@@ -1,6 +1,6 @@
 ---
 title: Mental Model
-description: "Understand how data flows through FHE-enabled dApps using the Counter example"
+description: "Understand how data flows through FHE-enabled dApps"
 ---
 
 To understand how **Cofhejs** fits into the Fhenix framework, you'll explore a simple mental model using a Counter smart contract example. This will show you how data flows through FHE-enabled dApps—from encryption to computation to decryption.
@@ -16,7 +16,9 @@ Imagine a smart contract called **Counter** where each user has their own privat
 - **CoFHE Co-Processor** = Fhenix's off-chain service that handles FHE operations
 - **Ciphertext** = Encrypted data that can be computed on without decryption
 
-## Step 1: Encrypting Input Data
+<Steps>
+
+<Step title="Encrypting Input Data">
 
 When a user wants to add `5` to their counter, the data must first be encrypted before being sent to the smart contract.
 
@@ -31,7 +33,9 @@ When a user wants to add `5` to their counter, the data must first be encrypted 
 
 Think of this as placing the value `5` in a box and locking it with the CoFHE co-processor's public key. The locked box (ciphertext) can be sent to the smart contract, but no one can see what's inside without the private key.
 
-## Step 2: Performing Computations on Encrypted Data
+</Step>
+
+<Step title="Performing Computations on Encrypted Data">
 
 Once the encrypted data reaches the smart contract, FHE magic happens. The smart contract can perform arithmetic operations directly on the ciphertext without ever decrypting it.
 
@@ -51,7 +55,9 @@ This is where Fully Homomorphic Encryption shines. The CoFHE co-processor enable
 - Perform other arithmetic operations
 - All while the data remains encrypted and private
 
-## Step 3: Retrieving Encrypted Output
+</Step>
+
+<Step title="Retrieving Encrypted Output">
 
 When a user wants to read their counter value, they need to retrieve the encrypted data and decrypt it. However, the data is encrypted with the CoFHE co-processor's public key, so the user needs to request re-encryption.
 
@@ -72,6 +78,10 @@ This is like exchanging locks on the box:
 - The co-processor removes its lock and applies the user's lock
 - The box remains locked throughout, but now only the user can open it
 - The data remains private at every step
+
+</Step>
+
+</Steps>
 
 ## The Complete Flow
 
