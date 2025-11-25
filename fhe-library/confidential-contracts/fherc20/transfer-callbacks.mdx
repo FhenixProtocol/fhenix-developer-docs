@@ -1,0 +1,512 @@
+---
+title: "Transfer Callbacks"
+description: "Safe transfers with callbacks using IFHERC20Receiver interface"
+---
+
+## Overview
+
+FHERC20 supports **safe transfers with callbacks**. When you use the `...AndCall` functions, the recipient contract is notified of the incoming transfer and can accept or reject it. This enables atomic operations where token transfers and contract logic execute together.
+
+<CardGroup cols={2}>
+<Card title="Atomic Operations" icon="atom">
+Transfer tokens and execute contract logic in a single transaction, ensuring both succeed or both fail.
+</Card>
+
+<Card title="Recipient Validation" icon="shield-check">
+Recipients must explicitly accept transfers by implementing IFHERC20Receiver, preventing tokens from being locked in incompatible contracts.
+</Card>
+
+<Card title="Custom Logic" icon="code">
+Recipients can execute arbitrary logic upon receiving tokens, enabling complex DeFi interactions.
+</Card>
+
+<Card title="Data Passing" icon="envelope">
+Pass arbitrary data along with transfers to provide context or instructions to the recipient.
+</Card>
+</CardGroup>
+
+---
+
+## Transfer And Call Functions
+
+FHERC20 provides four functions that support callbacks:
+
+### Confidential Transfer And Call
+
+Transfer tokens from caller to recipient with callback:
+
+<CodeGroup>
+```solidity With Encrypted Input
+function confidentialTransferAndCall(
+    address to,
+    InEuint64 memory inValue,
+    bytes calldata data
+) external returns (euint64 transferred);
+```
+
+```solidity With Already-Encrypted Value
+function confidentialTransferAndCall(
+    address to,
+    euint64 value,
+    bytes calldata data
+) external returns (euint64 transferred);
+```
+</CodeGroup>
+
+### Confidential Transfer From And Call
+
+Transfer tokens from a third party to recipient with callback (requires operator permission):
+
+<CodeGroup>
+```solidity With Encrypted Input
+function confidentialTransferFromAndCall(
+    address from,
+    address to,
+    InEuint64 memory inValue,
+    bytes calldata data
+) external returns (euint64 transferred);
+```
+
+```solidity With Already-Encrypted Value
+function confidentialTransferFromAndCall(
+    address from,
+    address to,
+    euint64 value,
+    bytes calldata data
+) external returns (euint64 transferred);
+```
+</CodeGroup>
+
+**Parameters:**
+- `to`: Recipient address (must implement IFHERC20Receiver if it's a contract)
+- `from`: Source address (only for `...From...` variants)
+- `inValue`/`value`: Encrypted amount to transfer
+- `data`: Arbitrary data to pass to recipient
+
+**Returns:**
+- `transferred`: The actual encrypted amount transferred (may be zero if insufficient balance)
+
+---
+
+## The IFHERC20Receiver Interface
+
+Any contract that wants to receive tokens via `...AndCall` functions **must** implement the `IFHERC20Receiver` interface:
+
+```solidity
+interface IFHERC20Receiver {
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external returns (ebool);
+}
+```
+
+### Function Parameters
+
+- `operator`: The address that initiated the transfer (msg.sender of the ...AndCall function)
+- `from`: The address tokens are being transferred from
+- `amount`: The encrypted amount being transferred (euint64)
+- `data`: Arbitrary data passed along with the transfer
+
+### Return Value
+
+The function must return an `ebool` (encrypted boolean):
+- `FHE.asEbool(true)`: Accept the transfer
+- `FHE.asEbool(false)`: Reject the transfer (tokens will be returned to sender)
+
+<Warning>
+If `onConfidentialTransferReceived` returns encrypted `false`, the entire transfer is **reversed**. The tokens return to the sender as if the transfer never happened.
+</Warning>
+
+---
+
+## How It Works
+
+<Steps>
+<Step title="Initiate Transfer">
+User calls `confidentialTransferAndCall` or `confidentialTransferFromAndCall` with recipient address, encrypted amount, and optional data.
+</Step>
+
+<Step title="Execute Transfer">
+FHERC20 performs the normal confidential transfer, updating balances and access controls.
+</Step>
+
+<Step title="Check Recipient">
+If the recipient is a contract (code size > 0), FHERC20 checks if it implements IFHERC20Receiver.
+</Step>
+
+<Step title="Call Callback">
+If implemented, FHERC20 calls `onConfidentialTransferReceived` on the recipient contract.
+</Step>
+
+<Step title="Evaluate Response">
+The recipient returns encrypted true (accept) or false (reject). FHERC20 evaluates this response.
+</Step>
+
+<Step title="Finalize or Revert">
+If accepted, the transfer is complete. If rejected, tokens are returned to sender.
+</Step>
+</Steps>
+
+---
+
+## Implementing IFHERC20Receiver
+
+### Basic Implementation
+
+Here's a minimal receiver that accepts all transfers:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@fhenixprotocol/contracts/interfaces/IFHERC20Receiver.sol";
+import "@fhenixprotocol/contracts/FHE.sol";
+
+contract BasicReceiver is IFHERC20Receiver {
+    event TokensReceived(
+        address indexed operator,
+        address indexed from,
+        bytes32 amount,
+        bytes data
+    );
+
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external override returns (ebool) {
+        // Log the receipt
+        emit TokensReceived(operator, from, euint64.unwrap(amount), data);
+
+        // Accept all transfers
+        return FHE.asEbool(true);
+    }
+}
+```
+
+### Conditional Acceptance
+
+Accept transfers only under certain conditions:
+
+```solidity
+contract ConditionalReceiver is IFHERC20Receiver {
+    address public immutable trustedToken;
+    mapping(address => bool) public approvedSenders;
+
+    constructor(address _trustedToken) {
+        trustedToken = _trustedToken;
+    }
+
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external override returns (ebool) {
+        // Only accept from trusted token
+        if (msg.sender != trustedToken) {
+            return FHE.asEbool(false);
+        }
+
+        // Only accept from approved senders
+        if (!approvedSenders[from]) {
+            return FHE.asEbool(false);
+        }
+
+        // Accept the transfer
+        return FHE.asEbool(true);
+    }
+
+    function approveSender(address sender, bool approved) external {
+        approvedSenders[sender] = approved;
+    }
+}
+```
+
+### With Custom Logic
+
+Execute logic upon receiving tokens:
+
+```solidity
+contract StakingPool is IFHERC20Receiver {
+    IFHERC20 public immutable stakingToken;
+    mapping(address => euint64) public stakedBalances;
+
+    constructor(address _stakingToken) {
+        stakingToken = IFHERC20(_stakingToken);
+    }
+
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external override returns (ebool) {
+        // Only accept our staking token
+        if (msg.sender != address(stakingToken)) {
+            return FHE.asEbool(false);
+        }
+
+        // Update staked balance
+        stakedBalances[from] = stakedBalances[from] + amount;
+
+        // Grant access to the balance
+        FHE.allowThis(stakedBalances[from]);
+        FHE.allow(stakedBalances[from], from);
+
+        // Process any additional data
+        if (data.length > 0) {
+            _processStakingData(from, data);
+        }
+
+        // Accept the transfer
+        return FHE.asEbool(true);
+    }
+
+    function _processStakingData(address staker, bytes calldata data) internal {
+        // Custom logic based on data parameter
+        // e.g., parse lock duration, referral codes, etc.
+    }
+}
+```
+
+---
+
+## Using Transfer Callbacks
+
+### Basic Usage
+
+```javascript
+// Off-chain: Prepare encrypted amount
+const encryptedAmount = await cofhe.encrypt(1000);
+
+// Call with empty data
+await token.confidentialTransferAndCall(
+    receiverAddress,
+    encryptedAmount,
+    "0x" // Empty data
+);
+```
+
+### Passing Data
+
+You can encode arbitrary data to pass to the recipient:
+
+```javascript
+// Encode some parameters
+const lockDuration = 30 * 24 * 60 * 60; // 30 days
+const referralCode = ethers.utils.formatBytes32String("REF123");
+
+const data = ethers.utils.defaultAbiCoder.encode(
+    ["uint256", "bytes32"],
+    [lockDuration, referralCode]
+);
+
+// Transfer with data
+const encryptedAmount = await cofhe.encrypt(1000);
+await token.confidentialTransferAndCall(
+    stakingPoolAddress,
+    encryptedAmount,
+    data
+);
+```
+
+The recipient can decode this data:
+
+```solidity
+function onConfidentialTransferReceived(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // Decode the data
+    (uint256 lockDuration, bytes32 referralCode) = abi.decode(
+        data,
+        (uint256, bytes32)
+    );
+
+    // Use the decoded parameters
+    _processStake(from, amount, lockDuration, referralCode);
+
+    return FHE.asEbool(true);
+}
+```
+
+---
+
+## Reversion Behavior
+
+### When Does It Revert?
+
+The transfer will revert if:
+
+```solidity
+// 1. Recipient is a contract but doesn't implement IFHERC20Receiver
+contract NoReceiver {
+    // Missing onConfidentialTransferReceived
+}
+
+// 2. Recipient's callback reverts
+function onConfidentialTransferReceived(...) external override returns (ebool) {
+    revert("Not accepting transfers");
+}
+
+// 3. Recipient's callback returns encrypted false
+function onConfidentialTransferReceived(...) external override returns (ebool) {
+    return FHE.asEbool(false); // Transfer will be reversed
+}
+```
+
+### When Does It Succeed?
+
+The transfer succeeds if:
+
+```solidity
+// 1. Recipient is an EOA (not a contract)
+await token.confidentialTransferAndCall(eoaAddress, amount, data);
+
+// 2. Recipient is a contract implementing IFHERC20Receiver that returns true
+function onConfidentialTransferReceived(...) external override returns (ebool) {
+    return FHE.asEbool(true);
+}
+```
+
+---
+
+## Security Considerations
+
+<AccordionGroup>
+<Accordion title="Reentrancy Protection" icon="rotate" defaultOpen>
+<Warning>
+The callback happens **after** the balance transfer but **before** the transaction completes. Implement reentrancy guards if your receiver makes external calls.
+</Warning>
+
+```solidity
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract SafeReceiver is IFHERC20Receiver, ReentrancyGuard {
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external override nonReentrant returns (ebool) {
+        // Protected against reentrancy
+        return FHE.asEbool(true);
+    }
+}
+```
+</Accordion>
+
+<Accordion title="Gas Limits" icon="gas-pump" defaultOpen>
+Callback execution is subject to gas limits. Keep logic simple:
+
+```solidity
+function onConfidentialTransferReceived(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // ✅ Simple logic is fine
+    stakedBalances[from] += amount;
+
+    // ❌ Avoid complex operations
+    // for (uint i = 0; i < 1000; i++) { ... }
+
+    return FHE.asEbool(true);
+}
+```
+</Accordion>
+
+<Accordion title="Untrusted Senders" icon="user-secret" defaultOpen>
+Your receiver will be called by anyone who transfers tokens to you. Validate the sender:
+
+```solidity
+function onConfidentialTransferReceived(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // Validate token
+    if (msg.sender != address(trustedToken)) {
+        return FHE.asEbool(false);
+    }
+
+    // Validate sender if needed
+    if (!isAllowedSender(from)) {
+        return FHE.asEbool(false);
+    }
+
+    return FHE.asEbool(true);
+}
+```
+</Accordion>
+
+<Accordion title="Data Validation" icon="check" defaultOpen>
+Always validate the `data` parameter before using it:
+
+```solidity
+function onConfidentialTransferReceived(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // Validate data length
+    if (data.length > 0) {
+        // Safely decode with try-catch
+        try this.decodeData(data) returns (uint256 value) {
+            // Use decoded value
+            _processValue(value);
+        } catch {
+            // Invalid data, reject transfer
+            return FHE.asEbool(false);
+        }
+    }
+
+    return FHE.asEbool(true);
+}
+
+function decodeData(bytes calldata data) external pure returns (uint256) {
+    return abi.decode(data, (uint256));
+}
+```
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+<Card title="Keep Callbacks Simple" icon="bolt">
+Minimize gas usage in your `onConfidentialTransferReceived` implementation. Complex logic should be moved to separate functions.
+</Card>
+
+<Card title="Validate Everything" icon="shield-check">
+Always validate the token sender (`msg.sender`), the transfer initiator (`operator`), and the source (`from`) before accepting transfers.
+</Card>
+
+<Card title="Handle Failures Gracefully" icon="triangle-exclamation">
+Return `FHE.asEbool(false)` to reject transfers rather than reverting, when possible. This provides better UX.
+</Card>
+
+<Card title="Test Thoroughly" icon="vial">
+Test both acceptance and rejection scenarios, including edge cases like zero transfers and malformed data.
+</Card>
+</CardGroup>
+
+---
+
+## Related Topics
+
+- Learn about [Operators](/fhe-library/confidential-contracts/fherc20/operators) for delegated transfers
+- Explore [Core Features](/fhe-library/confidential-contracts/fherc20/core-features) for basic transfers
+- Review [Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) for secure implementations

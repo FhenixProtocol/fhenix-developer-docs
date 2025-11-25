@@ -1,0 +1,238 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Fhenix Documentation",
+  "colors": {
+    "primary": "#0AD9DC",
+    "light": "#0AD9DC",
+    "dark": "#0AD9DC"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Get Started",
+            "global": {
+              "anchors": [
+                {
+                  "anchor": "Website",
+                  "href": "https://www.fhenix.io/",
+                  "icon": "globe"
+                },
+                {
+                  "anchor": "Blog",
+                  "href": "https://www.fhenix.io/blog",
+                  "icon": "newspaper"
+                }
+              ]
+            },
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "get-started/introduction/fhenix",
+              "get-started/introduction/compatibility",
+              "get-started/introduction/support-and-feedback"
+            ]
+          },
+          {
+            "group": "Builder Support",
+            "pages": [
+              "get-started/builder-support/get-funded"
+            ]
+          },
+          {
+            "group": "Build with AI",
+            "pages": [
+              "get-started/build-with-ai/build-with-ai",
+              "get-started/build-with-ai/ai-assistant"
+            ]
+          }
+        ]
+      },      {
+        "tab": "Cofhejs",
+            "global": {
+              "anchors": [
+                {
+                  "anchor": "Github",
+                  "href": "https://github.com/FhenixProtocol/cofhejs",
+                  "icon": "github"
+                }
+              ]
+            },
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "cofhejs/introduction/overview",
+              "cofhejs/introduction/mental-model",
+              "cofhejs/introduction/installation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "cofhejs/guides/encryption",
+              "cofhejs/guides/permits-management",
+              "cofhejs/guides/sealing-unsealing",
+              "cofhejs/guides/error-handling"
+            ]
+          }, 
+          {
+            "group": "Examples",
+            "pages": [
+              "cofhejs/examples/end-to-end"            
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "cofhejs/resources/templates"
+            ] 
+          }
+        ]
+      },
+      {
+        "tab": "FHE library",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "fhe-library/introduction/overview",
+              "fhe-library/introduction/quick-start",
+              "fhe-library/introduction/best-practices"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "fhe-library/core-concepts/inputs",
+              "fhe-library/core-concepts/trivial-encryption",
+              "fhe-library/core-concepts/data-evaluation",
+              "fhe-library/core-concepts/encrypted-operations",
+              "fhe-library/core-concepts/conditions",
+              "fhe-library/core-concepts/access-control",
+              "fhe-library/core-concepts/decryption-operations",
+              "fhe-library/core-concepts/randomness",
+              "fhe-library/core-concepts/gas-and-benchmarks",
+              "fhe-library/core-concepts/common-errors"
+            ]
+          },
+          {
+            "group": "Confidential Contracts",
+            "pages": [
+              {
+                "group": "FHERC20",
+                "pages": [
+                  "fhe-library/confidential-contracts/fherc20/overview",
+                  "fhe-library/confidential-contracts/fherc20/core-features",
+                  "fhe-library/confidential-contracts/fherc20/operators",
+                  "fhe-library/confidential-contracts/fherc20/transfer-callbacks",
+                  "fhe-library/confidential-contracts/fherc20/fherc20-permit",
+                  "fhe-library/confidential-contracts/fherc20/fherc20-wrapper",
+                  "fhe-library/confidential-contracts/fherc20/best-practices"
+                ]
+              }
+            ]
+          },
+
+          {
+            "group": "Examples",
+            "pages": [
+              "fhe-library/examples/auction-example"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "fhe-library/reference/fhe-sol"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Tutorials",
+        "groups": [
+          {
+            "group": "Tutorials",
+            "pages": [
+              "tutorials/overview",
+              "tutorials/your-first-fhe-contract",
+              "tutorials/adding-fhe-to-existing-contract",
+              "tutorials/migrating-to-cofhe",
+              "tutorials/acl-usage-examples"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Deep Dive",
+        "groups":[
+          {
+            "group": "CoFHE Components",
+            "pages": [
+              "deep-dive/cofhe-components/overview",
+              "deep-dive/cofhe-components/task-manager",
+              "deep-dive/cofhe-components/acl",
+              "deep-dive/cofhe-components/aggregator",
+              "deep-dive/cofhe-components/plaintext-storage",
+              "deep-dive/cofhe-components/ct-registry",
+              "deep-dive/cofhe-components/zk-verifier",
+              "deep-dive/cofhe-components/fheos-server",
+              "deep-dive/cofhe-components/threshold-network"
+            ]
+          },
+          {
+            "group": "Data Flows",
+            "pages": [
+              "deep-dive/data-flows/encryption-request-flow",
+              "deep-dive/data-flows/fhe-operation-request-flow",
+              "deep-dive/data-flows/decryption-request-flow",
+              "deep-dive/data-flows/decrypt-from-cofhejs"
+            ]
+          },
+          { 
+            "group": "Research",
+            "pages": [
+              "deep-dive/research/future-plans",
+              "deep-dive/research/research-in-fhenix"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Github",
+        "href": "https://github.com/fhenixprotocol/",
+        "icon": "github"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "support",
+      "href": "https://t.me/+OEO4CItQYh8xYzNh"
+    }
+  },
+  "contextual": {
+    "options": [
+     "copy",
+     "chatgpt",
+     "claude",
+     "cursor"
+   ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/fhenix",
+      "github": "https://github.com/fhenixprotocol/",
+      "discord": "https://discord.com/invite/FuVgxrvJMY"
+    }
+  }
+}

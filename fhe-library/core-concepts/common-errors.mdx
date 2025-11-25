@@ -1,0 +1,137 @@
+---
+title: "Common Errors"
+description: "Critical limitations and important considerations when working with CoFHE, including common issues and Solidity error references"
+---
+
+## Overview
+
+This page documents critical limitations and important considerations when working with CoFHE. Understanding these common issues and error messages will help you troubleshoot problems and build more robust FHE-enabled smart contracts.
+
+<Warning>
+Always verify you're using compatible component versions. Many errors can be resolved by ensuring you're using the latest versions of all CoFHE components.
+</Warning>
+
+## Common Issues
+
+### Missing Revert Data
+
+If you encounter a `Missing revert data` error, verify that you're using the latest `cofhe-contracts` version.
+
+<Steps>
+<Step title="Check your version">
+Verify the version of `cofhe-contracts` in your project:
+
+<CodeGroup>
+```bash npm
+npm list @fhenixprotocol/cofhe-contracts
+```
+
+```bash yarn
+yarn list --pattern "@fhenixprotocol/cofhe-contracts"
+```
+
+```bash pnpm
+pnpm list @fhenixprotocol/cofhe-contracts
+```
+</CodeGroup>
+</Step>
+
+<Step title="Compare with compatibility guide">
+Check the [Compatibility](/get-started/introduction/compatibility) page to ensure you're using a supported version.
+</Step>
+
+<Step title="Update if necessary">
+If your version is outdated, update to the latest compatible version:
+
+<CodeGroup>
+```bash npm
+npm install @fhenixprotocol/cofhe-contracts@latest
+```
+
+```bash yarn
+yarn add @fhenixprotocol/cofhe-contracts@latest
+```
+
+```bash pnpm
+pnpm add @fhenixprotocol/cofhe-contracts@latest
+```
+</CodeGroup>
+</Step>
+</Steps>
+
+<Note>
+This section will be expanded over time as new issues arise. If you encounter an issue not documented here, please report it to the Fhenix team.
+</Note>
+
+## Possible Errors from Solidity
+
+The following table lists common Solidity errors you may encounter when working with CoFHE contracts. Each error includes a description to help you understand what went wrong and how to fix it.
+
+| Error | Description |
+|-------|-------------|
+| **InvalidInputsAmount** | Operation requires a specific number of inputs. Occurs when an operation receives the wrong number of arguments |
+| **InvalidOperationInputs** | Operation inputs must be valid for the operation. Thrown when inputs violate operation requirements |
+| **TooManyInputs** | Operations have maximum input limits. Error when input count exceeds the operation's maximum |
+| **InvalidBytesLength** | Byte arrays must match expected length. Occurs when byte array length doesn't match the required size |
+| **InvalidTypeOrSecurityZone** | Operations must use compatible types and security zones. Occurs when an operation violates type or security zone constraints |
+| **InvalidInputType** | Input must match the expected type. Error when input type doesn't match function requirements |
+| **InvalidInputForFunction** | Function inputs must match defined parameters. Thrown when a function receives an incompatible input type |
+| **InvalidSecurityZone** | Operations must stay within defined security zones. Error when an operation violates security zone constraints |
+| **InvalidSignature** | Cryptographic signatures must be valid. Occurs with signature verification failures |
+| **InvalidSigner** | Signer must match the expected authorized address. Error when transaction signer doesn't match the required address |
+| **InvalidAddress** | Address must be valid and non-zero. Error when an invalid address is provided |
+| **OnlyOwnerAllowed** | Function restricted to contract owner. Error includes the address of the unauthorized caller |
+| **OnlyAggregatorAllowed** | Function restricted to authorized aggregator. Error includes the address of the unauthorized caller |
+| **AlreadyDelegated** | Delegatee contract is already a delegatee for sender and delegator addresses. Error when attempting duplicate delegation |
+| **SenderCannotBeDelegateeAddress** | Sender cannot be the delegatee address. Error when sender tries to delegate to themselves |
+| **SenderNotAllowed** | Sender address not authorized for allow operations. Error includes the address of the unauthorized sender |
+| **DirectAllowForbidden** | Direct handle allowance not permitted. Must use Task Manager. Error includes the address attempting direct allow |
+
+### Understanding Error Types
+
+**Input Validation Errors:**
+- `InvalidInputsAmount`, `InvalidOperationInputs`, `TooManyInputs`, `InvalidBytesLength`
+- These errors indicate problems with how data is passed to FHE operations
+- **Solution**: Verify that you're passing the correct number and type of arguments
+
+**Type and Security Zone Errors:**
+- `InvalidTypeOrSecurityZone`, `InvalidInputType`, `InvalidInputForFunction`, `InvalidSecurityZone`
+- These errors occur when encrypted types don't match expected types or security zones
+- **Solution**: Ensure encrypted values use compatible types (e.g., `euint32` matches `euint32`) and are in the correct security zone
+
+**Authentication Errors:**
+- `InvalidSignature`, `InvalidSigner`, `InvalidAddress`
+- These errors relate to cryptographic verification and address validation
+- **Solution**: Verify signatures are valid and addresses are properly formatted
+
+**Authorization Errors:**
+- `OnlyOwnerAllowed`, `OnlyAggregatorAllowed`, `SenderNotAllowed`, `DirectAllowForbidden`
+- These errors indicate permission or access control violations
+- **Solution**: Ensure the correct account is calling the function and that proper permissions are set
+
+**Delegation Errors:**
+- `AlreadyDelegated`, `SenderCannotBeDelegateeAddress`
+- These errors occur when delegation operations are invalid
+- **Solution**: Check that delegation hasn't already occurred and that sender and delegatee addresses are different
+
+## Troubleshooting Tips
+
+When encountering errors:
+
+1. **Check error messages carefully**: The error name and description provide clues about what went wrong
+2. **Verify input types**: Ensure encrypted values match expected types
+3. **Check permissions**: Verify that `FHE.allowThis()` or `FHE.allowSender()` have been called where necessary
+4. **Review component versions**: Ensure all CoFHE components are up to date
+5. **Test in mock environment**: Use the mock environment to debug issues without network delays
+
+<Tip>
+Many errors can be prevented by following [best practices](/fhe-library/introduction/best-practices) and ensuring proper access control management.
+</Tip>
+
+## Next Steps
+
+- Review the [Compatibility](/get-started/introduction/compatibility) page for version requirements
+- Learn about [access control](/fhe-library/core-concepts/access-control) to prevent authorization errors
+- Check [best practices](/fhe-library/introduction/best-practices) for secure FHE development
+- Explore the [API reference](/api-reference/introduction) for detailed function documentation
+

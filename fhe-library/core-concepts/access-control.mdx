@@ -1,0 +1,185 @@
+---
+title: "Access Control"
+description: "Understanding and managing permissions for encrypted data in confidential smart contracts"
+---
+
+## Motivation
+
+Consider the following scenario: Your contract receives an encrypted input that should remain confidential.
+
+```solidity
+// Contract A
+function submitSecretBid(InEuint32 bid) public {
+    euint32 handle = FHE.asEuint32(bid);
+    // Perform some operations on the encrypted input
+}
+```
+
+If there were no access control mechanisms, someone could observe the handle value used above and reuse it by initializing a local variable with the same value.
+
+```solidity
+// Contract B
+function attackBid(uint128 seenHandleValue) public {
+    FHE.decrypt(seenHandleValue); // try to expose the value
+}
+```
+
+<Warning>
+To prevent misuse, all FHE operations verify that the caller has explicit permission to use the ciphertext handle.
+</Warning>
+
+---
+
+## How Access Control Works
+
+In practice, the code above will revert with an `ACLNotAllowed` error when attempting to decrypt the ciphertext. Any other FHE operation will also fail if the calling contract doesn't have permission for all input handles.
+
+### Example: Unauthorized Operations Fail
+
+```solidity
+FHE.add(notAllowedCt, allowedCt); // -> will revert with ACLNotAllowed
+```
+
+By default, newly created ciphertext handles are accessible to the contract that created them, but **only for the duration of the transaction**. Any additional access must be explicitly granted.
+
+---
+
+## Granting Access
+
+CoFHE provides five methods to grant access to ciphertext handles:
+
+<AccordionGroup>
+<Accordion title="FHE.allowThis()" icon="building" defaultOpen>
+**`FHE.allowThis(CIPHERTEXT_HANDLE)`**
+
+Allows the current contract access to the handle. Use this when you want the contract itself to retain access to a ciphertext beyond the current transaction.
+
+```solidity
+euint32 secretValue = FHE.asEuint32(input);
+FHE.allowThis(secretValue); // Contract can access this later
+```
+</Accordion>
+
+<Accordion title="FHE.allowSender()" icon="paper-plane" defaultOpen>
+**`FHE.allowSender(CIPHERTEXT_HANDLE)`**
+
+Allows the transaction sender (`msg.sender`) access to the handle. Use this when you want to grant the caller of the function access to the ciphertext.
+
+```solidity
+euint32 secretValue = FHE.asEuint32(input);
+FHE.allowSender(secretValue); // Grant access to msg.sender
+```
+</Accordion>
+
+<Accordion title="FHE.allow()" icon="user" defaultOpen>
+**`FHE.allow(CIPHERTEXT_HANDLE, ADDRESS)`**
+
+Allows a specific address persistent access to the handle. Use this when you want to grant permanent access to another contract or user.
+
+```solidity
+euint32 secretValue = FHE.asEuint32(input);
+FHE.allow(secretValue, recipientAddress); // Grant access to specific address
+```
+</Accordion>
+
+<Accordion title="FHE.allowTransient()" icon="clock" defaultOpen>
+**`FHE.allowTransient(CIPHERTEXT_HANDLE, ADDRESS)`**
+
+Allows a specific address temporary access to the handle for the duration of the transaction only. Use this for cross-contract calls within the same transaction.
+
+```solidity
+euint32 secretValue = FHE.asEuint32(input);
+FHE.allowTransient(secretValue, otherContract); // Temporary access for this tx
+```
+</Accordion>
+
+<Accordion title="FHE.allowGlobal()" icon="globe" defaultOpen>
+**`FHE.allowGlobal(CIPHERTEXT_HANDLE)`**
+
+Allows any address access to the handle. Use with caution - this makes the ciphertext handle publicly accessible.
+
+```solidity
+euint32 publicValue = FHE.asEuint32(input);
+FHE.allowGlobal(publicValue); // Anyone can access this
+```
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Decryption and Access Control
+
+<Note>
+To decrypt a ciphertext off-chain using the decryption network, the issuer of the decryption request must have permission on the ciphertext handle. If not, the request will be denied by the access control system.
+</Note>
+
+This means you must grant appropriate permissions before attempting to decrypt values, whether on-chain or through the decryption network.
+
+---
+
+## Behind the Scenes
+
+Every blockchain integrating CoFHE includes a deployed `ACL.sol` contract. This contract manages ownership records for each ciphertext, ensuring that only authorized owners can perform operations on their encrypted data.
+
+### ACL Storage Structure
+
+The ACL contract contains the following mapping which tracks the ownership of each ciphertext handle:
+
+```solidity
+mapping(uint128 handle => mapping(address account => bool isAllowed)) persistedAllowedPairs;
+```
+
+This two-level mapping allows efficient lookup of whether a specific address has permission to access a specific ciphertext handle.
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+<Card title="Principle of Least Privilege" icon="shield-halved">
+Only grant access to addresses that genuinely need it. Avoid using `allowGlobal()` unless the data is truly meant to be public.
+</Card>
+
+<Card title="Use Transient for Cross-Contract Calls" icon="arrow-right-arrow-left">
+When calling other contracts within a transaction, use `allowTransient()` instead of permanent access to limit exposure.
+</Card>
+
+<Card title="Track Your Permissions" icon="list-check">
+Keep track of which addresses have access to which ciphertexts, especially in complex multi-contract systems.
+</Card>
+
+<Card title="Clean Up When Possible" icon="broom">
+Consider the lifecycle of your encrypted data and whether permissions should be revoked after certain operations.
+</Card>
+</CardGroup>
+
+---
+
+## Practical Examples
+
+For detailed examples on how to explicitly manage ciphertext allowances in contracts, see the [ACL Usage Examples](/fhe-library/tutorials/acl-usage-examples) guide.
+
+### Quick Example: Token Transfer
+
+```solidity
+function transfer(address to, InEuint32 memory inAmount) public {
+    euint32 amount = FHE.asEuint32(inAmount);
+
+    euint32 fromBalance = _balances[msg.sender];
+    euint32 toBalance = _balances[to];
+
+    euint32 newFromBalance = FHE.sub(fromBalance, amount);
+    euint32 newToBalance = FHE.add(toBalance, amount);
+
+    // Grant contract access to store balances
+    FHE.allowThis(newFromBalance);
+    FHE.allowThis(newToBalance);
+
+    // Optionally grant users access to their own balances
+    FHE.allow(newFromBalance, msg.sender);
+    FHE.allow(newToBalance, to);
+
+    _balances[msg.sender] = newFromBalance;
+    _balances[to] = newToBalance;
+}
+```

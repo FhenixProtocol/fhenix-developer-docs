@@ -1,0 +1,274 @@
+---
+title: "FHERC20 Overview"
+description: "Introduction to the FHERC20 confidential token standard"
+---
+
+## What is FHERC20?
+
+FHERC20 is a Fully Homomorphic Encryption (FHE) enabled token standard that provides **complete confidentiality** for token balances while maintaining compatibility with existing ERC20 infrastructure. Built on the Fhenix CoFHE protocol, FHERC20 allows users to transfer and manage tokens without revealing their balances or transaction amounts to anyone—not even other participants in the same smart contract.
+
+<CardGroup cols={2}>
+<Card title="Private by Default" icon="lock">
+All balances and transfer amounts are encrypted using FHE, ensuring complete financial privacy on a public blockchain.
+</Card>
+
+<Card title="ERC20 Compatible" icon="plug">
+Maintains compatibility with existing wallets and block explorers through an indicator system, while confidential operations use specialized functions.
+</Card>
+
+<Card title="Secure Operations" icon="shield">
+Perform computations on encrypted data without decryption, using homomorphic properties to maintain security throughout all operations.
+</Card>
+
+<Card title="Flexible Permissions" icon="key">
+Modern operator system with time-based expiration and signature-based approvals for granular access control.
+</Card>
+</CardGroup>
+
+---
+
+## Key Features
+
+### 1. Encrypted Balances
+
+Unlike standard ERC20 tokens where balances are visible to everyone, FHERC20 stores all balances as encrypted values using `euint64` types:
+
+```solidity
+// In FHERC20.sol
+mapping(address account => euint64) private _confidentialBalances;
+```
+
+These encrypted balances:
+- Cannot be read by anyone (including the contract)
+- Can be operated on using FHE operations
+- Maintain their encrypted state throughout all computations
+- Only decrypt when explicitly authorized
+
+### 2. Confidential Transfers
+
+All token movements use encrypted amounts:
+
+```solidity
+// Transfer with encrypted input
+function confidentialTransfer(address to, InEuint64 memory inValue)
+    external returns (euint64 transferred);
+
+// Transfer with already-encrypted value
+function confidentialTransfer(address to, euint64 value)
+    external returns (euint64 transferred);
+```
+
+<Note>
+FHERC20 provides two overloads for most functions: one accepting `InEuint64` (encrypted input from users) and one accepting `euint64` (already-encrypted values for contract-to-contract calls).
+</Note>
+
+### 3. Operator System
+
+Instead of traditional ERC20 allowances (which leak information about approved amounts), FHERC20 uses a time-based operator system:
+
+```solidity
+// Grant operator permission until a specific timestamp
+function setOperator(address operator, uint48 until) external;
+
+// Check if an address is an authorized operator
+function isOperator(address holder, address spender)
+    external view returns (bool);
+```
+
+Operators have **full access** to move tokens on behalf of the holder until the expiration time, without revealing specific amounts.
+
+### 4. Transfer Callbacks
+
+FHERC20 supports safe transfers with callbacks:
+
+```solidity
+function confidentialTransferAndCall(
+    address to,
+    InEuint64 memory inValue,
+    bytes calldata data
+) external returns (euint64 transferred);
+```
+
+Recipients must implement the `IFHERC20Receiver` interface to accept these transfers, enabling atomic token transfers with contract interactions.
+
+---
+
+## Architecture
+
+<Steps>
+<Step title="Client-Side Encryption">
+Users encrypt their transaction data (amounts, recipients) off-chain using the CoFHEjs library before submitting to the blockchain.
+</Step>
+
+<Step title="On-Chain FHE Operations">
+The FHERC20 contract performs all operations (additions, subtractions, comparisons) on encrypted data without ever decrypting it.
+</Step>
+
+<Step title="Access Control">
+The contract manages permissions for who can access encrypted balances, using FHE access control mechanisms.
+</Step>
+
+<Step title="Indicator System">
+For compatibility with standard wallets, FHERC20 maintains non-confidential "indicators" that show activity without revealing amounts.
+</Step>
+</Steps>
+
+---
+
+## The Indicator System
+
+To maintain compatibility with existing ERC20 infrastructure (wallets, block explorers), FHERC20 implements an **indicator system**:
+
+<Accordion title="What are Indicators?" icon="gauge" defaultOpen>
+Indicators are small, non-confidential numbers that represent account activity without revealing actual balances:
+
+- Range from `0.0000` to `0.9999` (stored as `0-9999`)
+- Start at `0` for accounts that have never interacted
+- Initialize at `0.5001` upon first interaction
+- Increment by `0.0001` for each received transaction
+- Decrement by `0.0001` for each sent transaction
+
+**Example:**
+```solidity
+// Alice's indicator: 0.5234
+// Bob's indicator: 0.4987
+// These numbers provide visual feedback in wallets but reveal no actual balance info
+```
+</Accordion>
+
+<Accordion title="Why Indicators?" icon="question" defaultOpen>
+Standard ERC20 functions like `balanceOf()` must return a `uint256`. For confidential tokens, we can't return the real balance, so we return the indicator instead.
+
+This allows:
+- ✅ Wallets to display "activity" for the token
+- ✅ Block explorers to show transactions occurred
+- ✅ Basic compatibility with existing infrastructure
+- ❌ But doesn't reveal actual token amounts
+
+Users can opt out by calling `resetIndicatedBalance()` to set their indicator back to zero.
+</Accordion>
+
+<Accordion title="Indicator Tick" icon="ruler" defaultOpen>
+The `indicatorTick` is the base unit for indicator increments:
+
+```solidity
+uint256 indicatorTick = 10^(decimals - 4);
+
+// For a token with 18 decimals:
+// indicatorTick = 10^14 = 100000000000000
+```
+
+This value is returned in `Transfer` events to maintain ERC20 compatibility while hiding real amounts.
+</Accordion>
+
+---
+
+## Comparison with Standard ERC20
+
+| Feature | Standard ERC20 | FHERC20 |
+|---------|---------------|---------|
+| **Balance Visibility** | Public, anyone can see | Encrypted, private |
+| **Transfer Amounts** | Public, visible in events | Encrypted |
+| **Allowances** | Specific amounts approved | Time-based operator system |
+| **Transfer Function** | `transfer(to, amount)` | `confidentialTransfer(to, encryptedAmount)` |
+| **Balance Query** | Returns actual balance | Returns indicator |
+| **Compatibility** | Native ERC20 | Indicator system for wallets |
+| **Privacy** | None | Complete |
+
+---
+
+## Contract Variants
+
+The FHERC20 ecosystem includes several specialized contracts:
+
+<CardGroup cols={2}>
+<Card title="FHERC20" icon="coins" href="/fhe-library/confidential-contracts/fherc20/core-features">
+**Base Implementation**
+
+Core confidential token with encrypted balances, confidential transfers, and operator system.
+</Card>
+
+<Card title="FHERC20Permit" icon="signature" href="/fhe-library/confidential-contracts/fherc20/fherc20-permit">
+**Signature-Based Approval**
+
+Extends FHERC20 with EIP-712 signature-based operator approval, enabling gasless approvals.
+</Card>
+
+<Card title="FHERC20Wrapper" icon="gift" href="/fhe-library/confidential-contracts/fherc20/fherc20-wrapper">
+**ERC20 Wrapper**
+
+Wraps standard ERC20 tokens into confidential FHERC20 tokens and handles unwrapping with claim system.
+</Card>
+
+<Card title="FHERC20UnwrapClaim" icon="hand-holding-dollar" href="/fhe-library/confidential-contracts/fherc20/unwrap-claims">
+**Claim Management**
+
+Abstract contract providing claim functionality for managing unwrap operations and decryption results.
+</Card>
+</CardGroup>
+
+---
+
+## Quick Start Example
+
+Here's a minimal example showing FHERC20 in action:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@fhenixprotocol/contracts/FHERC20.sol";
+
+contract MyConfidentialToken is FHERC20 {
+    constructor() FHERC20("My Confidential Token", "MCT", 18) {}
+
+    // Mint confidential tokens
+    function mint(address to, uint64 amount) external {
+        _mint(to, amount);
+    }
+}
+```
+
+Using the token:
+
+```solidity
+// User encrypts amount off-chain, then submits
+InEuint64 memory encryptedAmount = cofhe.encrypt(100);
+token.confidentialTransfer(recipient, encryptedAmount);
+
+// Check indicator (not real balance!)
+uint256 indicator = token.balanceOf(user); // Returns indicator value
+
+// Check real encrypted balance (only accessible to user)
+euint64 encBalance = token.confidentialBalanceOf(user);
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Core Features" icon="star" href="/fhe-library/confidential-contracts/fherc20/core-features">
+Learn about encrypted balances, transfers, and the indicator system in detail.
+</Card>
+
+<Card title="Operators" icon="users" href="/fhe-library/confidential-contracts/fherc20/operators">
+Understand the operator permission system and how it replaces traditional allowances.
+</Card>
+
+<Card title="Transfer Callbacks" icon="phone-arrow-down-left" href="/fhe-library/confidential-contracts/fherc20/transfer-callbacks">
+Implement safe transfers with callbacks using the IFHERC20Receiver interface.
+</Card>
+
+<Card title="Best Practices" icon="shield-check" href="/fhe-library/confidential-contracts/fherc20/best-practices">
+Security considerations, gas optimization, and recommended patterns.
+</Card>
+</CardGroup>
+
+---
+
+## Related Topics
+
+- Learn about FHE operations in [Encrypted Operations](/fhe-library/core-concepts/encrypted-operations)
+- Understand access control in [Access Control](/fhe-library/core-concepts/access-control)
+- Explore encryption with [CoFHEjs](/cofhejs/introduction/overview)

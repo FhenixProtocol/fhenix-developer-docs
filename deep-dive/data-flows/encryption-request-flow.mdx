@@ -1,0 +1,65 @@
+---
+title: Encryption Request Flow
+description: "Complete flow of the encryption request process using Cofhejs for encrypting data for private computation with smart contracts"
+---
+
+## Overview
+
+This document outlines the complete flow of the encryption request process using Cofhejs, a TypeScript library designed to help users encrypt data for private computation with smart contracts. Understanding this process is essential for developers who want to enable their users to interact with privacy-preserving smart contracts using encrypted inputs.
+
+## Key Components
+
+| Component | Description |
+|-----------|-------------|
+| **dApp** | The decentralized application that interacts with the user and the contracts |
+| **Cofhejs** | TypeScript package designed for seamless interaction Fhenix's co-processor |
+| **Threshold Network** | (When applicable) Handles secure decryption operations |
+
+## Flow Diagram
+
+The following diagram illustrates the complete flow of an Encryption request in the CoFHE ecosystem:
+
+<Frame>
+<img src="/images/Encrypt-a-value.svg" alt="End-to-end flow of an Encryption request through the CoFHE system components" />
+</Frame>
+
+*Figure 1: End-to-end flow of an Encryption request through the CoFHE system components*
+
+## Step-by-Step Flow
+
+<Steps>
+<Step title="Install and initialize Cofhejs">
+Install, include and initialize Cofhejs in your project (full details [here](/cofhejs/introduction/installation)).
+
+```bash
+npm install cofhejs
+```
+
+```javascript
+const { cofhejs, FheTypes, Encryptable } = require("cofhejs/node");
+```
+</Step>
+
+<Step title="Data preparation">
+1️⃣ The data is encrypted locally using the `encrypt` function.
+
+Under the hood, `encrypt` encrypts the data using the TFHE library and create a zkPoK to prove the encryption is correct.
+</Step>
+
+<Step title="Encryption verification">
+The zkPoK is verified using the `verify` function. 2️⃣
+
+This verification process ensures that the ciphertext was generated correctly—that it represents a valid encryption of a known plaintext—and that the data has not been tampered with. Upon successful verification, the encrypted data is stored in the Data Availability (DA) layer. 3️⃣ 4️⃣
+
+The function returns a value handle that can be used to reference the encrypted data later, along with a signature. 5️⃣
+</Step>
+
+<Step title="Using the encrypted data">
+The user can send the value handle to the contract as an encrypted input. This handle represents the ciphertext stored in the DA layer and allows the contract to reference the encrypted value.
+</Step>
+</Steps>
+
+<Note>
+Read more about the implementation details [here](/cofhejs/guides/encryption)
+</Note>
+

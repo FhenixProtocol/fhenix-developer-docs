@@ -1,0 +1,32 @@
+---
+title: Overview
+description: "Introduction to Cofhejs - a TypeScript package for interacting with FHE-enabled smart contracts"
+---
+
+
+Cofhejs is a TypeScript package designed to enable seamless interaction between clients and Fhenix's co-processor (CoFHE). It is an essential component for engineers working with FHE-enabled smart contracts, as it facilitates the encryption and decryption processes required for secure data handling in decentralized applications (dApps). Cofhejs ensures that data remains private throughout its journey from input to output in the blockchain ecosystem.
+
+To work with FHE-enabled contracts, you need to make three primary modifications to your client/frontend:
+
+<CardGroup cols={2}>
+
+<Card title="Mental Model" icon="brain" href="/cofhejs/introduction/mental-model">
+  Learn how data flows through FHE-enabled dApps using the Counter example—from encryption to computation to decryption.
+</Card>
+
+<Card title="Encrypting Input Data" icon="lock" href="/cofhejs/guides/encryption">
+  Before passing data to the smart contract, input must be encrypted to ensure its confidentiality.
+</Card>
+
+<Card title="Creating Permits and Permissions" icon="id-card" href="/cofhejs/guides/permits-management">
+  Generate permits and permissions that determine who can interact with or view the data.
+</Card>
+
+<Card title="Unsealing Output Data" icon="unlock" href="/cofhejs/guides/sealing-unsealing">
+  Decrypt the output after the contract processes the data so it can be used or displayed.
+</Card>
+
+</CardGroup>
+
+Cofhejs allows encryption to begin and end privately in a dApp, while FHE-enabled contracts perform computations on these encrypted values.
+

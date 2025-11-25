@@ -1,0 +1,379 @@
+---
+title: "FHERC20 Wrapper"
+description: "Wrap standard ERC20 tokens into confidential FHERC20 tokens"
+---
+
+## Overview
+
+FHERC20Wrapper enables you to convert standard ERC20 tokens into confidential FHERC20 tokens and vice versa. This creates a privacy layer on top of existing tokens, allowing users to transact privately while maintaining interoperability with the broader DeFi ecosystem.
+
+<CardGroup cols={2}>
+<Card title="Privacy Layer" icon="mask">
+Transform transparent ERC20 balances into encrypted FHERC20 balances for confidential transactions.
+</Card>
+
+<Card title="Reversible" icon="rotate">
+Unwrap confidential tokens back to standard ERC20 at any time through a secure claim process.
+</Card>
+
+<Card title="1:1 Backing" icon="scale-balanced">
+Each wrapped token is backed 1:1 by the underlying ERC20 token held in the wrapper contract.
+</Card>
+
+<Card title="DeFi Bridge" icon="bridge">
+Bridge between transparent DeFi protocols and confidential trading/transfers.
+</Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+<Steps>
+<Step title="Wrap Tokens">
+User deposits standard ERC20 tokens into the wrapper contract, which mints an equivalent amount of confidential FHERC20 tokens.
+</Step>
+
+<Step title="Confidential Transfers">
+User can now transfer the wrapped tokens confidentially using all FHERC20 features while balances remain encrypted.
+</Step>
+
+<Step title="Unwrap Request">
+When ready to exit, user burns confidential tokens and requests decryption of the burned amount.
+</Step>
+
+<Step title="Claim Tokens">
+After decryption completes, user claims their original ERC20 tokens from the wrapper contract.
+</Step>
+</Steps>
+
+---
+
+## Wrapping Tokens
+
+### Function Signature
+
+```solidity
+function wrap(address to, uint64 value) external;
+```
+
+**Parameters:**
+- `to`: Address to receive the wrapped (confidential) tokens
+- `value`: Amount of ERC20 tokens to wrap
+
+### How Wrapping Works
+
+1. User approves wrapper contract to spend ERC20 tokens
+2. Wrapper transfers ERC20 tokens from user to itself
+3. Wrapper mints equivalent confidential FHERC20 tokens to recipient
+4. Wrapped tokens can now be used confidentially
+
+### Example
+
+```javascript
+// 1. Approve wrapper to spend your tokens
+await erc20Token.approve(wrapperAddress, amount);
+
+// 2. Wrap tokens (receives confidential tokens)
+await wrapper.wrap(recipientAddress, amount);
+
+// 3. Check confidential balance (encrypted)
+const encBalance = await wrapper.confidentialBalanceOf(recipientAddress);
+
+// 4. Transfer confidentially
+const encAmount = await cofhe.encrypt(100);
+await wrapper.confidentialTransfer(anotherAddress, encAmount);
+```
+
+---
+
+## Unwrapping Tokens
+
+Unwrapping is a two-step process due to the asynchronous nature of FHE decryption.
+
+### Step 1: Unwrap (Burn and Request Decryption)
+
+```solidity
+function unwrap(address to, uint64 value) external;
+```
+
+**Parameters:**
+- `to`: Address to receive the unwrapped ERC20 tokens
+- `value`: Amount of confidential tokens to unwrap
+
+This function:
+1. Burns the specified amount of confidential tokens from caller
+2. Requests decryption of the burned amount
+3. Creates a claim for the recipient
+
+```javascript
+// Unwrap 100 tokens
+await wrapper.unwrap(myAddress, 100);
+
+// A claim is created, but ERC20 tokens aren't sent yet
+// (waiting for decryption to complete)
+```
+
+<Note>
+Due to the [zero-replacement behavior](/fhe-library/confidential-contracts/fherc20/core-features#the-update-function), if you attempt to unwrap more than your balance, zero tokens will be burned and you'll have a claim for zero tokens.
+</Note>
+
+### Step 2: Claim Unwrapped Tokens
+
+After decryption completes, claim your ERC20 tokens:
+
+#### Claim Specific Amount
+
+```solidity
+function claimUnwrapped(uint256 ctHash) external;
+```
+
+**Parameters:**
+- `ctHash`: The ciphertext hash identifying the specific claim
+
+```javascript
+// Get the ciphertext hash from the unwrap transaction
+const tx = await wrapper.unwrap(myAddress, 100);
+const receipt = await tx.wait();
+
+// Extract ctHash from event (implementation specific)
+const ctHash = extractCtHashFromReceipt(receipt);
+
+// Wait for decryption to complete (a few blocks)
+await waitForDecryption();
+
+// Claim your ERC20 tokens
+await wrapper.claimUnwrapped(ctHash);
+
+// Check ERC20 balance
+const balance = await erc20Token.balanceOf(myAddress);
+```
+
+#### Claim All Unwrapped Tokens
+
+```solidity
+function claimAllUnwrapped() external;
+```
+
+Claims all pending unwrap requests for the caller:
+
+```javascript
+// Unwrap multiple times
+await wrapper.unwrap(myAddress, 50);
+await wrapper.unwrap(myAddress, 30);
+await wrapper.unwrap(myAddress, 20);
+
+// Wait for all decryptions
+await waitForDecryptions();
+
+// Claim everything at once
+await wrapper.claimAllUnwrapped();
+
+// Receives 50 + 30 + 20 = 100 ERC20 tokens
+```
+
+---
+
+## Claim Management
+
+### Getting Claim Information
+
+```solidity
+function getClaim(uint256 ctHash) external view returns (Claim memory);
+```
+
+Returns claim details:
+
+```solidity
+struct Claim {
+    address to;              // Recipient address
+    uint64 value;           // Original requested amount
+    uint64 decryptedAmount; // Actual decrypted amount (after zero-replacement)
+    bool decrypted;         // Whether decryption is complete
+    bool claimed;           // Whether tokens have been claimed
+}
+```
+
+```javascript
+// Get claim info
+const claim = await wrapper.getClaim(ctHash);
+
+console.log(`To: ${claim.to}`);
+console.log(`Requested: ${claim.value}`);
+console.log(`Actual: ${claim.decryptedAmount}`);
+console.log(`Ready: ${claim.decrypted}`);
+console.log(`Claimed: ${claim.claimed}`);
+```
+
+### Getting User Claims
+
+```solidity
+function getUserClaims(address user) external view returns (uint256[] memory);
+```
+
+Returns all claim hashes for a user:
+
+```javascript
+// Get all pending claims
+const claimHashes = await wrapper.getUserClaims(myAddress);
+
+console.log(`You have ${claimHashes.length} pending claims`);
+
+// Check each claim
+for (const hash of claimHashes) {
+    const claim = await wrapper.getClaim(hash);
+    if (claim.decrypted && !claim.claimed) {
+        console.log(`Claim ${hash} is ready to claim!`);
+    }
+}
+```
+
+---
+
+## Complete Example
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@fhenixprotocol/contracts/FHERC20Wrapper.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// Deploy a wrapper for an existing ERC20 token
+contract MyTokenWrapper is FHERC20Wrapper {
+    constructor(address underlyingToken)
+        FHERC20Wrapper(
+            underlyingToken,
+            "Wrapped MyToken",
+            "wMTK",
+            18
+        )
+    {}
+}
+```
+
+
+## Symbol Management
+
+The wrapper owner can update the token symbol:
+
+```solidity
+function updateSymbol(string memory updatedSymbol) external onlyOwner;
+```
+
+This is useful for:
+- Distinguishing wrapped versions (e.g., "wUSDC" vs "USDC")
+- Rebrand if needed
+- Fix initial symbol mistakes
+
+```javascript
+// Update symbol
+await wrapper.updateSymbol("wUSDC");
+
+// Verify
+const symbol = await wrapper.symbol();
+console.log(`New symbol: ${symbol}`); // "wUSDC"
+```
+
+---
+
+## Security Considerations
+
+<AccordionGroup>
+<Accordion title="Token Compatibility" icon="plug" defaultOpen>
+<Warning>
+FHERC20Wrapper only works with standard ERC20 tokens. It will NOT work with:
+- Rebasing tokens (token balance changes automatically)
+- Fee-on-transfer tokens (tokens that charge fees)
+- Tokens with transfer hooks
+- Already-encrypted FHERC20 tokens
+</Warning>
+
+Always test with the specific token before deploying to production.
+</Accordion>
+
+<Accordion title="Unwrap Timing" icon="clock" defaultOpen>
+Unwrapping requires waiting for decryption:
+
+```javascript
+// Unwrap initiates decryption
+await wrapper.unwrap(user.address, amount);
+
+// ⏳ Must wait for decryption (typically 1-10 blocks)
+
+// Too early - will revert
+await wrapper.claimUnwrapped(ctHash); // ❌ Reverts
+
+// After waiting
+await waitForBlocks(5);
+await wrapper.claimUnwrapped(ctHash); // ✅ Success
+```
+
+Implement proper UI feedback for this waiting period.
+</Accordion>
+
+<Accordion title="Zero-Replacement" icon="circle-xmark" defaultOpen>
+If you unwrap more than your balance, you get zero:
+
+```javascript
+// Balance: 100 confidential tokens
+const encBalance = await wrapper.confidentialBalanceOf(user.address);
+
+// Try to unwrap 200
+await wrapper.unwrap(user.address, 200);
+
+// Claim will give you 0 ERC20 tokens
+await waitAndClaim(ctHash);
+const received = 0; // Not 100, not 200, but 0
+```
+
+Always ensure sufficient balance before unwrapping.
+</Accordion>
+
+<Accordion title="Claim Management" icon="list-check" defaultOpen>
+Users can accumulate multiple pending claims:
+
+```javascript
+// Multiple unwraps
+await wrapper.unwrap(user.address, 50);  // Claim 1
+await wrapper.unwrap(user.address, 30);  // Claim 2
+await wrapper.unwrap(user.address, 20);  // Claim 3
+
+// Each must be claimed individually or use claimAllUnwrapped
+const claims = await wrapper.getUserClaims(user.address);
+console.log(`${claims.length} pending claims`);
+```
+
+Provide UI to track and manage multiple claims.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Use Cases
+
+<CardGroup cols={2}>
+<Card title="DEX Privacy" icon="arrow-right-arrow-left">
+Wrap tokens before trading on a confidential DEX, then unwrap profits. Your trading activity and positions remain private.
+</Card>
+
+<Card title="Private Payments" icon="hand-holding-dollar">
+Wrap stablecoins for confidential payments, then unwrap to cash out to bank accounts or fiat on-ramps.
+</Card>
+
+<Card title="Confidential Payroll" icon="money-check-dollar">
+Companies can wrap tokens, distribute salaries confidentially, and employees unwrap to receive standard tokens.
+</Card>
+
+<Card title="Privacy Pools" icon="users">
+Create pools where users deposit tokens for privacy, transact confidentially, and withdraw when desired.
+</Card>
+</CardGroup>
+
+---
+
+## Related Topics
+
+- Understand [Unwrap Claims](/fhe-library/confidential-contracts/fherc20/unwrap-claims) for detailed claim management
+- Learn about [Core Features](/fhe-library/confidential-contracts/fherc20/core-features) for confidential transfers
+- Review [Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) for secure implementations

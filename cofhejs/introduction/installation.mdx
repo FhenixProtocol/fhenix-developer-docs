@@ -1,0 +1,97 @@
+---
+title: Manual Installation
+description: "Install and set up Cofhejs for FHE-enabled smart contract development"
+---
+
+To get started with Cofhejs, you need to install it as a dependency in your JavaScript project. You can do this using npm (Node Package Manager), Yarn, or pnpm. Open your terminal and navigate to your project's directory, then run the following:
+
+<CodeGroup>
+```bash yarn
+yarn add cofhejs
+```
+
+```bash npm
+npm install cofhejs
+```
+
+```bash pnpm
+pnpm add cofhejs
+```
+</CodeGroup>
+
+## Setup
+
+To use Cofhejs for interacting with FHE-enabled smart contracts, you must first initialize it.
+
+The `cofhejs` client handles key operations such as encrypting input data, creating permits, and decrypting output data from the blockchain.
+
+<Steps>
+<Step title="Import required modules">
+Import the Cofhejs library and your web3 provider library (Ethers.js or Viem).
+
+<CodeGroup>
+```typescript Node.js
+const { cofhejs } = require("cofhejs/node");
+const { ethers } = require("ethers");
+```
+
+```typescript Browser
+const { cofhejs } = require("cofhejs/web");
+const { ethers } = require("ethers");
+```
+</CodeGroup>
+</Step>
+
+<Step title="Initialize your web3 provider">
+Set up your provider and signer based on your environment.
+</Step>
+
+<Step title="Initialize Cofhejs">
+Initialize the Cofhejs client with your provider and signer.
+</Step>
+</Steps>
+
+Below is a complete example setup:
+
+<CodeGroup>
+```javascript Node.js
+const { cofhejs } = require("cofhejs/node");
+const { ethers } = require("ethers");
+
+// initialize your web3 provider
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:42069");
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
+// initialize cofhejs Client with ethers (it also supports viem)
+await cofhejs.initializeWithEthers({
+  ethersProvider: provider,
+  ethersSigner: wallet,
+  environment: "TESTNET"
+});
+```
+
+```javascript Browser
+const { cofhejs } = require("cofhejs/web");
+const { ethers } = require("ethers");
+
+// initialize your web3 provider
+const provider = new ethers.BrowserProvider(window.ethereum);
+const signer = (await provider.getSigner()) as ethers.JsonRpcSigner;
+
+// initialize cofhejs Client with ethers (it also supports viem)
+await cofhejs.initializeWithEthers({
+  ethersProvider: provider,
+  ethersSigner: signer,
+  environment: "TESTNET"
+});
+```
+</CodeGroup>
+
+## Next Steps
+
+Now that you have Cofhejs installed and initialized, you're ready to start building with FHE-enabled smart contracts. Here are the key concepts to learn next:
+
+- **[Learn how encryption works](/cofhejs/guides/encryption)** - Understand how to encrypt input data before sending it to smart contracts
+- **[Learn how permits work](/cofhejs/guides/permits-management)** - Discover how to create permits and manage permissions for encrypted data
+- **[Learn about sealing and unsealing](/cofhejs/guides/sealing-unsealing)** - Master the process of decrypting output data from FHE-enabled contracts
+- **[Understand error handling](/cofhejs/guides/error-handling)** - Learn how to handle errors and edge cases in your FHE applications

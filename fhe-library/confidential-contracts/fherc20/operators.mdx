@@ -1,0 +1,373 @@
+---
+title: "Operators"
+description: "Understanding FHERC20's time-based operator permission system"
+---
+
+## Overview
+
+FHERC20 introduces a new permission model called **operators** that replaces the traditional ERC20 allowance system. Instead of approving specific amounts (which would leak information about balances), FHERC20 uses time-based operator permissions that grant full access until an expiration timestamp.
+
+<CardGroup cols={2}>
+<Card title="Privacy Preserving" icon="mask">
+No amount-specific approvals means no information leakage about how much you're willing to let others spend.
+</Card>
+
+<Card title="Time-Based Expiration" icon="clock">
+Operators have automatic expiration using Unix timestamps, reducing the need for explicit revocation.
+</Card>
+
+<Card title="Full Access" icon="key">
+Operators can move any amount of tokens (up to your balance) without needing separate approvals for each transaction.
+</Card>
+
+<Card title="Simple Management" icon="sliders">
+One function to grant, extend, or revoke operator permissions with intuitive timestamp-based control.
+</Card>
+</CardGroup>
+
+---
+
+## Why Operators Instead of Allowances?
+
+### The Problem with Traditional Allowances
+
+Standard ERC20 uses the `approve()` function to grant spending permissions:
+
+```solidity
+// Standard ERC20 - LEAKS INFORMATION
+token.approve(spender, 1000); // Everyone can see you approved 1000 tokens
+```
+
+This approach has privacy issues for confidential tokens:
+- ❌ Reveals how much you're willing to let someone spend
+- ❌ Requires updating allowances frequently
+- ❌ Can leak information about your balance
+- ❌ Doesn't work well with encrypted amounts
+
+### The Operator Solution
+
+FHERC20 operators grant permission without revealing amounts:
+
+```solidity
+// FHERC20 - NO INFORMATION LEAKAGE
+token.setOperator(spender, block.timestamp + 1 days);
+```
+
+This approach is privacy-preserving:
+- ✅ No amount information revealed
+- ✅ Time-based expiration is automatic
+- ✅ Simple on/off permission model
+- ✅ Works perfectly with encrypted values
+
+---
+
+## Setting Operators
+
+### Function Signature
+
+```solidity
+function setOperator(address operator, uint48 until) external;
+```
+
+**Parameters:**
+- `operator`: Address to grant operator permissions to
+- `until`: Unix timestamp when the permission expires (uint48 supports dates until year 8921556)
+
+### Basic Usage
+
+<CodeGroup>
+```solidity Grant for 1 Day
+// Grant operator permission for 24 hours
+token.setOperator(
+    operatorAddress,
+    uint48(block.timestamp + 1 days)
+);
+```
+
+```solidity Grant for 1 Hour
+// Grant operator permission for 1 hour
+token.setOperator(
+    operatorAddress,
+    uint48(block.timestamp + 1 hours)
+);
+```
+
+```solidity Grant Indefinitely
+// Grant operator permission far into the future
+token.setOperator(
+    operatorAddress,
+    type(uint48).max  // Expires in year 8921556
+);
+```
+
+```solidity Revoke Immediately
+// Revoke operator permission
+token.setOperator(
+    operatorAddress,
+    uint48(block.timestamp)  // Expires now
+);
+```
+</CodeGroup>
+
+<Tip>
+Use `uint48(block.timestamp + duration)` to calculate expiration times. The `uint48` type is large enough for practical use while being gas-efficient.
+</Tip>
+
+---
+
+## Checking Operator Status
+
+### Function Signature
+
+```solidity
+function isOperator(address holder, address spender)
+    external view returns (bool);
+```
+
+**Parameters:**
+- `holder`: Address of the token holder
+- `spender`: Address to check operator status for
+
+**Returns:**
+- `true` if `spender` is currently an authorized operator for `holder`
+- `false` if not authorized or permission has expired
+
+### Usage Examples
+
+```solidity
+// Check if address is an operator
+bool canOperate = token.isOperator(holderAddress, spenderAddress);
+
+if (canOperate) {
+    // Spender can transfer holder's tokens
+    token.confidentialTransferFrom(holder, recipient, encryptedAmount);
+}
+```
+
+```javascript
+// Off-chain checking
+const isAuthorized = await token.isOperator(holderAddress, operatorAddress);
+
+if (isAuthorized) {
+    console.log("Operator is authorized");
+} else {
+    console.log("Operator permission expired or never granted");
+}
+```
+
+---
+
+## Using Operator Permissions
+
+Once granted operator status, an address can use `confidentialTransferFrom()` to move tokens:
+
+```solidity
+function confidentialTransferFrom(
+    address from,
+    address to,
+    InEuint64 memory inValue
+) external returns (euint64 transferred);
+```
+
+### Complete Example
+
+```solidity
+// 1. Token holder grants operator permission
+await token.connect(holder).setOperator(
+    operatorAddress,
+    Math.floor(Date.now() / 1000) + 86400  // 1 day from now
+);
+
+// 2. Operator can now transfer on behalf of holder
+const encryptedAmount = await cofhe.encrypt(100);
+await token.connect(operator).confidentialTransferFrom(
+    holderAddress,
+    recipientAddress,
+    encryptedAmount
+);
+
+// 3. After expiration, operator can no longer transfer
+// (automatically revoked when timestamp passes)
+```
+
+---
+
+## Internal Implementation
+
+### Storage
+
+Operators are stored in a mapping with their expiration times:
+
+```solidity
+mapping(address holder => mapping(address spender => uint48 until))
+    private _operators;
+```
+
+### Setting an Operator
+
+```solidity
+function setOperator(address operator, uint48 until) external {
+    address holder = msg.sender;
+
+    // Update or revoke operator permission
+    _operators[holder][operator] = until;
+
+    // Emit event (implementation specific)
+    emit OperatorSet(holder, operator, until);
+}
+```
+
+### Checking Operator Status
+
+```solidity
+function isOperator(address holder, address spender)
+    external view returns (bool)
+{
+    // Check if current time is before expiration
+    return _operators[holder][spender] >= block.timestamp;
+}
+```
+
+### Transfer From Check
+
+Before allowing a `confidentialTransferFrom`, the contract verifies operator status:
+
+```solidity
+function confidentialTransferFrom(
+    address from,
+    address to,
+    euint64 value
+) external returns (euint64 transferred) {
+    // Verify operator permission
+    if (!isOperator(from, msg.sender)) {
+        revert FHERC20InsufficientPermission(from, msg.sender);
+    }
+
+    // Perform the transfer
+    return _transfer(from, to, value);
+}
+```
+
+---
+
+## Operator Patterns
+
+### Pattern 1: Short-Lived Permissions
+
+Grant operator permissions for specific transactions:
+
+```solidity
+// Grant permission for a specific operation
+function executeSwap(address tokenIn, uint64 amountIn) external {
+    // Grant DEX operator permission for 5 minutes
+    tokenIn.setOperator(dexAddress, uint48(block.timestamp + 5 minutes));
+
+    // Execute swap
+    dex.swap(tokenIn, tokenOut, amountIn);
+
+    // Permission automatically expires after 5 minutes
+}
+```
+
+
+---
+
+## Operator vs Allowance Comparison
+
+| Feature | ERC20 Allowance | FHERC20 Operator |
+|---------|-----------------|------------------|
+| **Privacy** | ❌ Reveals approved amount | ✅ No amount revealed |
+| **Expiration** | ⚠️ Manual revocation required | ✅ Automatic time-based |
+| **Flexibility** | ✅ Can approve specific amounts | ⚠️ All-or-nothing access |
+| **Gas Efficiency** | ⚠️ Multiple approvals costly | ✅ Single approval sufficient |
+| **Complexity** | ✅ Simple amount-based | ✅ Simple time-based |
+| **Use with FHE** | ❌ Doesn't work with encryption | ✅ Designed for FHE |
+
+---
+
+## Security Considerations
+
+<AccordionGroup>
+<Accordion title="Operator Has Full Access" icon="triangle-exclamation" defaultOpen>
+<Warning>
+An operator can transfer **all** of a holder's tokens, not just a specific amount. Only grant operator permissions to trusted addresses.
+</Warning>
+
+```solidity
+// Operator can transfer entire balance
+euint64 balance = token.confidentialBalanceOf(holder);
+token.confidentialTransferFrom(holder, attacker, balance);
+```
+
+Best practices:
+- Use short expiration times when possible
+- Only authorize trusted contracts or addresses
+- Monitor operator grants in your UI
+- Consider implementing additional checks in contracts
+</Accordion>
+
+<Accordion title="Time-Based Expiration" icon="clock" defaultOpen>
+Operator permissions automatically expire based on blockchain timestamp:
+
+```solidity
+// Permission expires at specific timestamp
+uint48 expiresAt = uint48(block.timestamp + 1 hours);
+token.setOperator(operator, expiresAt);
+
+// After expiration, operator cannot act
+// No need for explicit revocation
+```
+
+**Advantages:**
+- Automatic cleanup
+- No gas cost for revocation
+- Predictable expiration
+
+**Considerations:**
+- Block timestamps can vary slightly
+- Account for clock skew in time calculations
+- Use buffer time for critical operations
+</Accordion>
+
+<Accordion title="Front-Running Protection" icon="shield" defaultOpen>
+Operator changes are atomic and immediate:
+
+```solidity
+// This transaction either succeeds completely or reverts
+token.setOperator(newOperator, expirationTime);
+```
+
+Unlike ERC20's approve/transferFrom race condition, operator changes are safe from front-running because:
+- No amount is specified
+- Permission is binary (yes/no)
+- Time-based expiration is deterministic
+</Accordion>
+
+<Accordion title="Multiple Operators" icon="users" defaultOpen>
+A holder can have multiple operators simultaneously:
+
+```solidity
+// Grant multiple operators
+token.setOperator(operatorA, uint48(block.timestamp + 1 days));
+token.setOperator(operatorB, uint48(block.timestamp + 7 days));
+token.setOperator(operatorC, uint48(block.timestamp + 30 days));
+
+// All can operate independently
+```
+
+**Consider:**
+- Each operator has full access
+- Permissions are independent
+- Track all active operators
+- Implement operator limits if needed
+</Accordion>
+</AccordionGroup>
+
+
+---
+
+## Related Topics
+
+- Learn about [FHERC20 Permit](/fhe-library/confidential-contracts/fherc20/fherc20-permit) for signature-based operator approval
+- Explore [Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for safe operator transfers
+- Review [Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) for secure operator management

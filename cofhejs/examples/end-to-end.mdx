@@ -1,0 +1,569 @@
+---
+title: End-to-End Example
+description: "Complete example demonstrating encryption, contract interaction, and unsealing with Cofhejs"
+---
+
+## End-to-End Example
+
+This example demonstrates a full interaction between a dApp and an FHE-enabled smart contract using `cofhejs`. You'll learn how to set up the client, encrypt data, send it to the contract, create a permit for accessing sealed data, and finally unseal the returned data for the user.
+
+### Prerequisites
+
+Before you begin, ensure you have:
+
+- **Node.js** installed (version 18 or higher)
+- **Ethers.js** or **Viem** installed in your project
+- A deployed FHE-enabled smart contract
+- Access to a Fhenix network (local or testnet)
+
+### Complete Flow
+
+The example demonstrates:
+1. Initializing Cofhejs with a provider and signer
+2. Encrypting input data before sending to the contract
+3. Interacting with an FHE-enabled smart contract
+4. Creating permits for data access
+5. Unsealing encrypted output data
+
+## Example Implementation
+
+Follow these steps to implement a complete FHE interaction workflow:
+
+<Steps>
+<Step title="Initialize dependencies and provider">
+Import required modules and set up your web3 provider. Connect to your local Fhenix network or testnet.
+
+<CodeGroup>
+```typescript Node.js
+const { cofhejs, FheTypes, Encryptable } = require("cofhejs/node");
+const { ethers } = require("ethers");
+
+// Connect to your local Fhenix network or testnet
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:42069");
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+```
+
+```typescript Browser
+import { cofhejs, FheTypes, Encryptable } from "cofhejs/web";
+import { ethers } from "ethers";
+
+// Connect to MetaMask or other browser wallet
+const provider = new ethers.BrowserProvider(window.ethereum);
+const signer = (await provider.getSigner()) as ethers.JsonRpcSigner;
+
+// Request account access
+await window.ethereum.request({ method: 'eth_requestAccounts' });
+```
+</CodeGroup>
+
+<Check>
+You should have a connected provider and wallet/signer ready for use.
+</Check>
+</Step>
+
+<Step title="Initialize Cofhejs">
+Initialize the Cofhejs client with your provider and signer. This sets up the FHE encryption capabilities and loads the chain key automatically.
+
+<CodeGroup>
+```typescript Node.js
+const initResult = await cofhejs.initializeWithEthers({
+	ethersProvider: provider,
+	ethersSigner: wallet,
+	environment: "TESTNET"
+});
+
+if (!initResult.success) {
+	console.error("Failed to initialize cofhejs:", initResult.error);
+	process.exit(1);
+}
+```
+
+```typescript Browser
+const initResult = await cofhejs.initializeWithEthers({
+	ethersProvider: provider,
+	ethersSigner: signer,
+	environment: "TESTNET"
+});
+
+if (!initResult.success) {
+	console.error("Failed to initialize cofhejs:", initResult.error);
+	// Show error to user in UI
+	return;
+}
+```
+</CodeGroup>
+
+<Check>
+Cofhejs is initialized and ready to encrypt and decrypt data.
+</Check>
+</Step>
+
+<Step title="Set up contract instance">
+Connect to your deployed FHE-enabled smart contract using the contract address and ABI.
+
+```typescript
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+```
+
+<Check>
+You have a contract instance ready for interaction.
+</Check>
+</Step>
+
+<Step title="Configure encryption state logging">
+Set up a callback function to track encryption progress. This helps provide better user experience during encryption operations.
+
+```typescript
+const logState = (state) => {
+	console.log(`Encryption State: ${state}`);
+	// In browser: updateEncryptionProgress(state);
+};
+```
+
+<Note>
+The encryption state callback receives states like: Extract, Pack, Prove, Verify, Replace, and Done.
+</Note>
+</Step>
+</Steps>
+
+Now that you've completed the setup, here's the complete implementation example:
+
+<CodeGroup>
+```typescript Node.js
+const { cofhejs, FheTypes, Encryptable } = require("cofhejs/node");
+const { ethers } = require("ethers");
+
+// Initialize your web3 provider
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:42069");
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
+// Initialize cofhejs Client with ethers
+const initResult = await cofhejs.initializeWithEthers({
+	ethersProvider: provider,
+	ethersSigner: wallet,
+	environment: "TESTNET"
+});
+
+if (!initResult.success) {
+	console.error("Failed to initialize cofhejs:", initResult.error);
+	process.exit(1);
+}
+
+// Set up the contract instance
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+
+// Set up encryption state logging callback
+const logState = (state) => {
+	console.log(`Encryption State: ${state}`);
+};
+
+// Step 5: Function to read decrypted counter value
+// This reads the counter after it has been decrypted on-chain
+const readCounterDecryptedValue = async () => {
+	try {
+		const result = await contract.get_counter_value();
+		console.log("Decrypted counter value:", result.toString());
+		return result;
+	} catch (error) {
+		console.error("Error reading decrypted counter:", error);
+		throw error;
+	}
+};
+
+// Step 6: Function to read encrypted counter value and unseal it
+// This demonstrates the unsealing process for encrypted data
+const readCounterEncryptedValue = async () => {
+	try {
+		// Get the encrypted counter value from the contract
+		const encryptedResult = await contract.get_encrypted_counter_value();
+		console.log("Encrypted counter value:", encryptedResult);
+
+		// Step 7: Create a permit to authorize unsealing
+		// The permit proves you own the private key to decrypt this data
+		const permitResult = await cofhejs.createPermit({
+			type: "self",
+			issuer: wallet.address
+		});
+
+		if (!permitResult.success) {
+			console.error("Failed to create permit:", permitResult.error);
+			return;
+		}
+
+		const permit = permitResult.data;
+
+		// Step 8: Unseal the encrypted value
+		// When creating a permit, cofhejs will use it automatically,
+		// but you can pass it manually as well for explicit control
+		const unsealResult = await cofhejs.unseal(
+			encryptedResult,
+			FheTypes.Uint64,
+			permit.data.issuer,
+			permit.data.getHash()
+		);
+
+		if (!unsealResult.success) {
+			console.error("Failed to unseal counter:", unsealResult.error);
+			return;
+		}
+
+		console.log("Unsealed counter value:", unsealResult.data.toString());
+		return unsealResult.data;
+	} catch (error) {
+		console.error("Error reading encrypted counter:", error);
+		throw error;
+	}
+};
+
+// Step 9: Function to increment the counter
+// This adds 1 to the encrypted counter value on-chain
+const incrementCounter = async () => {
+	try {
+		const tx = await contract.increment_counter();
+		console.log("Increment transaction hash:", tx.hash);
+		
+		// Wait for transaction confirmation
+		const receipt = await tx.wait();
+		console.log("Transaction confirmed in block:", receipt.blockNumber);
+		
+		return receipt;
+	} catch (error) {
+		console.error("Error incrementing counter:", error);
+		throw error;
+	}
+};
+
+// Step 10: Function to reset the counter with an encrypted value
+// This demonstrates encrypting input data before sending to the contract
+const resetCounter = async (encryptedValue) => {
+	try {
+		// Send the encrypted value to the contract
+		const tx = await contract.reset_counter(encryptedValue);
+		console.log("Reset counter transaction hash:", tx.hash);
+		
+		// Wait for transaction confirmation
+		const receipt = await tx.wait();
+		console.log("Transaction confirmed in block:", receipt.blockNumber);
+		
+		return receipt;
+	} catch (error) {
+		console.error("Error resetting counter:", error);
+		throw error;
+	}
+};
+
+// Step 11: Function to decrypt the counter on-chain
+// This requests the contract to decrypt the counter value
+const decryptCounter = async () => {
+	try {
+		const tx = await contract.decrypt_counter();
+		console.log("Decrypt counter transaction hash:", tx.hash);
+		
+		// Wait for transaction confirmation
+		const receipt = await tx.wait();
+		console.log("Transaction confirmed in block:", receipt.blockNumber);
+		
+		return receipt;
+	} catch (error) {
+		console.error("Error decrypting counter:", error);
+		throw error;
+	}
+};
+
+// ============================================
+// Example Usage Flow
+// ============================================
+
+async function main() {
+	console.log("=== Starting End-to-End Example ===\n");
+
+	try {
+		// Step 1: Read initial counter value
+		// Expected: 0 (or uninitialized)
+		console.log("1. Reading initial counter value...");
+		const initialValue = await readCounterDecryptedValue();
+		console.log(`   ✓ Initial value: ${initialValue.toString()}`);
+
+		// Step 2: Increment the counter
+		// Adds 1 to the encrypted counter value on-chain
+		console.log("\n2. Incrementing counter...");
+		await incrementCounter();
+		console.log("   ✓ Counter incremented successfully");
+
+		// Step 3: Read and unseal encrypted counter
+		// Expected: 1 (after unsealing)
+		console.log("\n3. Reading encrypted counter value...");
+		const unsealedValue1 = await readCounterEncryptedValue();
+		console.log(`   ✓ Unsealed value: ${unsealedValue1.toString()}`);
+
+		// Step 4: Increment again
+		console.log("\n4. Incrementing counter again...");
+		await incrementCounter();
+		console.log("   ✓ Counter incremented successfully");
+
+		// Step 5: Decrypt the counter on-chain
+		console.log("\n5. Decrypting counter on-chain...");
+		await decryptCounter();
+		console.log("   ✓ Counter decrypted on-chain");
+
+		// Step 6: Read the decrypted value
+		// Expected: 2
+		console.log("\n6. Reading decrypted counter value...");
+		const decryptedValue = await readCounterDecryptedValue();
+		console.log(`   ✓ Decrypted value: ${decryptedValue.toString()}`);
+
+		// Step 7: Encrypt new value and reset counter
+		console.log("\n7. Encrypting new value (10) and resetting counter...");
+		const encryptResult = await cofhejs.encrypt([Encryptable.uint64(10n)], logState);
+		
+		if (!encryptResult.success) {
+			console.error("Failed to encrypt value:", encryptResult.error);
+			return;
+		}
+
+		await resetCounter(encryptResult.data[0]);
+		console.log("   ✓ Counter reset with encrypted value 10");
+
+		// Step 8: Read encrypted counter after reset
+		// Expected: 10 (after unsealing)
+		console.log("\n8. Reading encrypted counter value after reset...");
+		const unsealedValue2 = await readCounterEncryptedValue();
+		console.log(`   ✓ Unsealed value: ${unsealedValue2.toString()}`);
+
+		console.log("\n=== Example completed successfully ===");
+	} catch (error) {
+		console.error("\n=== Example failed ===");
+		console.error("Error:", error);
+		process.exit(1);
+	}
+}
+
+// Run the example
+main();
+```
+
+```typescript Browser
+import { cofhejs, FheTypes, Encryptable } from "cofhejs/web";
+import { ethers } from "ethers";
+
+// Step 1: Initialize your web3 provider from browser wallet
+// Connect to MetaMask or other browser wallet
+const provider = new ethers.BrowserProvider(window.ethereum);
+const signer = (await provider.getSigner()) as ethers.JsonRpcSigner;
+
+// Step 2: Request account access
+await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+// Step 3: Initialize cofhejs Client with ethers
+// This sets up the FHE encryption capabilities and loads the chain key
+const initResult = await cofhejs.initializeWithEthers({
+	ethersProvider: provider,
+	ethersSigner: signer,
+	environment: "TESTNET"
+});
+
+if (!initResult.success) {
+	console.error("Failed to initialize cofhejs:", initResult.error);
+	// Show error to user in UI
+	return;
+}
+
+// Step 4: Set up the contract instance
+// Connect to your deployed FHE-enabled smart contract
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+// Step 5: Set up encryption state logging callback
+// Update UI progress indicator as encryption progresses
+const logState = (state) => {
+	console.log(`Encryption State: ${state}`);
+	// Update UI progress indicator
+	updateEncryptionProgress(state);
+};
+
+// Step 6: Function to read encrypted counter value and unseal it
+const readCounterEncryptedValue = async () => {
+	try {
+		// Get the encrypted counter value from the contract
+		const encryptedResult = await contract.get_encrypted_counter_value();
+
+		// Create a permit to authorize unsealing
+		const permitResult = await cofhejs.createPermit({
+			type: "self",
+			issuer: await signer.getAddress()
+		});
+
+		if (!permitResult.success) {
+			console.error("Failed to create permit:", permitResult.error);
+			return;
+		}
+
+		const permit = permitResult.data;
+
+		// Unseal the encrypted value
+		const unsealResult = await cofhejs.unseal(
+			encryptedResult,
+			FheTypes.Uint64,
+			permit.data.issuer,
+			permit.data.getHash()
+		);
+
+		if (!unsealResult.success) {
+			console.error("Failed to unseal counter:", unsealResult.error);
+			return;
+		}
+
+		// Display the unsealed value to the user
+		console.log("Unsealed counter value:", unsealResult.data.toString());
+		displayCounterValue(unsealResult.data.toString());
+		
+		return unsealResult.data;
+	} catch (error) {
+		console.error("Error reading encrypted counter:", error);
+		showErrorToUser(error);
+		throw error;
+	}
+};
+
+// Step 7: Function to increment the counter
+const incrementCounter = async () => {
+	try {
+		const tx = await contract.increment_counter();
+		console.log("Transaction sent:", tx.hash);
+		
+		// Show transaction pending UI
+		showTransactionPending(tx.hash);
+		
+		const receipt = await tx.wait();
+		console.log("Transaction confirmed:", receipt.blockNumber);
+		
+		// Show transaction success UI
+		showTransactionSuccess(receipt);
+		
+		return receipt;
+	} catch (error) {
+		console.error("Error incrementing counter:", error);
+		showErrorToUser(error);
+		throw error;
+	}
+};
+
+// Step 8: Function to reset counter with encrypted value
+const resetCounter = async (encryptedValue) => {
+	try {
+		const tx = await contract.reset_counter(encryptedValue);
+		console.log("Transaction sent:", tx.hash);
+		
+		showTransactionPending(tx.hash);
+		
+		const receipt = await tx.wait();
+		console.log("Transaction confirmed:", receipt.blockNumber);
+		
+		showTransactionSuccess(receipt);
+		
+		return receipt;
+	} catch (error) {
+		console.error("Error resetting counter:", error);
+		showErrorToUser(error);
+		throw error;
+	}
+};
+
+// Example: Encrypt and reset counter
+async function handleResetCounter() {
+	try {
+		// Show encryption progress UI
+		const encryptResult = await cofhejs.encrypt([Encryptable.uint64(10n)], logState);
+		
+		if (!encryptResult.success) {
+			console.error("Failed to encrypt:", encryptResult.error);
+			showErrorToUser("Encryption failed");
+			return;
+		}
+
+		await resetCounter(encryptResult.data[0]);
+		await readCounterEncryptedValue();
+	} catch (error) {
+		console.error("Error:", error);
+		showErrorToUser(error);
+	}
+}
+
+// Helper functions for UI updates (implement based on your UI framework)
+function updateEncryptionProgress(state) {
+	// Update progress indicator
+}
+
+function displayCounterValue(value) {
+	// Display value to user
+}
+
+function showTransactionPending(hash) {
+	// Show pending transaction UI
+}
+
+function showTransactionSuccess(receipt) {
+	// Show success message
+}
+
+function showErrorToUser(error) {
+	// Display error to user
+}
+```
+</CodeGroup>
+
+## Expected Output
+
+When you run this example, you should see output similar to:
+
+```
+=== Starting End-to-End Example ===
+
+1. Reading initial counter value...
+   ✓ Initial value: 0
+
+2. Incrementing counter...
+   ✓ Counter incremented successfully
+
+3. Reading encrypted counter value...
+   ✓ Unsealed value: 1
+
+4. Incrementing counter again...
+   ✓ Counter incremented successfully
+
+5. Decrypting counter on-chain...
+   ✓ Counter decrypted on-chain
+
+6. Reading decrypted counter value...
+   ✓ Decrypted value: 2
+
+7. Encrypting new value (10) and resetting counter...
+   ✓ Counter reset with encrypted value 10
+
+8. Reading encrypted counter value after reset...
+   ✓ Unsealed value: 10
+
+=== Example completed successfully ===
+```
+
+## Key Concepts Demonstrated
+
+This example showcases several important concepts:
+
+1. **Initialization**: Setting up Cofhejs with a provider and signer
+2. **Encryption**: Encrypting input data before sending to smart contracts
+3. **Contract Interaction**: Calling functions on FHE-enabled smart contracts
+4. **Permit Creation**: Creating permits to authorize data access
+5. **Unsealing**: Decrypting encrypted output data using permits
+6. **Error Handling**: Properly handling errors throughout the flow
+
+<Tip>
+You can modify the example to work with your own FHE-enabled contract by updating the `CONTRACT_ADDRESS` and `CONTRACT_ABI` variables.
+</Tip>
+
+## Next Steps
+
+- Learn more about [encryption](/cofhejs/guides/encryption)
+- Understand [permits management](/cofhejs/guides/permits-management)
+- Explore [sealing and unsealing](/cofhejs/guides/sealing-unsealing)
+- Review [error handling](/cofhejs/guides/error-handling) best practices
+

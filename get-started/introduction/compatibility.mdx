@@ -1,0 +1,72 @@
+---
+title: "Compatibility"
+description: "Essential version information and network compatibility for all CoFHE ecosystem components"
+---
+
+## Overview
+
+This document provides detailed compatibility information for all components in the CoFHE ecosystem. Following these version requirements is crucial for maintaining a stable and secure development environment.
+
+<Warning>
+Using incompatible versions of CoFHE components can lead to unexpected behavior, security vulnerabilities, or complete failure of your application. Always verify version compatibility before deployment.
+</Warning>
+
+## Core Components
+
+The following table lists all core CoFHE components with their current and minimum compatible versions:
+
+| Component | Current Version | Minimum Compatible Version | Notes |
+|-----------|----------------|----------------------------|-------|
+| **cofhe-contracts** | [`0.0.13`](https://github.com/FhenixProtocol/cofhe-contracts/tree/v0.0.13) ([abi](https://cofhe-docs.s3.us-east-1.amazonaws.com/v0.0.13/index.html)) | [`0.0.13`](https://github.com/FhenixProtocol/cofhe-contracts/tree/v0.0.13) ([abi](https://cofhe-docs.s3.us-east-1.amazonaws.com/v0.0.13/index.html)) | Solidity libraries and smart contracts for FHE operations |
+| **Cofhejs** | [`0.3.1`](https://github.com/FhenixProtocol/cofhejs/releases/tag/v0.3.1) | [`0.2.1-alpha.1`](https://github.com/FhenixProtocol/cofhejs/releases/tag/v0.2.1-alpha.1) | JavaScript library for interacting with FHE contracts and the CoFHE coprocessor |
+| **cofhe-mock-contracts** | [`0.3.1`](https://github.com/FhenixProtocol/cofhe-mock-contracts/releases/tag/v0.3.1) | [`0.2.1-alpha.3`](https://github.com/FhenixProtocol/cofhe-mock-contracts/releases/tag/v0.2.1-alpha.3) | Solidity contracts that mimic CoFHE off-chain behavior |
+| **cofhe-hardhat-plugin** | [`0.3.1`](https://github.com/FhenixProtocol/cofhe-hardhat-plugin/releases/tag/v0.3.1) | [`0.2.1-alpha.3`](https://github.com/FhenixProtocol/cofhe-hardhat-plugin/releases/tag/v0.2.1-alpha.3) | Hardhat plugin that deploys the cofhe-mock-contracts and exposes utilities |
+
+### Version Compatibility Guidelines
+
+When working with CoFHE components:
+
+- **Always use the latest stable versions**: Check GitHub releases for the most recent versions
+- **Verify compatibility**: Ensure all components are within their compatible version ranges
+- **Test thoroughly**: After updating versions, test your application in both mock and testnet environments
+- **Check release notes**: Review breaking changes and migration guides when upgrading
+
+<Tip>
+For the best development experience, use the latest versions of all components. They are designed to work together seamlessly and include the latest features and security improvements.
+</Tip>
+
+## Network Compatibility
+
+CoFHE currently supports the following networks:
+
+| Network | Compatible | API Version | Notes | Plugin Name |
+|---------|------------|-------------|-------|-------------|
+| **Sepolia** | ✅ | `v1` | Full support | `eth-sepolia` |
+| **Arbitrum Sepolia** | ✅ | `v1` | Full support | `arb-sepolia` |
+| **Base Sepolia** | ✅ | `v1` | Full support | `base-sepolia` |
+
+<Info>
+All supported networks use API version `v1`. The plugin names correspond to the network identifiers used in Hardhat configuration files.
+</Info>
+
+
+## Troubleshooting Compatibility Issues
+
+If you encounter compatibility issues:
+
+1. **Verify all versions**: Ensure all CoFHE components are using compatible versions
+2. **Check network support**: Confirm your target network is supported
+3. **Review error messages**: Look for version mismatch errors in your console
+4. **Update dependencies**: Run `npm update` or `yarn upgrade` to get the latest compatible versions
+5. **Check documentation**: Review the component-specific documentation for version requirements
+
+<Warning>
+If you're experiencing issues after updating versions, check the release notes for breaking changes and migration guides. Some updates may require code changes in your contracts or client applications.
+</Warning>
+
+## Next Steps
+
+- Review the [Quick Start guide](/fhe-library/introduction/quick-start) to set up your development environment
+- Learn about [best practices](/fhe-library/introduction/best-practices) for developing with CoFHE
+- Explore the [API reference](/api-reference/introduction) for detailed component documentation
+

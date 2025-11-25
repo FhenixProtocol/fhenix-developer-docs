@@ -1,0 +1,1206 @@
+---
+title: "FHE.Sol"
+description: "Complete API reference for the FHE library - encrypted data types, operations, and access control functions"
+---
+
+## Overview
+
+The FHE library provides a comprehensive set of functions for working with Fully Homomorphic Encryption (FHE) in Solidity smart contracts. This library enables you to perform computations on encrypted data without decrypting it, ensuring privacy throughout your contract's execution.
+
+<Info>
+All functions in the FHE library are prefixed with `FHE.` when called. For example: `FHE.add(a, b)` or `FHE.decrypt(value)`.
+</Info>
+
+## Encrypted Data Types
+
+The library supports the following encrypted data types:
+
+| Type | Description |
+|------|-------------|
+| `ebool` | Encrypted boolean value |
+| `euint8` | Encrypted 8-bit unsigned integer |
+| `euint16` | Encrypted 16-bit unsigned integer |
+| `euint32` | Encrypted 32-bit unsigned integer |
+| `euint64` | Encrypted 64-bit unsigned integer |
+| `euint128` | Encrypted 128-bit unsigned integer |
+| `eaddress` | Encrypted Ethereum address |
+
+## Type Conversion
+
+### From Plaintext to Encrypted Types
+
+#### asEbool
+
+<ParamField body="value" type="bool" required>
+Plaintext boolean value to encrypt
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier for isolating encrypted computations
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean value
+</ResponseField>
+
+Converts a plaintext boolean value to an encrypted boolean.
+
+```solidity
+ebool encrypted = FHE.asEbool(true);
+ebool encryptedWithZone = FHE.asEbool(true, 1);
+```
+
+#### asEuint8
+
+<ParamField body="value" type="uint256" required>
+Plaintext value to encrypt (must fit in 8 bits)
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier
+</ParamField>
+
+<ResponseField name="result" type="euint8">
+Encrypted 8-bit unsigned integer
+</ResponseField>
+
+Converts a plaintext value to an encrypted 8-bit unsigned integer.
+
+```solidity
+euint8 encrypted = FHE.asEuint8(42);
+```
+
+#### asEuint16
+
+<ParamField body="value" type="uint256" required>
+Plaintext value to encrypt (must fit in 16 bits)
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier
+</ParamField>
+
+<ResponseField name="result" type="euint16">
+Encrypted 16-bit unsigned integer
+</ResponseField>
+
+Converts a plaintext value to an encrypted 16-bit unsigned integer.
+
+```solidity
+euint16 encrypted = FHE.asEuint16(1000);
+```
+
+#### asEuint32
+
+<ParamField body="value" type="uint256" required>
+Plaintext value to encrypt (must fit in 32 bits)
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier
+</ParamField>
+
+<ResponseField name="result" type="euint32">
+Encrypted 32-bit unsigned integer
+</ResponseField>
+
+Converts a plaintext value to an encrypted 32-bit unsigned integer.
+
+```solidity
+euint32 encrypted = FHE.asEuint32(50000);
+```
+
+#### asEuint64
+
+<ParamField body="value" type="uint256" required>
+Plaintext value to encrypt (must fit in 64 bits)
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier
+</ParamField>
+
+<ResponseField name="result" type="euint64">
+Encrypted 64-bit unsigned integer
+</ResponseField>
+
+Converts a plaintext value to an encrypted 64-bit unsigned integer.
+
+```solidity
+euint64 encrypted = FHE.asEuint64(1000000000);
+```
+
+#### asEuint128
+
+<ParamField body="value" type="uint256" required>
+Plaintext value to encrypt (must fit in 128 bits)
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier
+</ParamField>
+
+<ResponseField name="result" type="euint128">
+Encrypted 128-bit unsigned integer
+</ResponseField>
+
+Converts a plaintext value to an encrypted 128-bit unsigned integer.
+
+```solidity
+euint128 encrypted = FHE.asEuint128(1000000000000000000);
+```
+
+#### asEaddress
+
+<ParamField body="value" type="address" required>
+Plaintext Ethereum address to encrypt
+</ParamField>
+
+<ParamField body="securityZone" type="int32">
+Optional security zone identifier
+</ParamField>
+
+<ResponseField name="result" type="eaddress">
+Encrypted Ethereum address
+</ResponseField>
+
+Converts a plaintext address value to an encrypted address.
+
+```solidity
+eaddress encrypted = FHE.asEaddress(0x1234567890123456789012345678901234567890);
+```
+
+### From Encrypted Input Structures
+
+#### asEbool (from InEbool)
+
+<ParamField body="value" type="InEbool" required>
+Encrypted input structure containing boolean data
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean value
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted boolean.
+
+```solidity
+ebool encrypted = FHE.asEbool(encryptedInput);
+```
+
+#### asEuint8 (from InEuint8)
+
+<ParamField body="value" type="InEuint8" required>
+Encrypted input structure containing 8-bit integer data
+</ParamField>
+
+<ResponseField name="result" type="euint8">
+Encrypted 8-bit unsigned integer
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted 8-bit unsigned integer.
+
+```solidity
+euint8 encrypted = FHE.asEuint8(encryptedInput);
+```
+
+#### asEuint16 (from InEuint16)
+
+<ParamField body="value" type="InEuint16" required>
+Encrypted input structure containing 16-bit integer data
+</ParamField>
+
+<ResponseField name="result" type="euint16">
+Encrypted 16-bit unsigned integer
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted 16-bit unsigned integer.
+
+```solidity
+euint16 encrypted = FHE.asEuint16(encryptedInput);
+```
+
+#### asEuint32 (from InEuint32)
+
+<ParamField body="value" type="InEuint32" required>
+Encrypted input structure containing 32-bit integer data
+</ParamField>
+
+<ResponseField name="result" type="euint32">
+Encrypted 32-bit unsigned integer
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted 32-bit unsigned integer.
+
+```solidity
+euint32 encrypted = FHE.asEuint32(encryptedInput);
+```
+
+#### asEuint64 (from InEuint64)
+
+<ParamField body="value" type="InEuint64" required>
+Encrypted input structure containing 64-bit integer data
+</ParamField>
+
+<ResponseField name="result" type="euint64">
+Encrypted 64-bit unsigned integer
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted 64-bit unsigned integer.
+
+```solidity
+euint64 encrypted = FHE.asEuint64(encryptedInput);
+```
+
+#### asEuint128 (from InEuint128)
+
+<ParamField body="value" type="InEuint128" required>
+Encrypted input structure containing 128-bit integer data
+</ParamField>
+
+<ResponseField name="result" type="euint128">
+Encrypted 128-bit unsigned integer
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted 128-bit unsigned integer.
+
+```solidity
+euint128 encrypted = FHE.asEuint128(encryptedInput);
+```
+
+#### asEaddress (from InEaddress)
+
+<ParamField body="value" type="InEaddress" required>
+Encrypted input structure containing address data
+</ParamField>
+
+<ResponseField name="result" type="eaddress">
+Encrypted Ethereum address
+</ResponseField>
+
+Converts an encrypted input structure to an encrypted address.
+
+```solidity
+eaddress encrypted = FHE.asEaddress(encryptedInput);
+```
+
+### Type Conversion Between Encrypted Types
+
+#### asEbool (from euint)
+
+Converts various encrypted integer types to an encrypted boolean.
+
+```solidity
+ebool result = FHE.asEbool(euint8Value);
+ebool result = FHE.asEbool(euint16Value);
+ebool result = FHE.asEbool(euint32Value);
+ebool result = FHE.asEbool(euint64Value);
+ebool result = FHE.asEbool(euint128Value);
+ebool result = FHE.asEbool(eaddressValue);
+```
+
+#### asEuint8 (from other encrypted types)
+
+Converts various encrypted types to an encrypted 8-bit unsigned integer.
+
+```solidity
+euint8 result = FHE.asEuint8(eboolValue);
+euint8 result = FHE.asEuint8(euint16Value);
+euint8 result = FHE.asEuint8(euint32Value);
+euint8 result = FHE.asEuint8(euint64Value);
+euint8 result = FHE.asEuint8(euint128Value);
+euint8 result = FHE.asEuint8(eaddressValue);
+```
+
+#### asEuint16 (from other encrypted types)
+
+Converts various encrypted types to an encrypted 16-bit unsigned integer.
+
+```solidity
+euint16 result = FHE.asEuint16(eboolValue);
+euint16 result = FHE.asEuint16(euint8Value);
+euint16 result = FHE.asEuint16(euint32Value);
+euint16 result = FHE.asEuint16(euint64Value);
+euint16 result = FHE.asEuint16(euint128Value);
+euint16 result = FHE.asEuint16(eaddressValue);
+```
+
+#### asEuint32 (from other encrypted types)
+
+Converts various encrypted types to an encrypted 32-bit unsigned integer.
+
+```solidity
+euint32 result = FHE.asEuint32(eboolValue);
+euint32 result = FHE.asEuint32(euint8Value);
+euint32 result = FHE.asEuint32(euint16Value);
+euint32 result = FHE.asEuint32(euint64Value);
+euint32 result = FHE.asEuint32(euint128Value);
+euint32 result = FHE.asEuint32(eaddressValue);
+```
+
+#### asEuint64 (from other encrypted types)
+
+Converts various encrypted types to an encrypted 64-bit unsigned integer.
+
+```solidity
+euint64 result = FHE.asEuint64(eboolValue);
+euint64 result = FHE.asEuint64(euint8Value);
+euint64 result = FHE.asEuint64(euint16Value);
+euint64 result = FHE.asEuint64(euint32Value);
+euint64 result = FHE.asEuint64(euint128Value);
+euint64 result = FHE.asEuint64(eaddressValue);
+```
+
+#### asEuint128 (from other encrypted types)
+
+Converts various encrypted types to an encrypted 128-bit unsigned integer.
+
+```solidity
+euint128 result = FHE.asEuint128(eboolValue);
+euint128 result = FHE.asEuint128(euint8Value);
+euint128 result = FHE.asEuint128(euint16Value);
+euint128 result = FHE.asEuint128(euint32Value);
+euint128 result = FHE.asEuint128(euint64Value);
+euint128 result = FHE.asEuint128(eaddressValue);
+```
+
+#### asEaddress (from euint128)
+
+Converts an encrypted 128-bit unsigned integer to an encrypted address.
+
+```solidity
+eaddress result = FHE.asEaddress(euint128Value);
+```
+
+## Arithmetic Operations
+
+### add
+
+Performs addition of two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Sum of the two encrypted values
+</ResponseField>
+
+```solidity
+euint8 sum = FHE.add(a, b);
+euint32 sum = FHE.add(x, y);
+```
+
+### sub
+
+Performs subtraction of two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Difference of the two encrypted values
+</ResponseField>
+
+```solidity
+euint8 diff = FHE.sub(a, b);
+euint32 diff = FHE.sub(x, y);
+```
+
+### mul
+
+Performs multiplication of two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Product of the two encrypted values
+</ResponseField>
+
+```solidity
+euint8 product = FHE.mul(a, b);
+euint32 product = FHE.mul(x, y);
+```
+
+### div
+
+Performs division of two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value (dividend)
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (divisor, must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Quotient of the division
+</ResponseField>
+
+<Warning>
+Division by zero will cause the operation to revert. Ensure the divisor is non-zero.
+</Warning>
+
+```solidity
+euint8 quotient = FHE.div(a, b);
+euint32 quotient = FHE.div(x, y);
+```
+
+### rem
+
+Calculates the remainder when dividing two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value (dividend)
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (divisor, must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Remainder of the division
+</ResponseField>
+
+```solidity
+euint8 remainder = FHE.rem(a, b);
+euint32 remainder = FHE.rem(x, y);
+```
+
+### square
+
+Calculates the square of an encrypted unsigned integer.
+
+<ParamField body="value" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Encrypted value to square
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Square of the encrypted value
+</ResponseField>
+
+```solidity
+euint8 squared = FHE.square(a);
+euint32 squared = FHE.square(x);
+```
+
+## Bitwise Operations
+
+### and
+
+Performs a bitwise AND operation on two encrypted values.
+
+<ParamField body="lhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the bitwise AND operation
+</ResponseField>
+
+```solidity
+ebool result = FHE.and(a, b);
+euint8 result = FHE.and(x, y);
+```
+
+### or
+
+Performs a bitwise OR operation on two encrypted values.
+
+<ParamField body="lhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the bitwise OR operation
+</ResponseField>
+
+```solidity
+ebool result = FHE.or(a, b);
+euint8 result = FHE.or(x, y);
+```
+
+### xor
+
+Performs a bitwise XOR operation on two encrypted values.
+
+<ParamField body="lhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the bitwise XOR operation
+</ResponseField>
+
+```solidity
+ebool result = FHE.xor(a, b);
+euint8 result = FHE.xor(x, y);
+```
+
+### not
+
+Performs a bitwise NOT operation on an encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128" required>
+Encrypted value to negate
+</ParamField>
+
+<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the bitwise NOT operation
+</ResponseField>
+
+```solidity
+ebool result = FHE.not(a);
+euint8 result = FHE.not(x);
+```
+
+### shl
+
+Performs a shift left operation on an encrypted unsigned integer.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Encrypted value to shift
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Number of bits to shift left (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the shift left operation
+</ResponseField>
+
+```solidity
+euint8 result = FHE.shl(value, shiftAmount);
+euint32 result = FHE.shl(x, y);
+```
+
+### shr
+
+Performs a shift right operation on an encrypted unsigned integer.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Encrypted value to shift
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Number of bits to shift right (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the shift right operation
+</ResponseField>
+
+```solidity
+euint8 result = FHE.shr(value, shiftAmount);
+euint32 result = FHE.shr(x, y);
+```
+
+### rol
+
+Performs a rotate left operation on an encrypted unsigned integer.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Encrypted value to rotate
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Number of bits to rotate left (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the rotate left operation
+</ResponseField>
+
+```solidity
+euint8 result = FHE.rol(value, rotateAmount);
+euint32 result = FHE.rol(x, y);
+```
+
+### ror
+
+Performs a rotate right operation on an encrypted unsigned integer.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Encrypted value to rotate
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Number of bits to rotate right (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+Result of the rotate right operation
+</ResponseField>
+
+```solidity
+euint8 result = FHE.ror(value, rotateAmount);
+euint32 result = FHE.ror(x, y);
+```
+
+## Comparison Operations
+
+### eq
+
+Checks if two encrypted values are equal and returns an encrypted boolean.
+
+<ParamField body="lhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean indicating equality
+</ResponseField>
+
+```solidity
+ebool isEqual = FHE.eq(a, b);
+ebool isEqual = FHE.eq(address1, address2);
+```
+
+### ne
+
+Checks if two encrypted values are not equal and returns an encrypted boolean.
+
+<ParamField body="lhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean indicating inequality
+</ResponseField>
+
+```solidity
+ebool isNotEqual = FHE.ne(a, b);
+ebool isNotEqual = FHE.ne(address1, address2);
+```
+
+### lt
+
+Checks if the first encrypted unsigned integer is less than the second and returns an encrypted boolean.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean indicating if lhs is less than rhs
+</ResponseField>
+
+```solidity
+ebool isLessThan = FHE.lt(a, b);
+ebool isLessThan = FHE.lt(x, y);
+```
+
+### lte
+
+Checks if the first encrypted unsigned integer is less than or equal to the second and returns an encrypted boolean.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean indicating if lhs is less than or equal to rhs
+</ResponseField>
+
+```solidity
+ebool isLessEqual = FHE.lte(a, b);
+ebool isLessEqual = FHE.lte(x, y);
+```
+
+### gt
+
+Checks if the first encrypted unsigned integer is greater than the second and returns an encrypted boolean.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean indicating if lhs is greater than rhs
+</ResponseField>
+
+```solidity
+ebool isGreaterThan = FHE.gt(a, b);
+ebool isGreaterThan = FHE.gt(x, y);
+```
+
+### gte
+
+Checks if the first encrypted unsigned integer is greater than or equal to the second and returns an encrypted boolean.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="ebool">
+Encrypted boolean indicating if lhs is greater than or equal to rhs
+</ResponseField>
+
+```solidity
+ebool isGreaterEqual = FHE.gte(a, b);
+ebool isGreaterEqual = FHE.gte(x, y);
+```
+
+## Min/Max Functions
+
+### min
+
+Returns the smaller of two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+The smaller of the two encrypted values
+</ResponseField>
+
+```solidity
+euint8 minimum = FHE.min(a, b);
+euint32 minimum = FHE.min(x, y);
+```
+
+### max
+
+Returns the larger of two encrypted unsigned integers.
+
+<ParamField body="lhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Left-hand side encrypted value
+</ParamField>
+
+<ParamField body="rhs" type="euint8 | euint16 | euint32 | euint64 | euint128" required>
+Right-hand side encrypted value (must match lhs type)
+</ParamField>
+
+<ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
+The larger of the two encrypted values
+</ResponseField>
+
+```solidity
+euint8 maximum = FHE.max(a, b);
+euint32 maximum = FHE.max(x, y);
+```
+
+## Control Flow
+
+### select
+
+Conditionally selects between two encrypted values based on an encrypted boolean condition.
+
+<ParamField body="condition" type="ebool" required>
+Encrypted boolean condition
+</ParamField>
+
+<ParamField body="ifTrue" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Value to return if condition is true
+</ParamField>
+
+<ParamField body="ifFalse" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Value to return if condition is false (must match ifTrue type)
+</ParamField>
+
+<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress">
+Selected value based on condition
+</ResponseField>
+
+<Tip>
+Use `select` instead of `if/else` statements when working with encrypted values. Conditional branching doesn't work with encrypted data.
+</Tip>
+
+```solidity
+euint8 result = FHE.select(condition, a, b);
+ebool result = FHE.select(condition, trueValue, falseValue);
+eaddress result = FHE.select(condition, address1, address2);
+```
+
+## Encryption and Decryption
+
+### encrypt
+
+Encrypts a plaintext value to its corresponding encrypted type.
+
+<ParamField body="value" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
+Plaintext value to encrypt
+</ParamField>
+
+<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress">
+Encrypted value corresponding to the input type
+</ResponseField>
+
+```solidity
+ebool encrypted = FHE.encrypt(true);
+euint8 encrypted = FHE.encrypt(uint8(42));
+euint32 encrypted = FHE.encrypt(uint32(1000));
+eaddress encrypted = FHE.encrypt(0x1234...);
+```
+
+### decrypt
+
+Decrypts an encrypted value. The caller must have permission to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to decrypt
+</ParamField>
+
+<ResponseField name="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address">
+Decrypted plaintext value
+</ResponseField>
+
+<Warning>
+Decryption reveals the plaintext value. Use with caution and ensure proper access control is in place.
+</Warning>
+
+```solidity
+bool decrypted = FHE.decrypt(encryptedBool);
+uint8 decrypted = FHE.decrypt(encryptedUint8);
+uint32 decrypted = FHE.decrypt(encryptedUint32);
+address decrypted = FHE.decrypt(encryptedAddress);
+```
+
+### getDecryptResult
+
+Retrieves the decrypted result of a previously decrypted value. This function should be called after requesting decryption with `decrypt()`.
+
+<ParamField body="input" type="uint256" required>
+Hash of the encrypted value that was previously decrypted
+</ParamField>
+
+<ResponseField name="result" type="uint256">
+Decrypted result value
+</ResponseField>
+
+<Warning>
+This function will revert if the decryption result is not available yet. Use `getDecryptResultSafe` for non-reverting behavior.
+</Warning>
+
+```solidity
+uint256 result = FHE.getDecryptResult(ctHash);
+```
+
+### getDecryptResultSafe
+
+Safely retrieves the decrypted result of a previously decrypted value. Unlike `getDecryptResult`, this function returns a boolean flag indicating whether the decryption is complete.
+
+<ParamField body="input" type="uint256" required>
+Hash of the encrypted value that was previously decrypted
+</ParamField>
+
+<ResponseField name="result" type="uint256">
+Decrypted result value (valid only if decrypted is true)
+</ResponseField>
+
+<ResponseField name="decrypted" type="bool">
+Boolean indicating whether the decryption has completed successfully
+</ResponseField>
+
+```solidity
+(uint256 result, bool decrypted) = FHE.getDecryptResultSafe(ctHash);
+if (decrypted) {
+    // Use result
+}
+```
+
+## Access Control
+
+### allow
+
+Grants permission to the specified account to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to grant access to
+</ParamField>
+
+<ParamField body="account" type="address" required>
+Address of the account to grant access to
+</ParamField>
+
+```solidity
+FHE.allow(encryptedValue, userAddress);
+```
+
+### allowThis
+
+Grants permission to the current contract to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to grant access to
+</ParamField>
+
+<Tip>
+Call `allowThis` after modifying encrypted values if you need to access them later in the same contract.
+</Tip>
+
+```solidity
+euint32 counter = FHE.add(counter, FHE.asEuint32(1));
+FHE.allowThis(counter);  // Required for future access
+```
+
+### allowGlobal
+
+Grants global permission to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to grant global access to
+</ParamField>
+
+<Warning>
+Use `allowGlobal` with caution. It grants access to all accounts and contracts.
+</Warning>
+
+```solidity
+FHE.allowGlobal(encryptedValue);
+```
+
+### allowSender
+
+Grants permission to the message sender to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to grant access to
+</ParamField>
+
+```solidity
+FHE.allowSender(encryptedValue);
+```
+
+### allowTransient
+
+Grants temporary permission to the specified account to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to grant access to
+</ParamField>
+
+<ParamField body="account" type="address" required>
+Address of the account to grant temporary access to
+</ParamField>
+
+```solidity
+FHE.allowTransient(encryptedValue, userAddress);
+```
+
+### isAllowed
+
+Checks if the specified account has permission to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to check access for
+</ParamField>
+
+<ParamField body="account" type="address" required>
+Address of the account to check
+</ParamField>
+
+<ResponseField name="result" type="bool">
+True if the account has permission, false otherwise
+</ResponseField>
+
+```solidity
+bool hasAccess = FHE.isAllowed(encryptedValue, userAddress);
+```
+
+## Bindings
+
+The FHE library provides binding libraries that enable syntactic sugar for working with encrypted types. These bindings allow for more intuitive and object-oriented usage patterns.
+
+### Using Bindings
+
+With bindings, you can use encrypted types with dot notation instead of calling `FHE.*` functions:
+
+```solidity
+// Without bindings
+euint8 sum = FHE.add(a, b);
+
+// With bindings
+euint8 sum = a.add(b);
+```
+
+Each encrypted type has a corresponding binding library that includes all the operations available for that type.
+
+### Example with Bindings
+
+```solidity
+// Use secure encrypted input
+InEuint8 encryptedInputA;  // Provided by client-side encryption
+InEuint8 encryptedInputB;    // Provided by client-side encryption
+
+euint8 a = FHE.asEuint8(encryptedInputA);
+euint8 b = FHE.asEuint8(encryptedInputB);
+
+// Arithmetic operations
+euint8 sum = a.add(b);        // Addition
+euint8 diff = a.sub(b);       // Subtraction
+euint8 product = a.mul(b);    // Multiplication
+euint8 quotient = a.div(b);   // Division
+euint8 remainder = a.rem(b);  // Remainder
+euint8 squared = a.square();  // Square
+
+// Bitwise operations
+euint8 bitwiseAnd = a.and(b);   // AND
+euint8 bitwiseOr = a.or(b);     // OR
+euint8 bitwiseXor = a.xor(b);   // XOR
+euint8 bitwiseNot = a.not();    // NOT
+euint8 shiftLeft = a.shl(b);    // Shift Left
+euint8 shiftRight = a.shr(b);   // Shift Right
+euint8 rotateLeft = a.rol(b);    // Rotate Left
+euint8 rotateRight = a.ror(b);  // Rotate Right
+
+// Comparison operations
+ebool isEqual = a.eq(b);          // Equal
+ebool isNotEqual = a.ne(b);        // Not Equal
+ebool isLessThan = a.lt(b);       // Less Than
+ebool isLessEqual = a.lte(b);     // Less Than or Equal
+ebool isGreaterThan = a.gt(b);    // Greater Than
+ebool isGreaterEqual = a.gte(b);  // Greater Than or Equal
+
+// Min/Max functions
+euint8 minimum = a.min(b);  // Minimum
+euint8 maximum = a.max(b);  // Maximum
+
+// Type conversion
+ebool converted = a.toBool();    // Convert to ebool
+euint16 toU16 = a.toU16();       // Convert to euint16
+euint32 toU32 = a.toU32();       // Convert to euint32
+euint64 toU64 = a.toU64();       // Convert to euint64
+euint128 toU128 = a.toU128();    // Convert to euint128
+
+// Access control
+a.decrypt();                            // Decrypt
+a.allow(address);                       // Allow access
+a.allowThis();                          // Allow this contract
+a.allowGlobal();                        // Allow global access
+a.allowSender();                        // Allow sender
+a.allowTransient(address);              // Allow transient access
+bool hasAccess = a.isAllowed(address);  // Check access
+```
+
+## Security Considerations
+
+<Warning>
+Always consider security implications when working with encrypted data.
+</Warning>
+
+1. **Initialization**: All FHE functions check if their inputs are initialized and set them to 0 if not.
+
+2. **Decryption**: Decryption functions reveal the plaintext values and should be used with caution. Only decrypt when absolutely necessary.
+
+3. **Security Zones**: Some functions accept a `securityZone` parameter to isolate different encrypted computations. FHE operations can only be performed between ciphertexts that share the same security zone.
+
+4. **Access Control**: The library provides fine-grained access control through the `allow*` functions. Always set proper permissions before accessing encrypted values.
+
+5. **Type Safety**: Ensure encrypted values use compatible types when performing operations. Type mismatches will cause errors.
+
+## Example Usage
+
+### Basic Example
+
+This example shows how to perform private computations while keeping all intermediate values encrypted:
+
+```solidity
+// Use secure encrypted input
+InEuint8 encryptedInputA;  // Provided by client-side encryption
+InEuint8 encryptedInputB;  // Provided by client-side encryption
+
+euint8 a = FHE.asEuint8(encryptedInputA);
+euint8 b = FHE.asEuint8(encryptedInputB);
+
+// Perform operations
+euint8 sum = FHE.add(a, b);           // Encrypted addition
+euint8 product = FHE.mul(a, b);      // Encrypted multiplication
+ebool isGreater = FHE.gt(b, a);      // Encrypted comparison
+
+// Conditional logic
+euint8 result = FHE.select(isGreater, sum, product);
+
+// Grant access and decrypt the result
+FHE.allowThis(result);
+uint8 decryptedResult = FHE.decrypt(result);
+```
+
+### Example with Bindings
+
+```solidity
+// Use secure encrypted input
+InEuint8 encryptedInputA;  // Provided by client-side encryption
+InEuint8 encryptedInputB;  // Provided by client-side encryption
+
+euint8 a = FHE.asEuint8(encryptedInputA);
+euint8 b = FHE.asEuint8(encryptedInputB);
+
+// Perform operations using dot notation
+euint8 sum = a.add(b);               // Encrypted addition
+euint8 product = a.mul(b);           // Encrypted multiplication
+ebool isGreater = b.gt(a);           // Encrypted comparison
+
+// Conditional logic
+euint8 result = isGreater.select(sum, product);
+
+// Grant access and decrypt the result
+result.allowThis();
+uint8 decryptedResult = FHE.decrypt(result);
+```
+
+## Next Steps
+
+- Learn about [encrypted data types](/fhe-library/core-concepts/data-evaluation) and their use cases
+- Explore [encrypted operations](/fhe-library/core-concepts/encrypted-operations) in detail
+- Review [access control mechanisms](/fhe-library/core-concepts/access-control) for managing permissions
+- Check out [best practices](/fhe-library/introduction/best-practices) for secure FHE development
+

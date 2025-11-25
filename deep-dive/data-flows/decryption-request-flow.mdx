@@ -1,0 +1,72 @@
+---
+title: Decryption Request Flow
+sidebar_position: 3
+description: "Complete flow of a decryption request in the CoFHE ecosystem through smart contracts"
+---
+
+# Decryption Request Flow
+
+The process of requesting decryption through Smart Contracts starts the same as every other [FHE Operation Request](/deep-dive/data-flows/fhe-operation-request-flow) 📌steps 1-4
+
+Here we'll continue from FheOS server handling such request as follows:
+
+## Flow Diagram
+
+The following diagram illustrates the complete flow of an FHE Decryption request in the CoFHE ecosystem:
+
+<Frame>
+<img src="/images/Decryption Transactions.svg" alt="End-to-end flow of an FHE Decryption request through the CoFHE system components" />
+</Frame>
+
+*Figure 1: End-to-end flow of an FHE Decryption request through the CoFHE system components*
+
+## Step-by-Step Flow
+
+<Steps>
+<Step title="Steps 1-4 - FHE Operation Request">
+The decryption request follows the same initial steps as a standard FHE operation request:
+
+1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣
+
+Refer to [FHE Operation Request Flow](/deep-dive/data-flows/fhe-operation-request-flow) for details on steps 1-4, which include:
+- Integration with Cofhejs
+- Requesting an FHE Operation
+- Task Manager Processing
+- Aggregator Processing
+</Step>
+
+<Step title="FheOS server - Decryption Execution">
+The FheOS server handles decryption requests:
+
+1. **Create execution thread** on the fheOS server
+
+2. **FheOS server calls the threshold network** with:
+   - The ciphertext to be decrypted
+   - Transaction hash from the host chain
+   - Original operation handle
+</Step>
+
+<Step title="Threshold network security protocol">
+The Threshold Network performs secure decryption:
+
+- Verify the host chain requested the desired decryption
+- Retrieve the actual ciphertext hash from private storage
+- Validate ciphertext hash integrity
+- Perform secure decryption
+</Step>
+
+<Step title="FheOS Notifies the Aggregator with the decrypt result">
+After decryption is complete: 7️⃣
+
+- Call appropriate callback function on the Aggregator
+- The Aggregator calls the TaskManager with relevant result
+</Step>
+
+<Step title="TaskManager emit event with decryption result">
+The TaskManager finalizes the decryption process: 8️⃣
+
+- Provide decrypted result by emitting an event `DecryptionResult`
+- The event consists of `ciphertext handle`, `result`, `requestor` (of that decrypt operation)
+</Step>
+</Steps>
+

@@ -1,0 +1,236 @@
+---
+title: Error Handling
+description: "Handle errors effectively when working with Cofhejs using the Result type pattern"
+---
+
+## Error Handling
+
+`cofhejs` uses a consistent error handling pattern based on the `Result` type to provide predictable and type-safe error handling throughout the library. This guide explains how error handling works and how to properly handle errors in your applications.
+
+### Prerequisites
+
+Before handling errors, ensure you understand:
+- The [Result type pattern](#the-result-type) used throughout Cofhejs
+- Basic TypeScript/JavaScript error handling concepts
+- How to check for success/failure states
+
+## The Result Type
+
+`cofhejs` uses a functional approach to error handling with the `Result` type. This pattern avoids exceptions and provides explicit error information.
+
+```typescript
+export type Result<T, E = string> = 
+  | { success: true; data: T; error: null } 
+  | { success: false; data: null; error: E }
+```
+
+The `Result` type is a discriminated union that represents either:
+
+- A successful operation with data (`success: true`).
+- A failed operation with an error message (`success: false`).
+
+### Helper Functions
+
+`cofhejs` provides two helper functions to create Result objects:
+
+<CodeGroup>
+```typescript ResultErr
+// Creates a Result representing a failure
+export const ResultErr = <T, E>(error: E): Result<T, E> => ({
+	success: false,
+	data: null,
+	error,
+})
+```
+
+```typescript ResultOk
+// Creates a Result representing a success
+export const ResultOk = <T, E>(data: T): Result<T, E> => ({
+	success: true,
+	data,
+	error: null,
+})
+```
+</CodeGroup>
+
+## Where Result is Used
+
+Most asynchronous operations in `cofhejs` return a `Result` type, including:
+
+- Initialization functions (`initializeWithEthers`, `initializeWithViem`, `initialize`)
+- Permit operations (`createPermit`, `getPermit`, `getPermission`)
+- Encryption and decryption operations
+
+## Handling Errors
+
+When working with functions that return a `Result`, you must always check the `success` property before accessing the data.
+
+<Steps>
+<Step title="Check the success property">
+Always verify that the operation succeeded before accessing the data.
+</Step>
+
+<Step title="Handle errors appropriately">
+Provide meaningful error messages and handle failure cases gracefully.
+</Step>
+</Steps>
+
+### Basic Error Handling Pattern
+
+```typescript
+const result = await cofhejs.initialize({
+	provider: ethersProvider,
+	signer: wallet,
+	environment: 'TESTNET',
+})
+
+if (!result.success) {
+	console.error('Initialization failed:', result.error)
+	// Handle the error appropriately
+	return
+}
+
+// Safe to access result.data only after checking success
+const permit = result.data
+// Continue with your application logic
+```
+
+### Error Handling with Destructuring
+
+You can use destructuring to make your code more concise:
+
+```typescript
+const {
+	success,
+	data: permit,
+	error,
+} = await cofhejs.createPermit({
+	type: 'self',
+	issuer: userAddress,
+})
+
+if (!success) {
+	console.error('Failed to create permit:', error)
+	return
+}
+
+// Use permit safely
+console.log('Permit created successfully:', permit)
+```
+
+<Check>
+The permit is created successfully and can be used for subsequent operations.
+</Check>
+
+## Common Error Scenarios
+
+`Cofhejs` may return errors in various scenarios, including:
+
+1. **Initialization Errors**:
+   - Missing provider or signer
+   - Network connectivity issues
+   - Unsupported environment
+
+2. **Permit Errors**:
+   - Invalid permit parameters
+   - Missing signer
+   - Unauthorized operations
+
+3. **Encryption Errors**:
+   - Missing FHE public key
+   - Invalid input types
+   - Network service unavailability
+
+## Complete Example
+
+Here's a complete example of initializing `cofhejs` and handling potential errors:
+
+<CodeGroup>
+```typescript Initialization
+async function initializeCoFHE() {
+	try {
+		// initialize your web3 provider
+		const provider = new ethers.BrowserProvider(window.ethereum)
+		const signer = (await provider.getSigner()) as ethers.JsonRpcSigner
+
+		// initialize cofhejs Client with ethers (it also supports viem)
+		const result = await cofhejs.initializeWithEthers({
+			ethersProvider: provider,
+			ethersSigner: signer,
+			environment: 'TESTNET',
+		})
+
+		if (!result.success) {
+			// Handle specific error cases
+			if (result.error.includes('missing provider')) {
+				console.error('Provider not available. Please install a wallet extension.')
+			} else if (result.error.includes('failed to initialize cofhejs')) {
+				console.error('FHE initialization failed. The network may not be FHE-enabled.')
+			} else {
+				console.error('Initialization error:', result.error)
+			}
+			return null
+		}
+
+		console.log('`cofhejs` initialized successfully')
+		return result.data // The permit, if generated
+	} catch (unexpectedError) {
+		// Catch any unexpected errors not handled by the Result pattern
+		console.error('Unexpected error during initialization:', unexpectedError)
+		return null
+	}
+}
+```
+
+```typescript Permit Creation
+// Example of creating and using a permit with error handling
+async function createAndUsePermit(userAddress: string) {
+	const permitResult = await cofhejs.createPermit({
+		type: 'self',
+		issuer: userAddress,
+	})
+
+	if (!permitResult.success) {
+		console.error('Permit creation failed:', permitResult.error)
+		return
+	}
+
+	const permit = permitResult.data
+	console.log('Permit created successfully:', permit)
+
+	// Continue with operations that require the permit
+	// ...
+}
+```
+</CodeGroup>
+
+## Testing Error Cases
+
+When writing tests, `cofhejs` provides utility functions to validate error results:
+
+```typescript
+import { expectResultError } from 'cofhejs/test'
+
+test('should return error for invalid parameters', async () => {
+	const result = await cofhejs.initialize({
+		// Missing required parameters
+	})
+
+	expectResultError(result, 'initialize :: missing provider - Please provide an AbstractProvider interface')
+})
+```
+
+## Best Practices
+
+1. **Always check `success`**: Never access `data` without first verifying `success` is `true`.
+
+2. **Handle errors explicitly**: Provide meaningful error messages to users based on the error type.
+
+3. **Use try-catch for unexpected errors**: While `cofhejs` uses the Result pattern, wrap operations in try-catch blocks to handle unexpected exceptions.
+
+4. **Log errors appropriately**: Use appropriate logging levels based on error severity and context.
+
+5. **Provide user-friendly messages**: Translate technical error messages into user-friendly explanations when possible.
+
+By consistently checking the `success` property and appropriately handling errors, you can build robust applications that gracefully handle failure cases when working with `cofhejs`.
+

@@ -1,0 +1,183 @@
+---
+title: Encryption
+description: "Encrypt input data before sending it to FHE-enabled smart contracts"
+---
+
+## Encrypting Input Data
+
+This step secures your data before sending it to the smart contract. Remember - all data sent to a smart contract on a blockchain is inherently public, which means that anyone can see it. However, Fhenix operates differently. To maintain user confidentiality and protect sensitive input data, Fhenix utilizes **Cofhejs** to provide built-in encryption methods that you must apply before sending any data to an FHE-enabled contract.
+
+Cofhejs provides an easy-to-use function to encrypt your inputs before sending them to the Fhenix Co-Processor.
+
+### Prerequisites
+
+Before encrypting data, ensure you have:
+- Cofhejs [installed and initialized](/cofhejs/introduction/installation)
+- A deployed FHE-enabled smart contract
+- Access to a Fhenix network (local or testnet)
+
+<Tip>
+Encryption in Fhenix is done using the global chain key. This key is loaded when you create a Cofhejs client automatically.
+</Tip>
+
+When you perform encryption, you specify the type of `euint` (Encrypted Integer) you want to create. This should match the expected type in the Solidity contract you are working with.
+
+## Setup
+
+<Steps>
+<Step title="Initialize Cofhejs">
+First, initialize the library with your provider and signer:
+</Step>
+</Steps>
+
+<CodeGroup>
+```typescript Ethers
+await cofhejs.initializeWithEthers({
+    ethersProvider: provider,
+    ethersSigner: wallet,
+    environment: "LOCAL",
+});
+```
+
+```typescript Viem
+await cofhejs.initializeWithViem({
+    viemClient: provider,
+    viemWalletClient: wallet,
+    environment: "LOCAL",
+});
+```
+</CodeGroup>
+
+## Encryption Examples
+
+### Single Value Encryption
+
+You can encrypt individual values by specifying the type:
+
+<CodeGroup>
+```typescript Bool
+import { cofhejs, Encryptable } from "cofhejs/node";
+
+const logState = (state) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+
+let result: [CofheInBool] = await cofhejs.encrypt([Encryptable.bool(true)], logState);
+```
+
+```typescript Uint8
+import { cofhejs, Encryptable } from "cofhejs/node";
+
+const logState = (state) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+
+let result: [CoFheInUint8] = await cofhejs.encrypt([Encryptable.uint8(10)], logState);
+```
+
+```typescript Uint64
+import { cofhejs, Encryptable } from "cofhejs/node";
+
+const logState = (state) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+
+let result: [CoFheInUint64] = await cofhejs.encrypt([Encryptable.uint64(10)], logState);
+```
+
+```typescript Address
+import { cofhejs, Encryptable } from "cofhejs/node";
+
+const logState = (state) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+
+let result: [CoFheInAddress] = await cofhejs.encrypt([Encryptable.address("0x1234567890123456789012345678901234567890")], logState);
+```
+</CodeGroup>
+
+### Multiple Values Encryption
+
+You can encrypt multiple values at once using the nested form:
+
+<CodeGroup>
+```typescript Array
+import { cofhejs, Encryptable } from "cofhejs/node";
+
+const logState = (state) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+
+let result = await cofhejs.encrypt([
+    Encryptable.bool(true),
+    Encryptable.uint8(10),
+    Encryptable.uint16(10),
+    Encryptable.uint32(10),
+    Encryptable.uint64(10),
+    Encryptable.uint128(10)
+    Encryptable.address('0x1234567890123456789012345678901234567890'),
+], logState);
+```
+
+```typescript Mixed Types
+import { cofhejs, Encryptable } from "cofhejs/node";
+
+const logState = (state: EncryptStep) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+
+// This will encrypt only the encrypted values (total 4 in this case)
+const encryptedValues = await cofhejs.encrypt([
+    { a: Encryptable.bool(false), b: Encryptable.uint64(10n), c: "hello" },
+    ["hello", 20n, Encryptable.address(contractAddress)],
+    Encryptable.uint8("10"),
+] as const, logState);
+
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+// Use the encrypted value of 10n
+const tx = await contract.add(encryptedValues.data[1]);
+```
+</CodeGroup>
+
+## Return Types
+
+The returned types from the encrypt function will be an array of the type `CoFheInBool`, `CoFheInUint8`, `CoFheInUint16`, `CoFheInUint32` (or 64/128) or `CoFheInAddress` depending on the type you specified.
+
+These encrypted types have the following structure:
+
+```typescript
+export type CoFheInItem = {
+  ctHash: bigint;
+  securityZone: number;
+  utype: FheTypes;
+  signature: string;
+};
+
+export type CoFheInUint8 extends CoFheInItem {
+  utype: FheTypes.Uint8;
+}
+```
+
+These types exist in order to enable type checking when interacting with Solidity contracts, and to make it easier to work with encrypted data.
+
+## setState Callback
+
+The `setState` function is used to monitor the state of the encryption process. Since the process is asynchronous, you can use this function to get the state of the encryption process for better UI experience.
+
+```typescript
+const logState = (state) => {
+    console.log(`Log Encrypt State :: ${state}`);
+};
+```
+
+The available states are:
+
+- **Extract** - Getting all the data ready for encryption (values to encrypt, chain information, etc.).
+- **Pack** - Preparing the data for the encryption process.
+- **Prove** - Signing the data.
+- **Verify** - Verifies the user's input, ensuring that it is safe to use (read more about this [here](/docs/devdocs/architecture/internal-utilities/verifier)).
+- **Replace** - Preparing the result and replacing the old values with encrypted ones.
+- **Done** - Process is finished.
+
+By encrypting user data before sending it to a contract, Fhenix ensures that data remains private throughout its lifecycle in the blockchain environment.
+

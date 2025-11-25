@@ -1,0 +1,131 @@
+---
+title: "Data Evaluation"
+description: "Understanding how FHE operations communicate with off-chain compute engines"
+---
+
+## Sending Computation Requests
+
+The blockchain that you write Smart Contracts on (for example, Arbitrum One) does not natively support FHE computation. This is why CoFHE is mostly an **off-chain system**, performing all the FHE heavy lifting asynchronously. All the logic happening on-chain is **giving instructions** for the off-chain component, CoFHE's **FHE Engine**, on what to compute. This concept is commonly referred to as [Symbolic Execution](https://en.wikipedia.org/wiki/Symbolic_execution).
+
+### How On-Chain Smart Contracts Communicate with the Off-Chain Engine
+
+Through **Events**. Every FHE operation exposed in `FHE.sol` that requires an FHE computation emits an event. For example:
+
+```solidity
+res = FHE.sub(first, second);
+```
+
+This code snippet computes subtraction between two numbers. Behind the scenes, the function `FHE.sub()` is **emitting an event**, basically broadcasting "Hey FheOS! you need to compute `first - second`!". CoFHE then picks up this event, and forwards it to FheOS (the compute engine) for execution.
+
+### More Examples
+
+**Creating a trivially encrypted value:**
+
+```solidity
+euint8 res = FHE.asEuint8(42);
+```
+
+This command emits an event saying "Create a trivially encrypted ciphertext representing the plaintext number `42`".
+
+**Adding encrypted values:**
+
+```solidity
+balance = FHE.add(amount, balance);
+```
+
+This command emits an event saying "Compute the encrypted result of adding the encrypted variables `balance` and `amount`".
+
+<Note>
+But how does CoFHE know how to connect two variables (e.g. `balance` and `amount`) to the underlying encrypted data to calculate the result? To understand this, you need to understand how encrypted data is represented in smart contracts.
+</Note>
+
+---
+
+## Data Representation
+
+In the context of a Smart Contract, most FHE operations result in a new ciphertext. Let's look at an example:
+
+```solidity
+function addNumbers() public view returns (euint32) {
+    euint32 a = FHE.asEuint32(10); // Creating two trivially-encrypted ciphertexts
+    euint32 b = FHE.asEuint32(20);
+    euint32 result = FHE.add(a, b); // Add them together
+
+    return result;
+}
+```
+
+In the example above, you are:
+
+1. Creating two trivially-encrypted 32-bit ciphertexts using `FHE.asEuint32()`
+2. Performing an FHE-addition, calculating the encrypted sum of both, using `FHE.add()`
+3. Returning the result
+
+The result of every operation is a value of type `euint32`, which represents a new 32-bit ciphertext. But what does `euint32` represent exactly? Let's look at the type's declaration:
+
+```solidity
+type euint32 is uint128;
+```
+
+<Warning>
+The `euint32` type is actually a `uint128` wrapper, not the encrypted data itself.
+</Warning>
+
+### Understanding Ciphertext Handles
+
+The actual ciphertext values of FHE-encrypted integers are too big to be stored directly in the blockchain, or emitted in an event. That's why in your smart contracts, the ciphertexts are represented by a 128-bit handle regardless of their encrypted type. You can think of this handle as an ID, or a pointer to the ciphertext stored off-chain. This handle is the identifier of said ciphertext. In practice, CoFHE actually stores full ciphertexts in an off-chain Data Availability (DA) layer.
+
+So, when evaluating the following statement:
+
+```solidity
+ebool isBigger = FHE.gt(newBid, currentBid);
+```
+
+`FHE.sol` is actually emitting the following event: "Check which number is bigger: `0xab12...` or `0xcd34..`". The result's handle (or identifier) will be stored in the variable `isBigger`, of type `ebool`.
+
+<Tip>
+Wondering what to do with `ebool isBigger`? Check out the page on [Conditionals](/fhe-library/core-concepts/select-vs-ifelse).
+</Tip>
+
+---
+
+## Deep Dive: Handle Determination
+
+<Accordion title="How are handles determined for asynchronous operations?">
+Since computation is executed asynchronously, you might wonder: how can you know the ciphertext's handle in real time?
+
+In fact, the ciphertext's handle is determined regardless of its value. It basically represents the operation that needs to be performed to create this value.
+
+**Example:**
+
+```solidity
+euint64 num = FHE.asEuint64(31);
+euint64 meaning = FHE.add(num, FHE.asEuint64(11));
+```
+
+The handle of `num` is a numerical representation of "trivially-encrypted `31`", while the handle of `meaning` is a similar representation of "result of addition between `num` and trivially-encrypted `11`". The actual encrypted value is, as mentioned before, evaluated asynchronously.
+
+This design allows smart contracts to continue executing without waiting for expensive FHE computations to complete.
+</Accordion>
+
+---
+
+## Key Concepts Summary
+
+<CardGroup cols={2}>
+<Card title="Event-Driven Communication" icon="bolt">
+All FHE operations emit events that instruct the off-chain engine what to compute. This enables symbolic execution of encrypted operations.
+</Card>
+
+<Card title="Ciphertext Handles" icon="fingerprint">
+Encrypted values are represented by 128-bit handles that act as identifiers. The actual ciphertext data is stored off-chain in a DA layer.
+</Card>
+
+<Card title="Asynchronous Execution" icon="clock">
+FHE computations happen asynchronously off-chain. Handles are determined immediately based on the operation, not the result value.
+</Card>
+
+<Card title="Storage Efficiency" icon="database">
+By using handles instead of storing full ciphertexts on-chain, CoFHE dramatically reduces gas costs and blockchain storage requirements.
+</Card>
+</CardGroup>

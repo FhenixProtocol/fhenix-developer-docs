@@ -1,0 +1,180 @@
+---
+title: "ACL Usage Examples"
+description: "Practical examples of using Access Control Lists (ACL) to manage permissions for encrypted data"
+---
+
+## Overview
+
+This tutorial provides practical examples of using Access Control Lists (ACL) to manage permissions for encrypted data in your CoFHE contracts.
+
+See [ACL Mechanism](/fhe-library/core-concepts/access-control) for explanation of why the ACL mechanism is needed.
+
+## Solidity API
+
+The following functions are available for managing access control:
+
+1. `FHE.allowThis(CIPHERTEXT_HANDLE)` - allows the current contract access to the handle
+2. `FHE.allow(CIPHERTEXT_HANDLE, ADDRESS)` - allows the specified address access to the handle
+3. `FHE.allowTransient(CIPHERTEXT_HANDLE, ADDRESS)` - allows the specified address access to the handle for the duration of the transaction
+
+## Automatic Transaction-Scoped Allowance
+
+The contract that creates the value for the first time will automatically get ownership of the ciphertext **for the duration of the transaction**, by using `ACL.allowTransient(this)` behind the scenes.
+
+```solidity
+// Contract A
+function doAdd(InEuint32 input1, InEuint32 input2) {
+    euint32 handle1 = FHE.asEuint32(input1); // Contract A gets temporary ownership of handle1
+    euint32 handle2 = FHE.asEuint32(input2); // Contract A gets temporary ownership of handle2
+    
+    euint32 result = FHE.add(handle1, handle2); // possible because Contract A has ownership of handle1 and handle2
+}
+```
+
+<Info>
+This automatic allowance only lasts for the duration of the current transaction. To use encrypted values in future transactions, you must explicitly grant access.
+</Info>
+
+## Persistent Allowance for This Contract
+
+To use the results in other transactions, explicit ownership must be granted with `FHE.allow(address)` or `FHE.allowThis()`.
+
+```solidity
+contract A {
+    private euint32 result;
+    private euint32 handle1;
+
+    function doAdd(InEuint32 input1, InEuint32 input2) {
+        handle1 = FHE.asEuint32(input1);         // Contract A gets temporary ownership of handle1
+        euint32 handle2 = FHE.asEuint32(input2); // Contract A gets temporary ownership of handle2
+
+        result = FHE.add(handle1, handle2);      // Contract A gets temporary ownership of result
+        FHE.allowThis(result);                   // result is allowed for future transactions
+    }
+
+    function doSomethingWithResult() {
+        FHE.decrypt(result);      // Allowed
+        FHE.add(handle1, result); // ACLNotAllowed (handle1 is not owned persistently)
+    }
+}
+```
+
+<Warning>
+If you don't call `FHE.allowThis()` after modifying encrypted values, you won't be able to use them in future transactions. Always call `FHE.allowThis()` after operations that modify encrypted state variables.
+</Warning>
+
+## Allowance for Decryptions
+
+To decrypt a ciphertext off-chain via the decryption network, the issuer must be allowed on the ciphertext handle via `FHE.allow(userAddress)`.
+
+```solidity
+contract A {
+    private mapping(address => euint256) balances;
+
+    function transfer(InEuint32 _amount, address to) {
+        euint32 amount = FHE.asEuint32(_amount);
+        
+        balances[msg.sender] = balances[msg.sender] - amount;
+        balances[to] = balances[to] + amount;
+
+        FHE.allow(balances[msg.sender], msg.sender); // now the sender can decrypt her balance
+        FHE.allow(balances[to], to);                 // now the receiver can decrypt his balance
+
+        // enable balance manipulation for future transactions
+        FHE.allowThis(balances[msg.sender]);
+        FHE.allowThis(balances[to]);
+    }
+}
+```
+
+<Tip>
+When allowing users to decrypt their own encrypted values, use `FHE.allow()` to grant persistent access. This enables users to decrypt values off-chain using Cofhejs without requiring additional transactions.
+</Tip>
+
+## Allow Other Contracts
+
+You can also allow other contracts to use your ciphertexts, either persistently or only for the course of this transaction via `FHE.allowTransient(handle, address)`.
+
+```solidity
+contract A {
+    function doAdd(InEuint32 input1) {
+        euint32 handle1 = FHE.asEuint32(input1);       // Contract A gets temporary ownership of handle1
+
+        FHE.allowTransient(handle1, addressB); // Contract B is allowed to use handle1 in this transaction alone
+        // or
+        FHE.allow(handle1, addressB);          // Contract B is allowed to use handle1 forever
+        
+        IContractB(addressB).doSomethingWithHandle1(handle1);
+    }
+}
+```
+
+<Note>
+Use `FHE.allowTransient()` when you only need to grant access for a single transaction. Use `FHE.allow()` when you need persistent access across multiple transactions.
+</Note>
+
+## Common Patterns
+
+### Pattern 1: Allow Contract and User
+
+When modifying encrypted values that users need to access:
+
+```solidity
+function updateBalance(address user, InEuint32 amount) public {
+    euint32 encryptedAmount = FHE.asEuint32(amount);
+    balances[user] = FHE.add(balances[user], encryptedAmount);
+    
+    // Allow contract to use in future transactions
+    FHE.allowThis(balances[user]);
+    
+    // Allow user to decrypt/seal their balance
+    FHE.allow(balances[user], user);
+}
+```
+
+### Pattern 2: Allow Sender
+
+A common pattern is to allow the message sender:
+
+```solidity
+function submitEncryptedData(InEuint32 data) public {
+    euint32 encryptedData = FHE.asEuint32(data);
+    storedData[msg.sender] = encryptedData;
+    
+    FHE.allowThis(storedData[msg.sender]);
+    FHE.allowSender(storedData[msg.sender]); // Equivalent to FHE.allow(storedData[msg.sender], msg.sender)
+}
+```
+
+### Pattern 3: Global Access
+
+For values that should be accessible to everyone:
+
+```solidity
+function setPublicValue(InEuint32 value) public onlyOwner {
+    publicValue = FHE.asEuint32(value);
+    FHE.allowGlobal(publicValue); // Everyone can now access this value
+}
+```
+
+## Best Practices
+
+<Steps>
+<Step title="Always allow after modifications">
+After modifying any encrypted state variable, call `FHE.allowThis()` to ensure the contract can use it in future transactions.
+</Step>
+
+<Step title="Allow users for decryption">
+If users need to decrypt their own values off-chain, use `FHE.allow()` or `FHE.allowSender()` to grant them access.
+</Step>
+
+<Step title="Use transient for single-use access">
+When passing encrypted values to other contracts for a single operation, use `FHE.allowTransient()` instead of `FHE.allow()`.
+</Step>
+</Steps>
+
+## Next Steps
+
+- Learn more about [Access Control](/fhe-library/core-concepts/access-control) mechanisms
+- Review [Your First FHE Contract](/tutorials/your-first-fhe-contract) for a complete example
+- Explore [Adding FHE to an Existing Contract](/tutorials/adding-fhe-to-existing-contract) for migration patterns

@@ -1,0 +1,86 @@
+---
+title: "Inputs"
+description: "Learn how to handle encrypted user inputs in confidential smart contracts"
+---
+
+## Overview
+
+One of the key aspects of writing confidential smart contracts is receiving encrypted inputs from users:
+
+```solidity
+function transfer(
+    address to,
+    InEuint32 memory inAmount // <------ encrypted input here
+) public virtual returns (euint32 transferred) {
+    euint32 amount = FHE.asEuint32(inAmount);
+}
+```
+
+<Note>
+Notice in the example above the distinction between **`InEuint32`** and **`euint32`**.
+</Note>
+
+## Input Types Conversion
+
+The **input types** `InEuintxx` (and `InEbool`, `InEaddress`) are special encrypted types that represent **user input**. Input types contain additional information required to authenticate and validate ciphertexts. For more on that, read about the [ZK-Verifier](/fhe-library/architecture/internal-utilities/verifier).
+
+Before you can use an encrypted input, you need to convert it to a regular **encrypted type**:
+
+```solidity
+euint32 amount = FHE.asEuint32(inAmount);
+```
+
+<Tip>
+Avoid storing encrypted input types in contract state. These types carry extra metadata, which increases gas costs and may cause unexpected behavior. Always convert them using `FHE.asE...()`.
+</Tip>
+
+Now that `amount` is of type `euint32`, you can store or manipulate it:
+
+```solidity
+toBalance = FHE.sub(toBalance, amount);
+```
+
+<Tip>
+Read more about the available FHE types and operations in the [FHE Encrypted Operations](/fhe-library/core-concepts/fhe-encrypted-operations) guide.
+</Tip>
+
+## Full Example
+
+Here's a complete example showing how to handle encrypted inputs in a transfer function:
+
+```solidity
+function transfer(
+    address to,
+    InEuint32 memory inAmount
+) public virtual returns (euint32 transferred) {
+    euint32 amount = FHE.asEuint32(inAmount);
+
+    toBalance = _balances[to];
+    fromBalance = _balances[msg.sender];
+
+    _updateBalance(to, FHE.add(toBalance, amount));
+    _updateBalance(from, FHE.sub(fromBalance, amount));
+}
+```
+
+<Note>
+For the example above to work correctly, you will also need to manage access to the newly created ciphertexts in the `_updateBalance()` function. Learn more about access control in the [ACL Mechanism](/fhe-library/core-concepts/acl-mechanism) guide.
+</Note>
+
+## Additional Examples
+
+### Voting in a Poll
+
+```solidity
+function castEncryptedVote(address poll, InEbool calldata encryptedVote) public {
+    _submitVote(poll, FHE.asEbool(encryptedVote));
+}
+```
+
+### Setting Encrypted User Preferences
+
+```solidity
+function updateUserSetting(address user, InEuint8 calldata encryptedSetting) public {
+    _applyUserSetting(user, FHE.asEuint8(encryptedSetting));
+}
+```

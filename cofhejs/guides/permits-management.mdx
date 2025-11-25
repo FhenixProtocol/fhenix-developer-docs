@@ -1,0 +1,276 @@
+---
+title: Permits Management
+description: "Create and manage permits for accessing encrypted data in FHE-enabled smart contracts"
+---
+
+## Creating Permits
+
+After encryption, values can be passed into FHE-enabled smart contracts, and the contract can operate on this data securely, within its own logic. However, to ensure that only the respective user can view the processed (encrypted) data, **permissions** and **sealing** mechanisms are used. These ensure that data remains private and viewable exclusively by the user who owns it.
+
+### Prerequisites
+
+Before creating permits, ensure you have:
+- Cofhejs [installed and initialized](/cofhejs/introduction/installation)
+- A web3 provider and signer configured
+- Access to a Fhenix network (local or testnet)
+
+Permits are a crucial security mechanism in Fhenix that allow users to authenticate themselves when accessing encrypted data through off-chain operations like `sealoutput` and `decrypt`. These operations are exposed and handled by `cofhejs`.
+
+### Purpose of Permits
+
+Permissions serve two main purposes:
+
+- **Verify User Identity**: They ensure that the data access request comes from the correct user by verifying that the message is signed with the user's private key.
+
+- **Sealing User Data**: They provide a **public key** to "seal" the encrypted data, meaning it is encrypted in such a way that only the user holding the corresponding **private key** (stored securely on the user's client) can decrypt it later.
+
+<Note>
+Fhenix uses **EIP712**, a widely used Ethereum standard for signing structured data. This means: first, a user must sign a permit in their wallet to authenticate themselves and authorize the creation of the permit; second, permits are stored locally in local storage and can be reused for future interactions with the same contract. Currently, each contract that the user interacts with requires its own unique permit (subject to change).
+</Note>
+
+## Quick Start
+
+### Basic Integration
+
+In a development environment, permit management can be handled automatically by `Cofhejs`. When initialized with a valid provider and signer, the SDK will prompt users to sign a new permit, granting them access to their encrypted data:
+
+<CodeGroup>
+```typescript Ethers
+// initialize your web3 provider
+const provider = new ethers.JsonRpcProvider('http://127.0.0.1:42069')
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider)
+
+// initialize cofhejs Client with ethers (it also supports viem)
+await cofhejs.initializeWithEthers({
+	ethersProvider: provider,
+	ethersSigner: wallet,
+	environment: 'TESTNET',
+})
+```
+
+```typescript Viem
+// initialize your web3 provider
+const client = createPublicClient({ chain: fhenix, transport: http() })
+const wallet = createWalletClient({ chain: fhenix, transport: http() })
+
+// initialize cofhejs Client with viem
+await cofhejs.initializeWithViem({
+	viemClient: client,
+	viemWalletClient: wallet,
+	environment: 'TESTNET',
+})
+```
+</CodeGroup>
+
+<Check>
+When initialized with automatic permit generation, Cofhejs will prompt users to sign a permit automatically.
+</Check>
+
+### Production Setup
+
+For production environments, you'll want more control over the permit generation process. Disable automatic permit generation by setting `generatePermit: false`:
+
+<CodeGroup>
+```typescript Ethers
+// initialize your web3 provider
+const provider = new ethers.JsonRpcProvider('http://127.0.0.1:42069')
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider)
+
+// initialize cofhejs Client with ethers (it also supports viem)
+await cofhejs.initializeWithEthers({
+	ethersProvider: provider,
+	ethersSigner: wallet,
+	environment: 'MAINNET',
+	generatePermit: false,
+})
+```
+
+```typescript Viem
+// initialize your web3 provider
+const client = createPublicClient({ chain: fhenix, transport: http() })
+const wallet = createWalletClient({ chain: fhenix, transport: http() })
+
+// initialize cofhejs Client with viem
+await cofhejs.initializeWithViem({
+	viemClient: client,
+	viemWalletClient: wallet,
+	environment: 'MAINNET',
+	generatePermit: false,
+})
+```
+</CodeGroup>
+
+After initialization, you'll need to manually call `cofhejs.createPermit()` to generate user permits. It's recommended to inform users about the purpose of permits before requesting their signature.
+
+### Creating a Permit
+
+Here's the basic code for creating a permit:
+
+```typescript
+const permitResult = await cofhejs.createPermit({
+	type: 'self',
+	issuer: wallet.address,
+})
+
+if (!permitResult.success) {
+	console.error('Failed to create permit:', permitResult.error)
+	return
+}
+
+const permit = permitResult.data
+```
+
+<Check>
+The permit is created and stored locally for future use with the same contract.
+</Check>
+
+### User Interface Example
+
+Here's an example modal that explains permits to users:
+
+<CodeGroup>
+```jsx React Modal
+const PermitModal = () => (
+	<div className='permit-modal'>
+		<h2>Sign a Permit</h2>
+		<p>Permits grant secure access to your encrypted data on Fhenix by authenticating you with your signature. Each permit:</p>
+		<ul>
+			<li>Is valid for 24 hours</li>
+			<li>Can only be used by you</li>
+			<li>Ensures your data remains private</li>
+		</ul>
+		<button onClick={handleSignPermit}>Sign Permit</button>
+	</div>
+)
+```
+
+```typescript Handler
+const handleSignPermit = async () => {
+	const result = await cofhejs.createPermit({
+		type: 'self',
+		issuer: userAddress,
+	})
+
+	if (!result.success) {
+		console.error('Failed to create permit:', result.error)
+		return
+	}
+	// Permit created successfully
+}
+```
+</CodeGroup>
+
+This will trigger the user's wallet to prompt for their signature. Once signed, the permit will be automatically stored and used for subsequent `cofhejs.unseal` operations.
+
+## Sharing Permits
+
+### Overview
+
+Sharing permits enables users to grant others access to their encrypted data in a secure way. The sharing process involves three steps:
+
+1. Original data owner creates a sharing permit.
+2. Owner sends the permit to the recipient.
+3. Recipient activates the permit with their signature.
+
+### Implementation
+
+Here's how to implement permit sharing:
+
+<CodeGroup>
+```typescript Create Sharing Permit
+const createSharingPermit = async (ownerAddress: string, recipientAddress: string) => {
+	const result = await cofhejs.createPermit({
+		type: 'sharing',
+		issuer: ownerAddress,
+		recipient: recipientAddress,
+	})
+
+	if (!result.success) {
+		throw new Error(`Failed to create sharing permit: ${result.error}`)
+	}
+
+	return result.data
+}
+```
+
+```typescript Activate Permit
+const activateReceivedPermit = async (sharingPermit: Permit) => {
+	const result = await cofhejs.createPermit({
+		...sharingPermit,
+		type: 'recipient',
+	})
+
+	if (!result.success) {
+		throw new Error(`Failed to activate permit: ${result.error}`)
+	}
+
+	return result.data
+}
+```
+</CodeGroup>
+
+The permit data can be safely transmitted to the recipient as plaintext since it contains no confidential information.
+
+## Advanced Features
+
+### Permit Validation
+
+Permits include built-in validation mechanisms:
+
+- **Expiration**: Permits automatically expire after 24 hours (configurable).
+- **Signature Verification**: Ensures permits are only used by authorized parties.
+- **Chain Validation**: Permits are bound to specific networks.
+
+### Custom Validators
+
+You can implement custom validation logic by specifying a validator contract:
+
+```typescript
+const permitWithValidator = await cofhejs.createPermit({
+	type: 'self',
+	issuer: userAddress,
+	validatorContract: '0x...', // Your validator contract address
+	validatorId: 1, // Custom validation identifier
+})
+```
+
+### Error Handling
+
+Always handle permit operations with proper error checking:
+
+```typescript
+const handlePermitCreation = async () => {
+	try {
+		const result = await cofhejs.createPermit({
+			type: 'self',
+			issuer: userAddress,
+		})
+
+		if (!result.success) {
+			console.error('Permit creation failed:', result.error)
+			return
+		}
+
+		// Handle successful permit creation
+	} catch (error) {
+		console.error('Unexpected error:', error)
+	}
+}
+```
+
+## API Reference
+
+See `PermitOptions` interface for the complete list of options available when creating permits:
+
+```typescript
+interface PermitOptions {
+	type: 'self' | 'sharing' | 'recipient'
+	issuer: string
+	recipient?: string
+	expiration?: number
+	validatorId?: number
+	validatorContract?: string
+	name?: string
+}
+```
+

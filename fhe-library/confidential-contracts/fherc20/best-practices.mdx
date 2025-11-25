@@ -1,0 +1,532 @@
+---
+title: "Best Practices"
+description: "Security, gas optimization, and implementation guidelines for FHERC20 tokens"
+---
+
+## Overview
+
+Building with FHERC20 requires understanding both traditional smart contract best practices and the unique considerations that come with fully homomorphic encryption. This guide provides actionable recommendations for secure, efficient, and privacy-preserving implementations.
+
+---
+
+## Security Best Practices
+
+<AccordionGroup>
+<Accordion title="Operator Permissions - Full Access Risk" icon="triangle-exclamation" defaultOpen>
+**Risk:** Operators have unlimited access to a user's balance until expiration.
+
+**Recommendation:**
+```solidity
+// ✅ Use short expiration times for specific operations
+function authorizeSwap(address dex) external {
+    // 10 minutes - just enough for the transaction
+    token.setOperator(dex, uint48(block.timestamp + 10 minutes));
+}
+
+// ❌ Avoid indefinite permissions unless absolutely necessary
+function dangerousApproval(address spender) external {
+    // This grants permanent access - very risky!
+    token.setOperator(spender, type(uint48).max);
+}
+```
+
+**Best practices:**
+- Grant operators only for the minimum necessary time
+- Use specific timeframes: 5-10 minutes for single transactions, 1 day for recurring operations
+- Document operator requirements clearly in your UI
+- Provide easy revocation by calling `setOperator(address, block.timestamp)`
+</Accordion>
+
+<Accordion title="Zero-Replacement Handling" icon="shield-check" defaultOpen>
+**Risk:** Insufficient balance transfers zero tokens instead of reverting, which can lead to unexpected behavior.
+
+**Recommendation:**
+```solidity
+// ✅ Check balance before operations that depend on success
+function safeSwap(address tokenIn, address tokenOut, uint64 amountIn) external {
+    euint64 balance = IFHERC20(tokenIn).confidentialBalanceOf(msg.sender);
+
+    // Request decryption to verify balance (in real implementation)
+    // For demo, assume we have a way to verify
+
+    // Only proceed if we can verify sufficient balance
+    require(canVerifyBalance(balance, amountIn), "Insufficient balance");
+
+    euint64 transferred = IFHERC20(tokenIn).confidentialTransfer(
+        address(this),
+        amountIn
+    );
+
+    // Perform swap logic...
+}
+
+// ❌ Don't assume transfers always succeed
+function dangerousSwap(address tokenIn, uint64 amountIn) external {
+    // This might transfer zero tokens!
+    IFHERC20(tokenIn).confidentialTransfer(address(this), amountIn);
+
+    // Continuing as if transfer succeeded is dangerous
+    _executeSwap(amountIn); // ❌ Wrong amount!
+}
+```
+
+**Best practices:**
+- Always work with the returned `euint64 transferred` value
+- Implement balance checks when transfer success is critical
+- Use the transferred amount in subsequent operations, not the requested amount
+- Consider using transfer callbacks for atomic operations
+</Accordion>
+
+<Accordion title="Access Control Management" icon="lock" defaultOpen>
+**Risk:** Improper FHE access control can prevent users from accessing their own balances or expose data to unauthorized parties.
+
+**Recommendation:**
+```solidity
+// ✅ Grant appropriate access after balance updates
+function _updateBalanceWithAccess(address account, euint64 newBalance) internal {
+    _confidentialBalances[account] = newBalance;
+
+    // Contract needs access for operations
+    FHE.allowThis(newBalance);
+
+    // User needs access to query their balance
+    FHE.allow(newBalance, account);
+}
+
+// ✅ Grant access to transferred amounts
+function confidentialTransfer(address to, euint64 value)
+    external returns (euint64 transferred)
+{
+    transferred = _transfer(msg.sender, to, value);
+
+    // Both parties should be able to see what was transferred
+    FHE.allow(transferred, msg.sender);
+    FHE.allow(transferred, to);
+
+    return transferred;
+}
+
+// ❌ Don't forget to grant access
+function badTransfer(address to, euint64 value) external {
+    euint64 transferred = _transfer(msg.sender, to, value);
+    // Forgot FHE.allow calls - users can't see transferred amount!
+    return transferred;
+}
+```
+
+**Best practices:**
+- Always call `FHE.allowThis()` for values the contract needs to use
+- Always call `FHE.allow(value, user)` for values users need to access
+- Grant access immediately after creating or modifying encrypted values
+- Review access control on all encrypted state changes
+</Accordion>
+
+<Accordion title="Reentrancy in Transfer Callbacks" icon="rotate" defaultOpen>
+**Risk:** The `onConfidentialTransferReceived` callback is executed during the transfer, creating reentrancy opportunities.
+
+**Recommendation:**
+```solidity
+// ✅ Use reentrancy guards
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract SafeReceiver is IFHERC20Receiver, ReentrancyGuard {
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external override nonReentrant returns (ebool) {
+        // Protected against reentrancy attacks
+        _processDeposit(from, amount);
+        return FHE.asEbool(true);
+    }
+}
+
+// ✅ Follow checks-effects-interactions pattern
+contract SecureStaking is IFHERC20Receiver {
+    mapping(address => euint64) public stakedBalances;
+
+    function onConfidentialTransferReceived(
+        address operator,
+        address from,
+        euint64 amount,
+        bytes calldata data
+    ) external override returns (ebool) {
+        // Checks
+        require(msg.sender == address(stakingToken), "Wrong token");
+
+        // Effects (update state first)
+        stakedBalances[from] = stakedBalances[from] + amount;
+        FHE.allowThis(stakedBalances[from]);
+        FHE.allow(stakedBalances[from], from);
+
+        // Interactions (external calls last)
+        if (data.length > 0) {
+            _notifyReferral(from, data);
+        }
+
+        return FHE.asEbool(true);
+    }
+}
+```
+
+**Best practices:**
+- Use OpenZeppelin's ReentrancyGuard for all receiver implementations
+- Follow checks-effects-interactions pattern
+- Minimize external calls in callbacks
+- Keep callback logic simple and gas-efficient
+</Accordion>
+
+<Accordion title="Input Validation" icon="check" defaultOpen>
+**Risk:** Unvalidated inputs can lead to unexpected behavior or security vulnerabilities.
+
+**Recommendation:**
+```solidity
+// ✅ Validate all inputs
+function onConfidentialTransferReceived(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // Validate token source
+    if (msg.sender != address(trustedToken)) {
+        return FHE.asEbool(false);
+    }
+
+    // Validate sender (if needed)
+    if (!isAllowedSender(from)) {
+        return FHE.asEbool(false);
+    }
+
+    // Validate data length and content
+    if (data.length > 0) {
+        if (data.length != 64) {
+            return FHE.asEbool(false); // Expected specific data format
+        }
+
+        // Safely decode with bounds checking
+        (uint256 lockDuration, address referrer) = abi.decode(
+            data,
+            (uint256, address)
+        );
+
+        if (lockDuration > 365 days) {
+            return FHE.asEbool(false); // Reject unreasonable durations
+        }
+
+        if (referrer == address(0)) {
+            return FHE.asEbool(false); // Reject zero address
+        }
+    }
+
+    return FHE.asEbool(true);
+}
+
+// ❌ Don't trust inputs blindly
+function dangerousReceiver(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // Accepts anything - very dangerous!
+    _processData(data); // Could contain malicious data
+    return FHE.asEbool(true);
+}
+```
+
+**Best practices:**
+- Validate token source (`msg.sender`)
+- Validate transfer initiator (`operator`) and source (`from`) when needed
+- Check data length before decoding
+- Validate decoded parameters for reasonable bounds
+- Return `FHE.asEbool(false)` to reject invalid transfers
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Operators vs FHERC20Permit
+
+Choose the right permission mechanism for your use case:
+
+### When to Use Operators
+
+<AccordionGroup>
+<Accordion title="Standard User Interactions" defaultOpen>
+**Use operators when:**
+- User directly approves via wallet transaction
+- Simple on-chain permission grants
+- No meta-transaction support needed
+
+```solidity
+// User directly approves DEX
+await token.connect(user).setOperator(
+    dexAddress,
+    Math.floor(Date.now() / 1000) + 3600
+);
+
+// DEX can now swap on behalf of user
+await dex.swap(tokenIn, tokenOut, amountIn);
+```
+
+**Advantages:**
+- Simple, direct approach
+- No signature complexity
+- Immediate effect
+</Accordion>
+
+<Accordion title="Long-Lived Permissions" defaultOpen>
+**Use operators when:**
+- Granting recurring permissions
+- No need for gasless approvals
+
+```solidity
+// Grant 30-day subscription access
+await token.setOperator(
+    subscriptionContract,
+    uint48(block.timestamp + 30 days)
+);
+```
+</Accordion>
+</AccordionGroup>
+
+### When to Use FHERC20Permit
+
+<AccordionGroup>
+<Accordion title="Gasless Approvals" defaultOpen>
+**Use permit when:**
+- Users shouldn't pay gas for approvals
+- Implementing meta-transactions
+- Better UX for new users
+
+```javascript
+// User signs off-chain (no gas)
+const signature = await user._signTypedData(domain, types, value);
+
+// Relayer submits permit + action (user pays nothing)
+await relayer.executeWithPermit(
+    token.address,
+    permitData,
+    signature,
+    swapCalldata
+);
+```
+
+**Advantages:**
+- User pays no gas for approval
+- One transaction instead of two
+- Better onboarding experience
+</Accordion>
+
+<Accordion title="Atomic Operations" defaultOpen>
+**Use permit when:**
+- Combining approval + action in single transaction
+- Reducing transaction count
+
+```solidity
+// Single transaction: approve + swap
+function swapWithPermit(
+    address token,
+    uint48 until,
+    bytes calldata signature,
+    SwapParams calldata params
+) external {
+    // Approve via permit
+    IFHERC20Permit(token).permit(
+        params.from,
+        address(this),
+        until,
+        signature
+    );
+
+    // Execute swap immediately
+    _executeSwap(params);
+}
+```
+</Accordion>
+</AccordionGroup>
+
+### Comparison Table
+
+| Factor | Operator (setOperator) | FHERC20Permit (permit) |
+|--------|------------------------|------------------------|
+| **Gas Cost** | User pays gas | Relayer can pay gas |
+| **Transaction Count** | 2 (approve + action) | 1 (combined) |
+| **Complexity** | Simple | Requires signatures |
+| **User Experience** | Standard wallet flow | Gasless, seamless |
+| **Use Case** | General permissions | Meta-transactions |
+| **Implementation** | Direct on-chain | EIP-712 signatures |
+
+---
+
+## Common Pitfalls and Solutions
+
+<AccordionGroup>
+<Accordion title="Pitfall: Forgetting to Grant FHE Access" icon="key">
+**Problem:**
+```solidity
+function badMint(address to, uint64 amount) internal {
+    euint64 value = FHE.asEuint64(amount);
+    _confidentialBalances[to] = _confidentialBalances[to] + value;
+
+    // ❌ Forgot to grant access!
+    // User and contract can't read the balance
+}
+```
+
+**Solution:**
+```solidity
+function goodMint(address to, uint64 amount) internal {
+    euint64 value = FHE.asEuint64(amount);
+    _confidentialBalances[to] = _confidentialBalances[to] + value;
+
+    // ✅ Grant necessary access
+    FHE.allowThis(_confidentialBalances[to]); // Contract can use it
+    FHE.allow(_confidentialBalances[to], to);  // User can query it
+}
+```
+</Accordion>
+
+<Accordion title="Pitfall: Not Handling Zero Transfers" icon="circle-0">
+**Problem:**
+```solidity
+function badSwap(address tokenIn, uint64 amountIn) external {
+    // Transfer might return zero!
+    token.confidentialTransfer(address(this), amountIn);
+
+    // ❌ Assumes transfer succeeded with full amount
+    _executeSwap(amountIn); // Wrong if transfer was zero!
+}
+```
+
+**Solution:**
+```solidity
+function goodSwap(address tokenIn, uint64 amountIn) external {
+    // Use the actual transferred amount
+    euint64 transferred = token.confidentialTransfer(
+        address(this),
+        amountIn
+    );
+
+    // ✅ Work with what was actually transferred
+    _executeSwap(transferred);
+
+    // Or check balance first if exact amount is critical
+}
+```
+</Accordion>
+
+<Accordion title="Pitfall: Incorrect Claim Management" icon="inbox">
+**Problem:**
+```solidity
+function badUnwrap(uint64 amount) external {
+    wrapper.unwrap(msg.sender, amount);
+
+    // ❌ Trying to claim immediately - decryption not ready!
+    wrapper.claimUnwrapped(someClaim);
+}
+```
+
+**Solution:**
+```javascript
+// ✅ Correct flow
+// 1. Request unwrap
+const tx = await wrapper.unwrap(userAddress, amount);
+const receipt = await tx.wait();
+
+// 2. Wait for decryption (typically 2-5 blocks)
+await waitForBlocks(5);
+
+// 3. Get claim hash from event or getUserClaims
+const claims = await wrapper.getUserClaims(userAddress);
+const latestClaim = claims[claims.length - 1];
+
+// 4. Check if ready
+const claim = await wrapper.getClaim(latestClaim);
+if (claim.decrypted && !claim.claimed) {
+    // 5. Now safe to claim
+    await wrapper.claimUnwrapped(latestClaim);
+}
+```
+</Accordion>
+
+<Accordion title="Pitfall: Operator Expiration Timing" icon="clock">
+**Problem:**
+```javascript
+// ❌ Expiration in milliseconds (wrong!)
+await token.setOperator(
+    spender,
+    Date.now() + 3600000 // JavaScript timestamp
+);
+```
+
+**Solution:**
+```javascript
+// ✅ Expiration in seconds (Unix timestamp)
+const expirationTime = Math.floor(Date.now() / 1000) + 3600;
+await token.setOperator(
+    spender,
+    expirationTime
+);
+
+// ✅ Or use block.timestamp from contract
+const currentBlock = await ethers.provider.getBlock('latest');
+const until = currentBlock.timestamp + 3600;
+await token.setOperator(spender, until);
+```
+</Accordion>
+
+<Accordion title="Pitfall: Not Validating Callback Returns" icon="shield-check">
+**Problem:**
+```solidity
+function badReceiver(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    _processTokens(from, amount);
+
+    // ❌ Always returns true, even if processing failed!
+    return FHE.asEbool(true);
+}
+```
+
+**Solution:**
+```solidity
+function goodReceiver(
+    address operator,
+    address from,
+    euint64 amount,
+    bytes calldata data
+) external override returns (ebool) {
+    // ✅ Validate before accepting
+    if (msg.sender != address(trustedToken)) {
+        return FHE.asEbool(false);
+    }
+
+    if (!isValidSender(from)) {
+        return FHE.asEbool(false);
+    }
+
+    // Process with error handling
+    try this._processTokens(from, amount, data) {
+        return FHE.asEbool(true);
+    } catch {
+        return FHE.asEbool(false);
+    }
+}
+```
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Related Topics
+
+- Review [Core Features](/fhe-library/confidential-contracts/fherc20/core-features) for fundamental concepts
+- Learn about [Operators](/fhe-library/confidential-contracts/fherc20/operators) for permission management
+- Explore [Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for safe transfers
+- Check the [Migration Guide](/fhe-library/confidential-contracts/fherc20/migration-guide) for detailed migration steps

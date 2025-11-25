@@ -1,0 +1,329 @@
+---
+title: "FHERC20 Permit"
+description: "Gasless operator approvals using EIP-712 signatures"
+---
+
+## Overview
+
+FHERC20Permit extends the base FHERC20 contract with **signature-based operator approval**, allowing users to grant operator permissions without sending a transaction. This is similar to EIP-2612 (Permit for ERC20) but adapted for the operator model.
+
+<CardGroup cols={2}>
+<Card title="Gasless Approvals" icon="gas-pump">
+Users can approve operators by signing messages off-chain, eliminating the need for approval transactions and saving gas.
+</Card>
+
+<Card title="EIP-712 Standard" icon="file-signature">
+Uses the battle-tested EIP-712 standard for structured data signing, providing security and wallet compatibility.
+</Card>
+
+<Card title="Meta-Transactions" icon="paper-plane">
+Enable meta-transaction patterns where relayers can submit permits on behalf of users.
+</Card>
+
+<Card title="Improved UX" icon="smile">
+Users can approve and transfer in a single transaction, or approve without needing ETH for gas.
+</Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+### Traditional Operator Approval (2 transactions)
+
+```javascript
+// Transaction 1: Approve operator (costs gas)
+await token.setOperator(operatorAddress, expirationTime);
+
+// Transaction 2: Operator performs action
+await token.connect(operator).confidentialTransferFrom(user, recipient, amount);
+```
+
+### With Permit (1 transaction)
+
+```javascript
+// Off-chain: User signs approval (no gas)
+const signature = await user.signTypedData(domain, types, value);
+
+// On-chain: Operator submits permit + action (one transaction)
+await token.connect(operator).permit(
+    userAddress,
+    operatorAddress,
+    until,
+    deadline,
+    v, r, s
+);
+await token.connect(operator).confidentialTransferFrom(user, recipient, amount);
+```
+
+---
+
+## The Permit Function
+
+### Function Signature
+
+```solidity
+function permit(
+    address owner,
+    address spender,
+    uint48 until,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+) external;
+```
+
+**Parameters:**
+- `owner`: Address that is granting operator permission
+- `spender`: Address receiving operator permission
+- `until`: Unix timestamp when operator permission expires (uint48)
+- `deadline`: Unix timestamp when the signature itself expires (uint256)
+- `v`, `r`, `s`: ECDSA signature components
+
+### How Permit Works
+
+<Steps>
+<Step title="User Signs Off-Chain">
+User signs a structured message containing owner, spender, until, nonce, and deadline using their wallet.
+</Step>
+
+<Step title="Signature Submitted">
+Anyone (usually the operator or a relayer) submits the signature along with the permit parameters to the blockchain.
+</Step>
+
+<Step title="Signature Verification">
+Contract verifies the signature matches the owner's address and hasn't expired.
+</Step>
+
+<Step title="Operator Granted">
+If valid, the contract calls `setOperator(spender, until)` on behalf of the owner.
+</Step>
+
+<Step title="Nonce Incremented">
+The owner's nonce is incremented to prevent signature replay.
+</Step>
+</Steps>
+
+---
+
+## EIP-712 Domain and Types
+
+### Domain Separator
+
+```solidity
+function DOMAIN_SEPARATOR() external view returns (bytes32);
+```
+
+The domain separator uniquely identifies this contract:
+
+```javascript
+const domain = {
+    name: await token.name(),
+    version: "1",
+    chainId: await ethers.provider.getNetwork().then(n => n.chainId),
+    verifyingContract: token.address
+};
+```
+
+### Permit Type Hash
+
+```solidity
+bytes32 private constant PERMIT_TYPEHASH = keccak256(
+    "Permit(address owner,address spender,uint48 until,uint256 nonce,uint256 deadline)"
+);
+```
+
+The structured data for signing:
+
+```javascript
+const types = {
+    Permit: [
+        { name: "owner", type: "address" },
+        { name: "spender", type: "address" },
+        { name: "until", type: "uint48" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" }
+    ]
+};
+```
+
+---
+
+## Nonces
+
+### Function Signature
+
+```solidity
+function nonces(address owner) public view returns (uint256);
+```
+
+Each address has a nonce that increments with each permit, preventing replay attacks.
+
+```javascript
+// Get current nonce
+const nonce = await token.nonces(userAddress);
+
+// Nonce increments after each permit
+await token.permit(...);
+const newNonce = await token.nonces(userAddress); // nonce + 1
+```
+
+---
+
+## Meta-Transaction Pattern
+
+Permits enable meta-transactions where users sign approvals and a relayer submits them:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@fhenixprotocol/contracts/FHERC20Permit.sol";
+
+contract TokenRelayer {
+    FHERC20Permit public immutable token;
+
+    constructor(address _token) {
+        token = FHERC20Permit(_token);
+    }
+
+    // Relayer submits permit + executes transfer in one transaction
+    function permitAndTransferFrom(
+        address owner,
+        address to,
+        euint64 amount,
+        uint48 until,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        // Submit permit (owner approved relayer)
+        token.permit(owner, address(this), until, deadline, v, r, s);
+
+        // Execute transfer
+        token.confidentialTransferFrom(owner, to, amount);
+    }
+}
+```
+
+---
+
+## Security Considerations
+
+<AccordionGroup>
+<Accordion title="Signature Expiration" icon="clock" defaultOpen>
+Always set a reasonable `deadline` for signatures:
+
+```javascript
+// ✅ Good: 1 hour expiration
+const deadline = Math.floor(Date.now() / 1000) + 3600;
+
+// ❌ Bad: Far future expiration
+const deadline = Math.floor(Date.now() / 1000) + (365 * 24 * 3600);
+```
+
+Expired signatures are automatically rejected by the contract.
+</Accordion>
+
+<Accordion title="Nonce Management" icon="hashtag" defaultOpen>
+<Warning>
+Each permit increments the user's nonce. If a user signs multiple permits, only the one with the current nonce will be valid. Later signatures become invalid if an earlier one is used first.
+</Warning>
+
+```javascript
+// User signs permit A with nonce 5
+const permitA = await signPermit({nonce: 5, ...});
+
+// User signs permit B with nonce 5 (same nonce!)
+const permitB = await signPermit({nonce: 5, ...});
+
+// Only one will work - whichever is submitted first
+```
+
+Always fetch the current nonce before signing.
+</Accordion>
+
+<Accordion title="Front-Running" icon="forward-fast" defaultOpen>
+Since permits can be submitted by anyone, there's a risk of front-running:
+
+```javascript
+// User signs permit for operator A
+const sig = await user.signPermit(operatorA, ...);
+
+// Malicious operator B sees the signature in mempool
+// and submits it before operator A
+
+// Now operator B has the approval instead of A!
+```
+
+**Mitigation:** Ensure the `spender` parameter in your signature is the intended operator.
+</Accordion>
+
+<Accordion title="Signature Malleability" icon="copy" defaultOpen>
+ECDSA signatures can be malleable. FHERC20Permit uses the standard EIP-712 approach which includes built-in protections, but always:
+
+- Validate `v` is 27 or 28
+- Use ethers.js or viem signature utilities
+- Don't manually construct signatures
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Permit vs SetOperator
+
+| Feature | setOperator() | permit() |
+|---------|--------------|----------|
+| **Gas Cost** | User pays | Relayer or operator pays |
+| **Transactions** | 1 (from user) | 1 (from anyone) |
+| **UX** | Requires user transaction | User signs off-chain |
+| **Immediate** | Yes | Yes (once submitted) |
+| **Expiration** | Operator `until` time | Signature `deadline` + Operator `until` time |
+| **Best For** | Direct user interactions | Relayed/batched transactions |
+
+---
+
+## Complete Example Contract
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@fhenixprotocol/contracts/FHERC20Permit.sol";
+
+contract MyPermitToken is FHERC20Permit {
+    constructor() FHERC20Permit("My Permit Token", "MPT", 18) {}
+
+    function mint(address to, uint64 amount) external {
+        _mint(to, amount);
+    }
+}
+```
+
+Usage pattern:
+
+```javascript
+// 1. User signs permit off-chain (no gas)
+const sig = await user.signPermit(operatorAddress, until, deadline);
+
+// 2. Operator submits permit + transfer (one transaction)
+await token.connect(operator).permit(
+    user.address, operatorAddress, until, deadline,
+    sig.v, sig.r, sig.s
+);
+
+const amount = await cofhe.encrypt(100);
+await token.connect(operator).confidentialTransferFrom(
+    user.address, recipient.address, amount
+);
+```
+
+---
+
+## Related Topics
+
+- Learn about [Operators](/fhe-library/confidential-contracts/fherc20/operators) for the permission model
+- Explore [Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for safe transfers
+- Review [Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) for secure implementations

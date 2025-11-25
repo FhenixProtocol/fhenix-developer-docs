@@ -1,0 +1,163 @@
+---
+title: Sealing & Unsealing
+description: "Unseal encrypted data returned from FHE-enabled smart contracts"
+---
+
+## Overview
+
+In Fhenix's FHE system, data returned from smart contracts is "sealed" (internally re-encrypted since it already exists in an encrypted state) to maintain confidentiality during transmission. The unsealing process converts this encrypted data back into readable values using your permit's sealing key pair.
+
+After encryption, the data can be securely processed by the contract and sealed with your **public key** (from your permit), and it is returned to you when you request it. To access and interpret this data, you must **unseal** it using your private key, which is securely stored on your device. The unsealing process is essential to ensure that only you can view the final result.
+
+When the contract returns the encrypted data to you, it remains sealed. This means the data is still encrypted with your **public key** and cannot be read until the corresponding **private key** is used to unlock it. **Cofhejs** provides a simple method to handle this.
+
+<Tip>
+To learn more about sealed box encryption, take a look at the [libsodium sealedbox docs](https://libsodium.gitbook.io/doc/public-key_cryptography/sealed_boxes#purpose).
+</Tip>
+
+## Basic Usage
+
+### Prerequisites
+
+Before unsealing data, ensure you have:
+- Cofhejs [initialized](/cofhejs/introduction/installation#setup) with a provider and signer
+- A [permit created](/cofhejs/guides/permits-management) for your address
+- Encrypted data returned from your FHE-enabled smart contract
+
+### Simple Unsealing
+
+The most straightforward way to unseal data is using `cofhejs.unseal()`:
+
+<Note>
+Unsealing requires `Cofhejs` to be [initialized](/cofhejs/introduction/installation#setup) and for a [permit](/cofhejs/guides/permits-management) to be created.
+</Note>
+
+<CodeGroup>
+```typescript Basic Example
+// Get sealed data from a contract
+const sealedBalance = await myContract.getBalance()
+
+// Unseal with the correct type
+const result = await cofhejs.unseal(sealedBalance, FheTypes.Uint64)
+
+if (!result.success) {
+	console.error('Failed to unseal:', result.error)
+	return
+}
+
+console.log('Balance:', result.data) // Unsealed value as BigInt
+```
+
+<Check>
+The encrypted data is successfully unsealed and converted to a readable value.
+</Check>
+
+```typescript With Permit
+const permit = await cofhejs.getPermit({
+	type: 'self',
+	issuer: wallet.address,
+})
+
+const result = await contract.getSomeEncryptedValue()
+
+const unsealed = await cofhejs.unseal(
+	result, 
+	FheTypes.Uint32, 
+	permit.data.issuer, 
+	permit.data.getHash()
+)
+```
+</CodeGroup>
+
+### Supported Types
+
+The unsealing process supports all FHE data types:
+
+<CodeGroup>
+```typescript Integer Types
+// Integer types
+const uint8 = await cofhejs.unseal(sealed, FheTypes.Uint8)
+const uint16 = await cofhejs.unseal(sealed, FheTypes.Uint16)
+const uint32 = await cofhejs.unseal(sealed, FheTypes.Uint32)
+const uint64 = await cofhejs.unseal(sealed, FheTypes.Uint64)
+const uint128 = await cofhejs.unseal(sealed, FheTypes.Uint128)
+```
+
+```typescript Boolean & Address
+// Boolean
+const bool = await cofhejs.unseal(sealed, FheTypes.Bool)
+
+// Address
+const address = await cofhejs.unseal(sealed, FheTypes.Address)
+```
+</CodeGroup>
+
+## Advanced Usage
+
+### Direct Permit Unsealing
+
+For lower-level control, you can use the Permit class directly to unseal data:
+
+```typescript
+const permit = await Permit.create({
+	type: 'self',
+	issuer: userAddress,
+})
+
+// Seal some data (for demonstration)
+const value = 937387n
+const sealed = SealingKey.seal(value, permit.sealingPair.publicKey)
+
+// Unseal directly with permit
+const unsealed = permit.unseal(sealed)
+
+console.log(unsealed === value) // true
+```
+
+### Type Conversions
+
+Internally, data types require specific handling when unsealed:
+
+<CodeGroup>
+```typescript Boolean Conversion
+// Boolean values
+const boolValue = true
+const sealedBool = SealingKey.seal(boolValue ? 1 : 0, permit.sealingPair.publicKey)
+const unsealedBool = permit.unseal(sealedBool)
+const resultBool = unsealedBool === 1n // Convert BigInt to boolean
+```
+
+```typescript Address Conversion
+// Address values
+const addressValue = '0x1234...'
+const sealedAddress = SealingKey.seal(BigInt(addressValue), permit.sealingPair.publicKey)
+const unsealedAddress = permit.unseal(sealedAddress)
+const resultAddress = getAddress(`0x${unsealedAddress.toString(16).slice(-40)}`)
+```
+</CodeGroup>
+
+However, this is handled automatically for you with `cofhejs.unseal`. Unsealing an encrypted boolean will return a `bool`, an encrypted address will return a `0x` prefixed string, and an encrypted number will return a JavaScript `BigInt`.
+
+<Note>
+You don't need to manually handle type conversions when using `cofhejs.unseal()` - it handles all conversions automatically based on the FHE type you specify.
+</Note>
+
+## Return Types
+
+When using `cofhejs.unseal()`, the function returns a result object with the following structure:
+
+```typescript
+interface UnsealResult {
+	success: boolean
+	data?: BigInt | boolean | string // Depends on the FHE type
+	error?: string
+}
+```
+
+The `data` field will contain:
+- **BigInt** for integer types (Uint8, Uint16, Uint32, Uint64, Uint128)
+- **boolean** for Bool type
+- **string** (with `0x` prefix) for Address type
+
+By unsealing encrypted data using your private key, Fhenix ensures that only authorized users can access and view the final results from FHE-enabled smart contracts.
+

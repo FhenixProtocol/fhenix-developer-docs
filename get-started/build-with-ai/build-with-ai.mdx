@@ -1,0 +1,253 @@
+---
+title: Build with AI
+description: Learn how to use AI coding assistants effectively when building with Fhenix
+---
+
+# Developer's Guide to Building with AI
+
+
+
+> Learn practical AI prompting techniques to build confidential smart contracts and integrate FHE into your development workflow.
+
+This guide helps developers leverage AI tools effectively when building with Fhenix. Whether you're using Cursor, GitHub Copilot, or other AI assistants, these strategies will help you get better results and integrate AI smoothly into your FHE development process.
+
+## Understanding Context Windows
+
+### Why Context Matters
+
+AI coding assistants have what's called a "context window" - the amount of text they can "see" and consider when generating responses. Think of it as the AI's working memory:
+
+* Most modern AI assistants can process thousands of tokens (roughly 4-5 words per token)
+* Everything you share and everything the AI responds with consumes this limited space
+* Once the context window fills up, parts of your conversational history may be lost
+
+This is why providing relevant context upfront is crucial - the AI can only work with what it can "see" in its current context window.
+
+### Optimizing for Context Windows
+
+To get the most out of AI assistants when building with Fhenix:
+
+* **Prioritize relevant information**: Focus on sharing the most important details about your FHE use case first
+* **Remove unnecessary content**: Avoid pasting irrelevant code or documentation
+* **Structure your requests**: Use clear sections and formatting to make information easy to process
+* **Reference Fhenix docs**: Share specific documentation links or code snippets relevant to your task
+* **Create a project summary**: For larger projects, maintain a central documentation file that summarizes key FHE patterns and encryption strategies
+
+## Setting Up AI Tools
+
+### Configuring Cursor Rules
+
+Cursor Rules allow you to provide consistent context to Cursor AI, making it more effective at understanding your Fhenix codebase and providing relevant suggestions.
+
+### Creating Cursor Rules
+
+1. Open the Command Palette in Cursor:
+   * Mac: `Cmd + Shift + P`
+   * Windows/Linux: `Ctrl + Shift + P`
+
+2. Search for "Cursor Rules" and select the option to create or edit rules
+
+3. Add project-specific rules that help Cursor understand your Fhenix project:
+   * Specify that you're using Fhenix for confidential smart contracts
+   * Include your preferred Solidity version and patterns
+   * Note any specific FHE operations you'll be using
+
+4. Save your rules file and Cursor will apply these rules to its AI suggestions
+
+## Creating Project Documentation
+
+A comprehensive instructions file helps AI tools understand your Fhenix project better. This should be created early in your project and updated regularly.
+
+**Ready-to-Use Prompt for Creating Instructions.md:**
+
+```
+Create a detailed instructions.md file for my Fhenix project with the following sections:
+
+1. Overview: Summarize the project goals, problem statements, and core FHE functionality
+2. Tech Stack: List all technologies, libraries, frameworks with versions (including Fhenix SDK version)
+3. Project Structure: Document the file organization with explanations
+4. FHE Patterns: Document encryption/decryption patterns and FHE operations used
+5. Coding Standards: Document style conventions, linting rules, and patterns
+6. User Stories: Key functionality from the user perspective
+7. APIs and Integrations: External services and how they connect
+```
+
+## Effective Prompting Strategies
+
+### Be Specific and Direct
+
+Start with clear commands and be specific about what you want. AI tools respond best to clear, direct instructions.
+
+**Example:** 
+
+❌ "Help me with my Fhenix code"
+
+✅ "Create a confidential voting smart contract using Fhenix FHE that encrypts votes and allows tallying without revealing individual votes"
+
+### Provide Context for Complex Tasks
+
+**Ready-to-Use Prompt:**
+
+```
+I'm working on a Fhenix project for [your use case]. I need your help with:
+
+1. Problem: [describe specific FHE/encryption issue]
+2. Current approach: [explain what you've tried]
+3. Constraints: [mention any technical limitations or requirements]
+4. Expected outcome: [describe what success looks like]
+
+Here's the relevant Fhenix documentation: [link or paste relevant docs]
+```
+
+### Ask for Iterations
+
+Start simple and refine through iterations rather than trying to get everything perfect in one go.
+
+**Ready-to-Use Prompt:**
+
+```
+Let's approach this FHE implementation step by step:
+
+1. First, implement a basic version of [feature] with minimal encryption functionality
+2. Then, we'll review and identify areas for improvement
+3. Next, let's add error handling and edge cases
+4. Finally, we'll optimize for gas costs and performance
+
+Please start with step 1 now.
+```
+
+## Working with Fhenix
+
+### Leveraging Fhenix Documentation
+
+When building with Fhenix, it's important to provide AI assistants with the right context about FHE operations and patterns.
+
+**Example FHE Implementation Prompt:**
+
+```
+I'm implementing a confidential token transfer using Fhenix. Here's what I need:
+
+1. Encrypt token amounts before transfer
+2. Allow transfers between encrypted balances
+3. Prevent front-running by keeping amounts private
+4. Include proper error handling for encryption failures
+
+Based on Fhenix documentation, please show me:
+- How to encrypt amounts using the Fhenix SDK
+- How to perform encrypted operations
+- How to handle decryption for authorized users
+```
+
+### Component Integration Example
+
+**Ready-to-Use Prompt for Confidential Balance Display:**
+
+```
+I need to implement a new feature in my Fhenix project that:
+
+1. Shows the connected wallet's encrypted balance
+2. Allows users to decrypt their own balance
+3. Updates when the balance changes
+4. Handles loading and error states appropriately
+5. Follows our project's coding standards
+
+Please update our instructions.md to reflect this new implementation.
+```
+
+## Debugging with AI
+
+### Effective Debugging Prompts
+
+**Ready-to-Use Prompt for Bug Analysis:**
+
+```
+I'm encountering an issue with my FHE implementation:
+
+1. Expected behavior: [what should happen]
+2. Actual behavior: [what's happening instead]
+3. Error messages: [include any errors]
+4. Relevant code: [paste the problematic code]
+
+Please analyze this situation step by step and help me:
+
+1. Identify potential causes of this issue (especially related to encryption/decryption)
+2. Suggest debugging steps to isolate the problem
+3. Propose possible solutions
+```
+
+**Ready-to-Use Prompt for Adding Debug Logs:**
+
+```
+I need to debug the following FHE function. Please add comprehensive logging statements that will help me trace:
+
+1. Input values and their types (encrypted vs plaintext)
+2. Function execution flow
+3. Intermediate state changes
+4. Output values or errors
+5. Encryption/decryption operations
+
+Here's my code:
+
+[paste your code]
+```
+
+### When You're Stuck
+
+If you're uncertain how to proceed:
+
+**Ready-to-Use Clarification Prompt:**
+
+```
+I'm unsure how to proceed with [specific FHE task]. Here's what I know:
+
+1. [context about the problem]
+2. [what you've tried]
+3. [specific areas where you need guidance about FHE]
+
+What additional information would help you provide better assistance?
+```
+
+## Advanced Prompting Techniques
+
+Modern AI assistants have capabilities that you can leverage with these advanced techniques:
+
+**1. Step-by-step reasoning:** Ask the AI to work through FHE problems systematically
+
+```
+Please analyze this FHE encryption code step by step and identify potential security issues or gas optimizations.
+```
+
+**2. Format specification:** Request specific formats for clarity
+
+```
+Please structure your response as a tutorial with:
+- Code examples for encrypting and decrypting data
+- Explanations of each FHE operation
+- Best practices for gas optimization
+```
+
+**3. Length guidance:** Indicate whether you want brief or detailed responses
+
+```
+Please provide a concise explanation in 2-3 paragraphs about how FHE maintains privacy during computation.
+```
+
+**4. Clarify ambiguities:** Help resolve unclear points when you receive multiple options
+
+```
+I notice you suggested two approaches for encryption. To clarify, I'd prefer to use the first approach with Solidity native types.
+```
+
+## Best Practices Summary
+
+* **Understand context limitations**: Recognize that AI tools have finite context windows and prioritize information accordingly
+* **Provide relevant context**: Share Fhenix-specific code snippets, encryption patterns, and project details that matter for your specific question
+* **Be specific in requests**: Clear, direct instructions about FHE operations yield better results than vague questions
+* **Break complex tasks into steps**: Iterative approaches often work better for complex FHE implementations
+* **Request explanations**: Ask the AI to explain generated code or FHE concepts you don't understand
+* **Use formatting for clarity**: Structure your prompts with clear sections and formatting
+* **Reference Fhenix documentation**: When working with FHE, share relevant documentation links or examples
+* **Test and validate**: Always review and test AI-generated FHE code before implementing in production
+* **Build on previous context**: Refer to earlier parts of your conversation when iterating on FHE implementations
+* **Provide feedback**: Let the AI know what worked and what didn't to improve future responses
+
