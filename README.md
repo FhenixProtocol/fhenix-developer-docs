@@ -1,43 +1,86 @@
-# Mintlify Starter Kit
+# Fhenix Developer Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Official documentation for Fhenix - the privacy-preserving blockchain platform that enables developers to build confidential smart contracts using Fully Homomorphic Encryption (FHE).
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## About This Documentation
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+This repository contains the complete developer documentation for Fhenix, including:
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+- **Getting Started** - Introduction to Fhenix, compatibility guides, and builder support
+- **Cofhejs** - JavaScript library for client-side encryption, permit management, and decryption
+- **FHE Library** - Solidity library for working with encrypted data in smart contracts
+- **Tutorials** - Step-by-step guides for building FHE-enabled applications
+- **Deep Dive** - Technical architecture details, CoFHE components, and data flows
 
 ## Development
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+This documentation is built using [Mintlify](https://mintlify.com/). To preview the documentation locally:
 
-```
+### Prerequisites
+
+Install the [Mintlify CLI](https://www.npmjs.com/package/mint):
+
+```bash
 npm i -g mint
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+### Running Locally
 
-```
+Run the following command at the root of the documentation directory:
+
+```bash
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
+The documentation will be available at `http://localhost:3000`.
 
-## Publishing changes
+## Project Structure
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+```
+fhenix-developer-docs/
+├── get-started/           # Introduction and getting started guides
+├── cofhejs/              # Client-side encryption library docs
+├── fhe-library/          # Solidity FHE library documentation
+├── tutorials/            # Step-by-step tutorials
+├── deep-dive/            # Architecture and technical deep dives
+├── api-reference/        # API reference documentation
+└── docs.json             # Mintlify configuration
+```
 
-## Need help?
+## Publishing Changes
 
-### Troubleshooting
+Changes pushed to the default branch are automatically deployed to production through the Mintlify GitHub app integration.
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
+## Contributing
 
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+We welcome contributions to improve the documentation. When making changes:
+
+1. Test locally using `mint dev`
+2. Ensure all links and navigation work correctly
+3. Follow the existing documentation style and structure
+4. Submit a pull request with a clear description of your changes
+
+## Links
+
+- [Fhenix Website](https://www.fhenix.io/)
+- [Fhenix Blog](https://www.fhenix.io/blog)
+- [GitHub Organization](https://github.com/fhenixprotocol/)
+- [Discord Community](https://discord.com/invite/FuVgxrvJMY)
+- [Twitter/X](https://x.com/fhenix)
+
+## Troubleshooting
+
+- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI
+- If a page loads as a 404: Make sure you are running in the folder with `docs.json`
+
+## Resources
+
+- [Mintlify Documentation](https://mintlify.com/docs)
+- [Fhenix Documentation Live Site](https://docs.fhenix.io)
+
+## Support
+
+For questions and support:
+- Join our [Telegram Support Channel](https://t.me/+OEO4CItQYh8xYzNh)
+- Visit our [Discord](https://discord.com/invite/FuVgxrvJMY)
+- Check the [Support and Feedback](get-started/introduction/support-and-feedback.mdx) documentation
