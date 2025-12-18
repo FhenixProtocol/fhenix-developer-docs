@@ -234,5 +234,11 @@
       "github": "https://github.com/fhenixprotocol/",
       "discord": "https://discord.com/invite/FuVgxrvJMY"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/docs/devdocs/overview",
+      "destination": "/"
+    }
+  ]
 }
