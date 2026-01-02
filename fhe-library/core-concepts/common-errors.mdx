@@ -128,6 +128,134 @@ When encountering errors:
 Many errors can be prevented by following [best practices](/fhe-library/introduction/best-practices) and ensuring proper access control management.
 </Tip>
 
+## CoFHE Error Reference
+
+The following sections provide a comprehensive reference of all errors from `@fhenixprotocol/cofhe-errors` v1.0.1, organized by source contract. Each error includes its selector (for debugging), full signature, and parameters.
+
+### ACL Errors
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **SenderCannotBeDelegateeAddress** | `0x30dc9203` | `SenderCannotBeDelegateeAddress()` | None |
+| **DirectAllowForbidden** | `0x3809a243` | `DirectAllowForbidden(address)` | `sender` (address) |
+| **PermissionInvalid_IssuerSignature** | `0x4c40eccb` | `PermissionInvalid_IssuerSignature()` | None |
+| **PermissionInvalid_RecipientSignature** | `0x8e143bf7` | `PermissionInvalid_RecipientSignature()` | None |
+| **PermissionInvalid_Disabled** | `0xcbd3a966` | `PermissionInvalid_Disabled()` | None |
+| **SenderNotAllowed** | `0xd0d25976` | `SenderNotAllowed(address)` | `sender` (address) |
+| **AlreadyDelegated** | `0xd1860468` | `AlreadyDelegated()` | None |
+| **PermissionInvalid_Expired** | `0xed0764a1` | `PermissionInvalid_Expired()` | None |
+
+### TaskManager Errors
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **InvalidSecurityZone** | `0x24cbcf36` | `InvalidSecurityZone(int32,int32,int32)` | `zone` (int32), `min` (int32), `max` (int32) |
+| **TooManyInputs** | `0x2b0399d5` | `TooManyInputs(string,uint256,uint256)` | `operation` (string), `got` (uint256), `maxAllowed` (uint256) |
+| **ACLNotAllowed** | `0x4d13139e` | `ACLNotAllowed(uint256,address)` | `handle` (uint256), `account` (address) |
+| **InvalidTypeOrSecurityZone** | `0x52b50ae1` | `InvalidTypeOrSecurityZone(string)` | `operation` (string) |
+| **DecryptionResultNotReady** | `0x70cf6554` | `DecryptionResultNotReady(uint256)` | `ctHash` (uint256) |
+| **InvalidSigner** | `0x7ba5ffb5` | `InvalidSigner(address,address)` | `signer` (address), `expectedSigner` (address) |
+| **InvalidInputType** | `0x884a0e9d` | `InvalidInputType(uint8,uint8)` | `actual` (uint8), `expected` (uint8) |
+| **InvalidSignature** | `0x8baa579f` | `InvalidSignature()` | None |
+| **InvalidInputForFunction** | `0x91b4b378` | `InvalidInputForFunction(string,uint8)` | `functionName` (string), `inputType` (uint8) |
+| **RandomFunctionNotSupported** | `0x98e08ab0` | `RandomFunctionNotSupported()` | None |
+| **InvalidInputsAmount** | `0x9a84351c` | `InvalidInputsAmount(string,uint256,uint256)` | `operation` (string), `got` (uint256), `expected` (uint256) |
+| **OnlyAggregatorAllowed** | `0xa974a0fe` | `OnlyAggregatorAllowed(address)` | `caller` (address) |
+| **InvalidOperationInputs** | `0xb31612aa` | `InvalidOperationInputs(string)` | `operation` (string) |
+| **UnsupportedType** | `0xcabe5ce4` | `UnsupportedType(uint256)` | `t` (uint256) |
+| **CofheIsUnavailable** | `0xd8aba367` | `CofheIsUnavailable()` | None |
+| **InvalidAddress** | `0xe6c4247b` | `InvalidAddress()` | None |
+
+### Common Errors
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **InvalidHexCharacter** | `0x01d4fab6` | `InvalidHexCharacter(bytes1)` | `char` (bytes1) |
+| **SecurityZoneOutOfBounds** | `0x8f568bf8` | `SecurityZoneOutOfBounds(int32)` | `value` (int32) |
+
+### FHE Errors
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **InvalidEncryptedInput** | `0x67cf3071` | `InvalidEncryptedInput(uint8,uint8)` | `got` (uint8), `expected` (uint8) |
+
+### PlaintextsStorage Errors
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **OnlyTaskManagerAllowed** | `0xdce3ec0a` | `OnlyTaskManagerAllowed(address)` | `caller` (address) |
+
+### OpenZeppelin Contract Errors
+
+#### Ownable2StepUpgradeable
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **OwnableUnauthorizedAccount** | `0x118cdaa7` | `OwnableUnauthorizedAccount(address)` | `account` (address) |
+| **OwnableInvalidOwner** | `0x1e4fbdf7` | `OwnableInvalidOwner(address)` | `owner` (address) |
+| **NotInitializing** | `0xd7e6bcf8` | `NotInitializing()` | None |
+| **InvalidInitialization** | `0xf92ee8a9` | `InvalidInitialization()` | None |
+
+#### SafeCast
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **SafeCastOverflowedUintToInt** | `0x24775e06` | `SafeCastOverflowedUintToInt(uint256)` | `value` (uint256) |
+| **SafeCastOverflowedIntDowncast** | `0x327269a7` | `SafeCastOverflowedIntDowncast(uint8,int256)` | `bits` (uint8), `value` (int256) |
+| **SafeCastOverflowedUintDowncast** | `0x6dfcc650` | `SafeCastOverflowedUintDowncast(uint8,uint256)` | `bits` (uint8), `value` (uint256) |
+| **SafeCastOverflowedIntToUint** | `0xa8ce4432` | `SafeCastOverflowedIntToUint(int256)` | `value` (int256) |
+
+#### ERC1967Utils
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **ERC1967InvalidImplementation** | `0x4c9c8ce3` | `ERC1967InvalidImplementation(address)` | `implementation` (address) |
+| **ERC1967InvalidAdmin** | `0x62e77ba2` | `ERC1967InvalidAdmin(address)` | `admin` (address) |
+| **ERC1967InvalidBeacon** | `0x64ced0ec` | `ERC1967InvalidBeacon(address)` | `beacon` (address) |
+| **ERC1967NonPayable** | `0xb398979f` | `ERC1967NonPayable()` | None |
+
+#### UUPSUpgradeable
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **UUPSUnsupportedProxiableUUID** | `0xaa1d49a4` | `UUPSUnsupportedProxiableUUID(bytes32)` | `slot` (bytes32) |
+| **UUPSUnauthorizedCallContext** | `0xe07c8dba` | `UUPSUnauthorizedCallContext()` | None |
+
+#### Strings
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **StringsInvalidAddressFormat** | `0x1d15ae44` | `StringsInvalidAddressFormat()` | None |
+| **StringsInvalidChar** | `0x94e2737e` | `StringsInvalidChar()` | None |
+| **StringsInsufficientHexLength** | `0xe22e27eb` | `StringsInsufficientHexLength(uint256,uint256)` | `value` (uint256), `length` (uint256) |
+
+#### Address
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **AddressEmptyCode** | `0x9996b315` | `AddressEmptyCode(address)` | `target` (address) |
+
+#### ECDSA
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **ECDSAInvalidSignatureS** | `0xd78bce0c` | `ECDSAInvalidSignatureS(bytes32)` | `s` (bytes32) |
+| **ECDSAInvalidSignature** | `0xf645eedf` | `ECDSAInvalidSignature()` | None |
+| **ECDSAInvalidSignatureLength** | `0xfce698f7` | `ECDSAInvalidSignatureLength(uint256)` | `length` (uint256) |
+
+#### General Errors
+
+| Error Name | Selector | Signature | Parameters |
+|------------|----------|-----------|------------|
+| **MissingPrecompile** | `0x42b01bce` | `MissingPrecompile(address)` | (address) |
+| **FailedDeployment** | `0xb06ebf3d` | `FailedDeployment()` | None |
+| **InsufficientBalance** | `0xcf479181` | `InsufficientBalance(uint256,uint256)` | `balance` (uint256), `needed` (uint256) |
+| **FailedCall** | `0xd6bda275` | `FailedCall()` | None |
+
+<Note>
+Error selectors are the first 4 bytes of the keccak256 hash of the error signature. They're useful for debugging transaction failures and identifying which specific error was thrown.
+</Note>
+
 ## Next Steps
 
 - Review the [Compatibility](/get-started/introduction/compatibility) page for version requirements
