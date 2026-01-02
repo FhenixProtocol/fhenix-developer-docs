@@ -32,7 +32,7 @@ Refer to [FHE Operation Request Flow](/deep-dive/data-flows/fhe-operation-reques
 - Integration with Cofhejs
 - Requesting an FHE Operation
 - Task Manager Processing
-- Aggregator Processing
+- Slim Listener Processing
 </Step>
 
 <Step title="FheOS server - Decryption Execution">
@@ -55,11 +55,11 @@ The Threshold Network performs secure decryption:
 - Perform secure decryption
 </Step>
 
-<Step title="FheOS Notifies the Aggregator with the decrypt result">
+<Step title="FheOS Notifies the Result Processor with the decrypt result">
 After decryption is complete: 7️⃣
 
-- Call appropriate callback function on the Aggregator
-- The Aggregator calls the TaskManager with relevant result
+- Call appropriate callback function on the Result Processor
+- The Result Processor publishes the result back to the TaskManager on the host chain
 </Step>
 
 <Step title="TaskManager emit event with decryption result">

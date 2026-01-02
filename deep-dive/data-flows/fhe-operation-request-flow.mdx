@@ -17,7 +17,8 @@ This document outlines the complete flow of an FHE (Fully Homomorphic Encryption
 | **dApp** | The decentralized application that requests FHE operations |
 | **FHE.sol** | The library providing FHE operation functions |
 | **Task Manager** | Verifies and forwards operation requests |
-| **Aggregator** | Manages the request queue and communicates with the execution layer |
+| **Slim Listener** | Monitors blockchain events and forwards requests to the execution layer |
+| **Result Processor** | Handles operation results and publishes them back to the blockchain |
 | **fheOS Server** | Executes the actual FHE operations |
 | **Threshold Network** | (When applicable) Handles secure decryption operations |
 
@@ -78,16 +79,14 @@ The Task Manager serves as the gateway for all FHE operation requests:
 2. **Verify access permissions** by checking if the caller has proper access to the encrypted inputs (using ACL.sol) 3️⃣
 3. **Generate a unique handle** that will be used to reference the future ciphertext result
 4. **Return the handle** to the calling dApp contract
-5. **Emit an event** containing the operation details for the Aggregator to process 4️⃣
+5. **Emit an event** containing the operation details for the Slim Listener to process 4️⃣
 </Step>
 
-<Step title="Aggregator Processing">
-The Aggregator manages the queue of FHE operation requests:
+<Step title="Slim Listener Processing">
+The Slim Listener monitors and forwards FHE operation requests:
 
 1. **Listen for events** from the Task Manager 5️⃣
-2. **Add the request** to a processing queue
-3. **Forward request details** to the fheOS server 6️⃣
-4. **Track the request status** throughout its lifecycle
+2. **Forward request details** to the fheOS server 6️⃣
 </Step>
 
 <Step title="FheOS server - FHE Operation Execution">
@@ -98,7 +97,7 @@ The FheOS server handles requests:
 3. **Generate result ciphertext** containing the encrypted result
 4. **Map the handle** to the actual ciphertext hash in the private storage
 5. **Make result available** for subsequent operations
-6. **Notify the Aggregator** of operation completion
+6. **Notify the Result Processor** of operation completion
 </Step>
 
 <Step title="Result Handling (For Standard Operations)">

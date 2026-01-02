@@ -1,0 +1,12 @@
+---
+title: Slim Listener
+description: "Off-chain service that monitors blockchain events and forwards FHE operation requests to the computation layer"
+---
+
+| Aspect | Description |
+|--------|-------------|
+| **Type** | Off-chain event monitoring service |
+| **Function** | Listens to blockchain events and forwards FHE operation requests to the fheOS server |
+| **Responsibilities** | • Monitors events emitted by the Task Manager contract on the destination chain<br/>• Processes incoming requests and forwards them to the fheOS server<br/>• Ensures reliable delivery of operation requests to the computation layer |
+
+The Slim Listener acts as the bridge between on-chain events and the off-chain computation layer, ensuring that all FHE operation requests are captured and forwarded for processing.
