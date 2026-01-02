@@ -11,6 +11,14 @@ This page documents critical limitations and important considerations when worki
 Always verify you're using compatible component versions. Many errors can be resolved by ensuring you're using the latest versions of all CoFHE components.
 </Warning>
 
+<Card title="Quick Error Decoding" icon="terminal" href="/fhe-library/reference/cofhe-errors">
+  Encountering cryptic `execution reverted: 0x...` errors? Use the **@fhenixprotocol/cofhe-errors** package to decode them instantly:
+  ```bash
+  npx cofhe-errors 0x118cdaa7
+  ```
+  See the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) documentation for full usage instructions and the [Error Reference](/fhe-library/reference/cofhe-errors-reference) for a complete list of all 53 errors.
+</Card>
+
 ## Common Issues
 
 ### Missing Revert Data
@@ -130,8 +138,9 @@ Many errors can be prevented by following [best practices](/fhe-library/introduc
 
 ## Next Steps
 
+- Use the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) to decode error selectors
+- View the complete [Error Reference](/fhe-library/reference/cofhe-errors-reference) with all 53 errors
 - Review the [Compatibility](/get-started/introduction/compatibility) page for version requirements
 - Learn about [access control](/fhe-library/core-concepts/access-control) to prevent authorization errors
 - Check [best practices](/fhe-library/introduction/best-practices) for secure FHE development
-- Explore the [API reference](/api-reference/introduction) for detailed function documentation
 
