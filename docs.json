@@ -240,5 +240,10 @@
       "source": "/docs/devdocs/overview",
       "destination": "/"
     }
-  ]
+  ],
+  "integrations": {
+    "ga4": {
+        "measurementId": "G-NKHXME4286"
+    }
+}
 }
