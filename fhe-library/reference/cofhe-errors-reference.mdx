@@ -1,0 +1,228 @@
+---
+title: "Error Reference"
+description: "Complete reference of all 53 CoFHE smart contract errors with selectors, signatures, and parameters"
+---
+
+## Complete Error Database
+
+This page contains all 53 custom errors from the CoFHE smart contracts. Use this reference to understand error messages you encounter during development.
+
+<Tip>
+Use the `@fhenixprotocol/cofhe-errors` package to decode errors instantly:
+```bash
+npx cofhe-errors 0x118cdaa7
+```
+See the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) page for installation and usage instructions.
+</Tip>
+
+## Errors by Contract
+
+### ACL (8 errors)
+
+Access Control List errors related to permissions and delegation.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x30dc9203` | SenderCannotBeDelegateeAddress | `SenderCannotBeDelegateeAddress()` |
+| `0x3809a243` | DirectAllowForbidden | `DirectAllowForbidden(address)` |
+| `0x4c40eccb` | PermissionInvalid_IssuerSignature | `PermissionInvalid_IssuerSignature()` |
+| `0x8e143bf7` | PermissionInvalid_RecipientSignature | `PermissionInvalid_RecipientSignature()` |
+| `0xcbd3a966` | PermissionInvalid_Disabled | `PermissionInvalid_Disabled()` |
+| `0xd0d25976` | SenderNotAllowed | `SenderNotAllowed(address)` |
+| `0xd1860468` | AlreadyDelegated | `AlreadyDelegated()` |
+| `0xed0764a1` | PermissionInvalid_Expired | `PermissionInvalid_Expired()` |
+
+### TaskManager (16 errors)
+
+Errors from the TaskManager contract that handles FHE operations.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x24cbcf36` | InvalidSecurityZone | `InvalidSecurityZone(int32,int32,int32)` |
+| `0x2b0399d5` | TooManyInputs | `TooManyInputs(string,uint256,uint256)` |
+| `0x4d13139e` | ACLNotAllowed | `ACLNotAllowed(uint256,address)` |
+| `0x52b50ae1` | InvalidTypeOrSecurityZone | `InvalidTypeOrSecurityZone(string)` |
+| `0x70cf6554` | DecryptionResultNotReady | `DecryptionResultNotReady(uint256)` |
+| `0x7ba5ffb5` | InvalidSigner | `InvalidSigner(address,address)` |
+| `0x884a0e9d` | InvalidInputType | `InvalidInputType(uint8,uint8)` |
+| `0x8baa579f` | InvalidSignature | `InvalidSignature()` |
+| `0x91b4b378` | InvalidInputForFunction | `InvalidInputForFunction(string,uint8)` |
+| `0x98e08ab0` | RandomFunctionNotSupported | `RandomFunctionNotSupported()` |
+| `0x9a84351c` | InvalidInputsAmount | `InvalidInputsAmount(string,uint256,uint256)` |
+| `0xa974a0fe` | OnlyAggregatorAllowed | `OnlyAggregatorAllowed(address)` |
+| `0xb31612aa` | InvalidOperationInputs | `InvalidOperationInputs(string)` |
+| `0xcabe5ce4` | UnsupportedType | `UnsupportedType(uint256)` |
+| `0xd8aba367` | CofheIsUnavailable | `CofheIsUnavailable()` |
+| `0xe6c4247b` | InvalidAddress | `InvalidAddress()` |
+
+### Ownable2StepUpgradeable (4 errors)
+
+Errors related to contract ownership and initialization.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x118cdaa7` | OwnableUnauthorizedAccount | `OwnableUnauthorizedAccount(address)` |
+| `0x1e4fbdf7` | OwnableInvalidOwner | `OwnableInvalidOwner(address)` |
+| `0xd7e6bcf8` | NotInitializing | `NotInitializing()` |
+| `0xf92ee8a9` | InvalidInitialization | `InvalidInitialization()` |
+
+### ERC1967Utils (4 errors)
+
+Errors from the ERC1967 proxy utilities.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x4c9c8ce3` | ERC1967InvalidImplementation | `ERC1967InvalidImplementation(address)` |
+| `0x62e77ba2` | ERC1967InvalidAdmin | `ERC1967InvalidAdmin(address)` |
+| `0x64ced0ec` | ERC1967InvalidBeacon | `ERC1967InvalidBeacon(address)` |
+| `0xb398979f` | ERC1967NonPayable | `ERC1967NonPayable()` |
+
+### SafeCast (4 errors)
+
+Errors from safe type casting operations.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x24775e06` | SafeCastOverflowedUintToInt | `SafeCastOverflowedUintToInt(uint256)` |
+| `0x327269a7` | SafeCastOverflowedIntDowncast | `SafeCastOverflowedIntDowncast(uint8,int256)` |
+| `0x6dfcc650` | SafeCastOverflowedUintDowncast | `SafeCastOverflowedUintDowncast(uint8,uint256)` |
+| `0xa8ce4432` | SafeCastOverflowedIntToUint | `SafeCastOverflowedIntToUint(int256)` |
+
+### Errors (4 errors)
+
+General error utilities.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x42b01bce` | MissingPrecompile | `MissingPrecompile(address)` |
+| `0xb06ebf3d` | FailedDeployment | `FailedDeployment()` |
+| `0xcf479181` | InsufficientBalance | `InsufficientBalance(uint256,uint256)` |
+| `0xd6bda275` | FailedCall | `FailedCall()` |
+
+### ECDSA (3 errors)
+
+Errors from ECDSA signature verification.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0xd78bce0c` | ECDSAInvalidSignatureS | `ECDSAInvalidSignatureS(bytes32)` |
+| `0xf645eedf` | ECDSAInvalidSignature | `ECDSAInvalidSignature()` |
+| `0xfce698f7` | ECDSAInvalidSignatureLength | `ECDSAInvalidSignatureLength(uint256)` |
+
+### Strings (3 errors)
+
+Errors from string utility operations.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x1d15ae44` | StringsInvalidAddressFormat | `StringsInvalidAddressFormat()` |
+| `0x94e2737e` | StringsInvalidChar | `StringsInvalidChar()` |
+| `0xe22e27eb` | StringsInsufficientHexLength | `StringsInsufficientHexLength(uint256,uint256)` |
+
+### Common (2 errors)
+
+Common utility errors.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x01d4fab6` | InvalidHexCharacter | `InvalidHexCharacter(bytes1)` |
+| `0x8f568bf8` | SecurityZoneOutOfBounds | `SecurityZoneOutOfBounds(int32)` |
+
+### UUPSUpgradeable (2 errors)
+
+Errors from UUPS proxy upgradeability.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0xaa1d49a4` | UUPSUnsupportedProxiableUUID | `UUPSUnsupportedProxiableUUID(bytes32)` |
+| `0xe07c8dba` | UUPSUnauthorizedCallContext | `UUPSUnauthorizedCallContext()` |
+
+### Address (1 error)
+
+Address utility errors.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x9996b315` | AddressEmptyCode | `AddressEmptyCode(address)` |
+
+### FHE (1 error)
+
+Core FHE operation errors.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0x67cf3071` | InvalidEncryptedInput | `InvalidEncryptedInput(uint8,uint8)` |
+
+### PlaintextsStorage (1 error)
+
+Errors from the plaintext storage contract.
+
+| Selector | Name | Signature |
+|----------|------|-----------|
+| `0xdce3ec0a` | OnlyTaskManagerAllowed | `OnlyTaskManagerAllowed(address)` |
+
+---
+
+## All Errors (Alphabetical)
+
+| Selector | Name | Contract | Signature |
+|----------|------|----------|-----------|
+| `0x4d13139e` | ACLNotAllowed | TaskManager | `ACLNotAllowed(uint256,address)` |
+| `0x9996b315` | AddressEmptyCode | Address | `AddressEmptyCode(address)` |
+| `0xd1860468` | AlreadyDelegated | ACL | `AlreadyDelegated()` |
+| `0xd8aba367` | CofheIsUnavailable | TaskManager | `CofheIsUnavailable()` |
+| `0x70cf6554` | DecryptionResultNotReady | TaskManager | `DecryptionResultNotReady(uint256)` |
+| `0x3809a243` | DirectAllowForbidden | ACL | `DirectAllowForbidden(address)` |
+| `0x62e77ba2` | ERC1967InvalidAdmin | ERC1967Utils | `ERC1967InvalidAdmin(address)` |
+| `0x64ced0ec` | ERC1967InvalidBeacon | ERC1967Utils | `ERC1967InvalidBeacon(address)` |
+| `0x4c9c8ce3` | ERC1967InvalidImplementation | ERC1967Utils | `ERC1967InvalidImplementation(address)` |
+| `0xb398979f` | ERC1967NonPayable | ERC1967Utils | `ERC1967NonPayable()` |
+| `0xf645eedf` | ECDSAInvalidSignature | ECDSA | `ECDSAInvalidSignature()` |
+| `0xfce698f7` | ECDSAInvalidSignatureLength | ECDSA | `ECDSAInvalidSignatureLength(uint256)` |
+| `0xd78bce0c` | ECDSAInvalidSignatureS | ECDSA | `ECDSAInvalidSignatureS(bytes32)` |
+| `0xd6bda275` | FailedCall | Errors | `FailedCall()` |
+| `0xb06ebf3d` | FailedDeployment | Errors | `FailedDeployment()` |
+| `0xcf479181` | InsufficientBalance | Errors | `InsufficientBalance(uint256,uint256)` |
+| `0xe6c4247b` | InvalidAddress | TaskManager | `InvalidAddress()` |
+| `0x67cf3071` | InvalidEncryptedInput | FHE | `InvalidEncryptedInput(uint8,uint8)` |
+| `0x01d4fab6` | InvalidHexCharacter | Common | `InvalidHexCharacter(bytes1)` |
+| `0xf92ee8a9` | InvalidInitialization | Ownable2StepUpgradeable | `InvalidInitialization()` |
+| `0x91b4b378` | InvalidInputForFunction | TaskManager | `InvalidInputForFunction(string,uint8)` |
+| `0x884a0e9d` | InvalidInputType | TaskManager | `InvalidInputType(uint8,uint8)` |
+| `0x9a84351c` | InvalidInputsAmount | TaskManager | `InvalidInputsAmount(string,uint256,uint256)` |
+| `0xb31612aa` | InvalidOperationInputs | TaskManager | `InvalidOperationInputs(string)` |
+| `0x24cbcf36` | InvalidSecurityZone | TaskManager | `InvalidSecurityZone(int32,int32,int32)` |
+| `0x8baa579f` | InvalidSignature | TaskManager | `InvalidSignature()` |
+| `0x7ba5ffb5` | InvalidSigner | TaskManager | `InvalidSigner(address,address)` |
+| `0x52b50ae1` | InvalidTypeOrSecurityZone | TaskManager | `InvalidTypeOrSecurityZone(string)` |
+| `0x42b01bce` | MissingPrecompile | Errors | `MissingPrecompile(address)` |
+| `0xd7e6bcf8` | NotInitializing | Ownable2StepUpgradeable | `NotInitializing()` |
+| `0xa974a0fe` | OnlyAggregatorAllowed | TaskManager | `OnlyAggregatorAllowed(address)` |
+| `0xdce3ec0a` | OnlyTaskManagerAllowed | PlaintextsStorage | `OnlyTaskManagerAllowed(address)` |
+| `0x1e4fbdf7` | OwnableInvalidOwner | Ownable2StepUpgradeable | `OwnableInvalidOwner(address)` |
+| `0x118cdaa7` | OwnableUnauthorizedAccount | Ownable2StepUpgradeable | `OwnableUnauthorizedAccount(address)` |
+| `0xcbd3a966` | PermissionInvalid_Disabled | ACL | `PermissionInvalid_Disabled()` |
+| `0xed0764a1` | PermissionInvalid_Expired | ACL | `PermissionInvalid_Expired()` |
+| `0x4c40eccb` | PermissionInvalid_IssuerSignature | ACL | `PermissionInvalid_IssuerSignature()` |
+| `0x8e143bf7` | PermissionInvalid_RecipientSignature | ACL | `PermissionInvalid_RecipientSignature()` |
+| `0x98e08ab0` | RandomFunctionNotSupported | TaskManager | `RandomFunctionNotSupported()` |
+| `0x327269a7` | SafeCastOverflowedIntDowncast | SafeCast | `SafeCastOverflowedIntDowncast(uint8,int256)` |
+| `0xa8ce4432` | SafeCastOverflowedIntToUint | SafeCast | `SafeCastOverflowedIntToUint(int256)` |
+| `0x6dfcc650` | SafeCastOverflowedUintDowncast | SafeCast | `SafeCastOverflowedUintDowncast(uint8,uint256)` |
+| `0x24775e06` | SafeCastOverflowedUintToInt | SafeCast | `SafeCastOverflowedUintToInt(uint256)` |
+| `0x8f568bf8` | SecurityZoneOutOfBounds | Common | `SecurityZoneOutOfBounds(int32)` |
+| `0x30dc9203` | SenderCannotBeDelegateeAddress | ACL | `SenderCannotBeDelegateeAddress()` |
+| `0xd0d25976` | SenderNotAllowed | ACL | `SenderNotAllowed(address)` |
+| `0x1d15ae44` | StringsInvalidAddressFormat | Strings | `StringsInvalidAddressFormat()` |
+| `0x94e2737e` | StringsInvalidChar | Strings | `StringsInvalidChar()` |
+| `0xe22e27eb` | StringsInsufficientHexLength | Strings | `StringsInsufficientHexLength(uint256,uint256)` |
+| `0x2b0399d5` | TooManyInputs | TaskManager | `TooManyInputs(string,uint256,uint256)` |
+| `0xaa1d49a4` | UUPSUnsupportedProxiableUUID | UUPSUpgradeable | `UUPSUnsupportedProxiableUUID(bytes32)` |
+| `0xe07c8dba` | UUPSUnauthorizedCallContext | UUPSUpgradeable | `UUPSUnauthorizedCallContext()` |
+| `0xcabe5ce4` | UnsupportedType | TaskManager | `UnsupportedType(uint256)` |
+
+## Next Steps
+
+- Learn how to use the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) CLI and API
+- Review [common errors](/fhe-library/core-concepts/common-errors) troubleshooting guide
+- Check [best practices](/fhe-library/introduction/best-practices) for FHE development
