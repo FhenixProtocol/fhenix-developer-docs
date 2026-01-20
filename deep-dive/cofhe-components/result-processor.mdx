@@ -1,0 +1,12 @@
+---
+title: Result Processor
+description: "Off-chain service that handles FHE operation results and publishes them back to the blockchain"
+---
+
+| Aspect | Description |
+|--------|-------------|
+| **Type** | Off-chain result handling service |
+| **Function** | Receives computation results from fheOS and publishes them to the blockchain |
+| **Responsibilities** | • Receives FHE operation results from the fheOS server<br/>• Sends results to the Data Availability layer<br/>• Publishes decryption results back to the Task Manager on the host chain |
+
+The Result Processor ensures that computation results from the off-chain fheOS server are properly relayed back to the blockchain, completing the FHE operation lifecycle.
