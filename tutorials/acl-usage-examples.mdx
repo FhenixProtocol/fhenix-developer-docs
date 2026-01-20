@@ -69,13 +69,13 @@ To decrypt a ciphertext off-chain via the decryption network, the issuer must be
 
 ```solidity
 contract A {
-    private mapping(address => euint256) balances;
+    private mapping(address => euint32) balances;
 
     function transfer(InEuint32 _amount, address to) {
         euint32 amount = FHE.asEuint32(_amount);
-        
-        balances[msg.sender] = balances[msg.sender] - amount;
-        balances[to] = balances[to] + amount;
+
+        balances[msg.sender] = FHE.sub(balances[msg.sender], amount);
+        balances[to] = FHE.add(balances[to], amount);
 
         FHE.allow(balances[msg.sender], msg.sender); // now the sender can decrypt her balance
         FHE.allow(balances[to], to);                 // now the receiver can decrypt his balance
