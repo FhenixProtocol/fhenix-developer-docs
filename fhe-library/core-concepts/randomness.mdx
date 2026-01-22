@@ -17,8 +17,6 @@ The FHE library provides cryptographically secure random number generation that 
 | `FHE.randomEuint64()` | `euint64` |
 | `FHE.randomEuint128()` | `euint128` |
 
-Each function also accepts an optional `int32 securityZone` parameter to generate random values in a specific [security zone](/fhe-library/core-concepts/access-control#security-zones).
-
 ## Usage
 
 ```solidity
@@ -40,13 +38,6 @@ contract RandomExample {
         euint32 result = FHE.rem(random, FHE.asEuint32(100));
         FHE.allowThis(result);
         return result;
-    }
-
-    // Random with security zone
-    function randomInZone(int32 zone) public returns (euint32) {
-        euint32 random = FHE.randomEuint32(zone);
-        FHE.allowThis(random);
-        return random;
     }
 
     // Efficient random boolean (coin flip)
