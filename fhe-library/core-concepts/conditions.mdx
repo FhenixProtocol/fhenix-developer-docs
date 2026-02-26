@@ -135,6 +135,26 @@ euint32 feeRate = FHE.select(isPremiumUser, PREMIUM_FEE, STANDARD_FEE);
 euint32 totalFee = FHE.mul(amount, feeRate);
 ```
 
+### 6. Require
+
+Simulate `require` statements by returning encrypted zero instead of reverting when a condition fails:
+
+```solidity
+// Check if user has sufficient balance
+ebool hasSufficientBalance = userBalance.gte(amount);
+
+// If condition fails, use encrypted zero; otherwise use the actual amount
+euint32 transferAmount = FHE.select(hasSufficientBalance, amount, FHE.asEuint32(0));
+
+// Process the transfer (will be zero if condition wasn't met)
+userBalance = userBalance.sub(transferAmount);
+recipientBalance = recipientBalance.add(transferAmount);
+```
+
+<Note>
+This pattern simulates transaction invalidation by using encrypted zero when conditions aren't met, effectively making the operation a no-op while maintaining constant-time execution. Learn more in the [Require](/fhe-library/core-concepts/require) guide.
+</Note>
+
 ---
 
 ## Best Practices
