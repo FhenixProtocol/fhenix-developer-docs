@@ -31,18 +31,22 @@ Both require branching logic that reveals information about encrypted data, whic
 
 ## Working with Require in FHE
 
-To use `require` with encrypted conditions, you must first decrypt the condition. This should only be done when the result can be safely revealed:
+Since decryption is asynchronous, you cannot use traditional `require` statements with encrypted conditions in the same transaction. Instead, simulate the behavior by using encrypted zero when conditions fail:
 
 ```solidity
-// Decrypt the encrypted boolean before using in require
-ebool encryptedCondition = value.gt(threshold);
-bool condition = FHE.decrypt(encryptedCondition);
+// Check if user has sufficient balance
+ebool hasSufficientBalance = userBalance.gte(amount);
 
-require(condition, "Condition not met");
+// If condition fails, use encrypted zero; otherwise use the actual amount
+euint32 transferAmount = FHE.select(hasSufficientBalance, amount, FHE.asEuint32(0));
+
+// Process the transfer (will be zero if condition wasn't met)
+userBalance = userBalance.sub(transferAmount);
+recipientBalance = recipientBalance.add(transferAmount);
 ```
 
 <Note>
-Only decrypt conditions when revealing the result doesn't compromise privacy. For internal logic that must remain private, use `FHE.select` instead as shown in the [Conditions (if .. else)](/fhe-library/core-concepts/conditions) guide.
+This pattern simulates transaction invalidation by using encrypted zero when conditions aren't met, effectively making the operation a no-op while maintaining constant-time execution and privacy.
 </Note>
 
 ---
