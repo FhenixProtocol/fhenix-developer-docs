@@ -111,6 +111,7 @@
               "fhe-library/core-concepts/data-evaluation",
               "fhe-library/core-concepts/encrypted-operations",
               "fhe-library/core-concepts/conditions",
+              "fhe-library/core-concepts/require",
               "fhe-library/core-concepts/access-control",
               "fhe-library/core-concepts/decryption-operations",
               "fhe-library/core-concepts/randomness",
