@@ -137,7 +137,7 @@ euint32 totalFee = FHE.mul(amount, feeRate);
 
 ### 6. Require
 
-Simulate `require` statements by returning encrypted zero instead of reverting when a condition fails:
+Simulate `require` statements by using encrypted zero when a condition fails:
 
 ```solidity
 // Check if user has sufficient balance
