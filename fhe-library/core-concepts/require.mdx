@@ -1,0 +1,54 @@
+---
+title: "Require"
+description: "Understanding require statements with encrypted data in FHE"
+---
+
+## Overview
+
+The `require` statement in FHE contracts works similarly to [Conditions (if .. else)](/fhe-library/core-concepts/conditions) because both involve conditional logic on encrypted data. Just as you can't use traditional `if...else` statements with encrypted values, you also can't directly use `require` statements with encrypted booleans.
+
+<Warning>
+Traditional `require` statements cannot evaluate encrypted conditions directly. You must decrypt the condition first or use alternative patterns.
+</Warning>
+
+---
+
+## Why Require is Similar to Conditions
+
+Both `require` and conditional statements face the same fundamental challenge in FHE:
+
+<CardGroup cols={2}>
+<Card title="Encrypted Evaluation" icon="lock">
+The condition being checked is encrypted, so the contract cannot directly evaluate whether it's true or false.
+</Card>
+
+<Card title="No Direct Branching" icon="code-branch">
+Both require branching logic that reveals information about encrypted data, which breaks FHE's privacy guarantees.
+</Card>
+</CardGroup>
+
+---
+
+## Working with Require in FHE
+
+To use `require` with encrypted conditions, you must first decrypt the condition. This should only be done when the result can be safely revealed:
+
+```solidity
+// Decrypt the encrypted boolean before using in require
+ebool encryptedCondition = value.gt(threshold);
+bool condition = FHE.decrypt(encryptedCondition);
+
+require(condition, "Condition not met");
+```
+
+<Note>
+Only decrypt conditions when revealing the result doesn't compromise privacy. For internal logic that must remain private, use `FHE.select` instead as shown in the [Conditions (if .. else)](/fhe-library/core-concepts/conditions) guide.
+</Note>
+
+---
+
+## Related Topics
+
+- Learn more about conditional logic in [Conditions (if .. else)](/fhe-library/core-concepts/conditions)
+- Understand decryption in [Decryption Operations](/fhe-library/core-concepts/decryption-operations)
+- Explore access control in [Access Control](/fhe-library/core-concepts/access-control)
