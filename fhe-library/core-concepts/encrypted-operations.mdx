@@ -114,7 +114,6 @@ All operations supported by FHE.sol are listed in the table below. Note that all
 | Max                   | `max`            | n/a      | Yes    | Yes     | Yes     | Yes     | Yes      | No    | No       |
 | Not                   | `not`            | n/a      | Yes    | Yes     | Yes     | Yes     | Yes      | Yes   | No       |
 | Select                | `select`         | n/a      | Yes    | Yes     | Yes     | Yes     | Yes      | Yes   | Yes      |
-| Decrypt               | `decrypt`        | n/a      | Yes    | Yes     | Yes     | Yes     | Yes      | Yes   | Yes      |
 
 <Warning>
 **Division and Remainder by `0`**: These operations will output an encrypted representation of the maximal value of the uint type being used (e.g., encrypted 255 for `euint8`). This behavior prevents information leakage about the divisor.

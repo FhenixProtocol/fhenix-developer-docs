@@ -19,8 +19,8 @@ If there were no access control mechanisms, someone could observe the handle val
 
 ```solidity
 // Contract B
-function attackBid(uint128 seenHandleValue) public {
-    FHE.decrypt(seenHandleValue); // try to expose the value
+function attackBid(euint32 seenHandle, uint32 plaintext, bytes calldata signature) public {
+    FHE.publishDecryptResult(seenHandle, plaintext, signature); // try to expose the value
 }
 ```
 
@@ -32,7 +32,7 @@ To prevent misuse, all FHE operations verify that the caller has explicit permis
 
 ## How Access Control Works
 
-In practice, the code above will revert with an `ACLNotAllowed` error when attempting to decrypt the ciphertext. Any other FHE operation will also fail if the calling contract doesn't have permission for all input handles.
+In practice, the code above will revert with an `ACLNotAllowed` error because the calling contract doesn't have permission for that ciphertext handle. Any FHE operation will fail if the caller lacks permission for all input handles.
 
 ### Example: Unauthorized Operations Fail
 
@@ -46,7 +46,7 @@ By default, newly created ciphertext handles are accessible to the contract that
 
 ## Granting Access
 
-CoFHE provides five methods to grant access to ciphertext handles:
+CoFHE provides six methods to grant access to ciphertext handles:
 
 <AccordionGroup>
 <Accordion title="FHE.allowThis()" icon="building" defaultOpen>
@@ -103,17 +103,39 @@ euint32 publicValue = FHE.asEuint32(input);
 FHE.allowGlobal(publicValue); // Anyone can access this
 ```
 </Accordion>
+
+<Accordion title="FHE.allowPublic()" icon="lock-open" defaultOpen>
+**`FHE.allowPublic(CIPHERTEXT_HANDLE)`**
+
+Marks a ciphertext handle as eligible for public decryption. Anyone can then request decryption of this value off-chain via `decryptForTx` and publish or verify the result on-chain.
+
+Use this when a value is intended to become public — for example, the amount being unshielded in an FHERC20 unwrap flow.
+
+```solidity
+euint32 burnedAmount = FHE.asEuint32(input);
+FHE.allowPublic(burnedAmount); // Anyone can decrypt and publish this value
+```
+
+<Note>
+`allowPublic` does not reveal the value immediately. It only grants permission for anyone to request decryption. The value is revealed only when someone submits the plaintext and signature on-chain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`.
+</Note>
+</Accordion>
 </AccordionGroup>
 
 ---
 
 ## Decryption and Access Control
 
-<Note>
-To decrypt a ciphertext off-chain using the decryption network, the issuer of the decryption request must have permission on the ciphertext handle. If not, the request will be denied by the access control system.
-</Note>
+Decryption is a multi-step process: a client requests the plaintext and a threshold signature off-chain via `decryptForTx`, then publishes or verifies the result on-chain.
 
-This means you must grant appropriate permissions before attempting to decrypt values, whether on-chain or through the decryption network.
+Access control governs who can request decryption:
+
+- If the ciphertext was marked with `FHE.allowPublic()`, anyone can request decryption without a permit (`.withoutPermit()`).
+- Otherwise, only addresses with explicit permission on the handle can request decryption, and must provide a valid permit (`.withPermit()`).
+
+<Note>
+If the requester does not have permission on the ciphertext handle, the decryption request will be denied by the access control system. Grant appropriate permissions before attempting to decrypt — use `FHE.allowPublic()` for values intended to become public, or `FHE.allow()` / `FHE.allowSender()` for restricted access.
+</Note>
 
 ---
 

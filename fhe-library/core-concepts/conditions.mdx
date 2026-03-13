@@ -147,8 +147,9 @@ Never try to implement branching logic with traditional `if...else` statements o
 // Good
 euint32 result = FHE.select(condition, valueA, valueB);
 
-// Bad - leaks information!
-if (FHE.decrypt(condition)) { // Don't do this!
+// Bad - don't publish decrypted values for branching logic!
+FHE.publishDecryptResult(condition, plaintext, signature); // Don't do this!
+if (plaintext > 0) {
     result = valueA;
 } else {
     result = valueB;
@@ -225,15 +226,15 @@ contract EncryptedAuction {
         }
     }
 
-    function revealWinner() public view returns (uint32) {
-        // Only authorized parties can decrypt
-        return FHE.decrypt(highestBid);
+    function revealWinner(euint32 ctHash, uint32 plaintext, bytes calldata signature) public {
+        // Verify and publish the decrypted highest bid on-chain
+        FHE.publishDecryptResult(ctHash, plaintext, signature);
     }
 }
 ```
 
 <Note>
-In the example above, the actual bid amounts remain encrypted throughout the auction. Only the final winner can be revealed through controlled decryption.
+In the example above, the actual bid amounts remain encrypted throughout the auction. To reveal the winner, a client calls `decryptForTx` off-chain to obtain the plaintext and a threshold signature, then submits them on-chain via `revealWinner` for verification.
 </Note>
 
 ---
