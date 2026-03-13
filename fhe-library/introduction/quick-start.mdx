@@ -21,6 +21,8 @@ You can develop and test locally using mock contracts, then deploy to any of the
 
 The Fhenix development environment consists of several key components:
 
+{/* @SDK */}
+
 - **cofhe-hardhat-starter**: Template Hardhat project to clone and use as a starting point
 - **cofhe-hardhat-plugin**: Hardhat plugin that deploys mock contracts and exposes utilities
 - **cofhejs**: JavaScript library for interacting with FHE contracts and the CoFHE coprocessor
@@ -71,7 +73,7 @@ All dependencies are installed and ready to use.
 ## Project Structure
 
 The starter kit provides a well-organized directory structure to help you get started quickly:
-
+{/* @SDK */}
 - **`contracts/`**: Contains all your Solidity smart contract source files
   - `Counter.sol`: An example FHE-enabled counter contract demonstrating basic FHE operations
 - **`test/`**: Houses tests that utilize cofhejs and utilities to interact with FHE-enabled contracts
@@ -133,6 +135,7 @@ it('Should increment the counter', async function () {
 })
 ```
 
+{/* @SDK */}
 ```typescript Full Cofhejs Flow
 it('Full cofhejs flow', async function () {
     const [bob] = await hre.ethers.getSigners()
@@ -222,6 +225,7 @@ This plugin provides essential tools for developing FHE contracts:
 - **Testing Utilities**: Helpers for testing FHE contracts
 - **Mock Integration**: Sets up mock contracts for local testing
 
+{/* @SDK */}
 ### Cofhejs
 
 The JavaScript library for working with FHE contracts:
