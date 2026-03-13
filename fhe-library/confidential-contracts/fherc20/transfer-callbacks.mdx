@@ -280,9 +280,11 @@ contract StakingPool is IFHERC20Receiver {
 
 ### Basic Usage
 
-```javascript
+```typescript
 // Off-chain: Prepare encrypted amount
-const encryptedAmount = await cofhe.encrypt(1000);
+const [encryptedAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(1000n)])
+  .execute();
 
 // Call with empty data
 await token.confidentialTransferAndCall(
@@ -307,7 +309,9 @@ const data = ethers.utils.defaultAbiCoder.encode(
 );
 
 // Transfer with data
-const encryptedAmount = await cofhe.encrypt(1000);
+const [encryptedAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(1000n)])
+  .execute();
 await token.confidentialTransferAndCall(
     stakingPoolAddress,
     encryptedAmount,

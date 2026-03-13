@@ -314,7 +314,9 @@ await token.connect(operator).permit(
     sig.v, sig.r, sig.s
 );
 
-const amount = await cofhe.encrypt(100);
+const [amount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(100n)])
+  .execute();
 await token.connect(operator).confidentialTransferFrom(
     user.address, recipient.address, amount
 );

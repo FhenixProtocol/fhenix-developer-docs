@@ -42,7 +42,7 @@ These encrypted balances:
 - Cannot be read by anyone (including the contract)
 - Can be operated on using FHE operations
 - Maintain their encrypted state throughout all computations
-- Only decrypt when explicitly authorized
+- Are only revealed when explicitly published on-chain with a valid proof
 
 ### 2. Confidential Transfers
 
@@ -203,7 +203,7 @@ Wraps standard ERC20 tokens into confidential FHERC20 tokens and handles unwrapp
 <Card title="FHERC20UnwrapClaim" icon="hand-holding-dollar" href="/fhe-library/confidential-contracts/fherc20/unwrap-claims">
 **Claim Management**
 
-Abstract contract providing claim functionality for managing unwrap operations and decryption results.
+Abstract contract providing claim functionality for managing unwrap operations with decrypt-with-proof verification.
 </Card>
 </CardGroup>
 
@@ -231,16 +231,20 @@ contract MyConfidentialToken is FHERC20 {
 
 Using the token:
 
-```solidity
+```typescript
+import { Encryptable } from '@cofhe/sdk';
+
 // User encrypts amount off-chain, then submits
-InEuint64 memory encryptedAmount = cofhe.encrypt(100);
-token.confidentialTransfer(recipient, encryptedAmount);
+const [encryptedAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(100n)])
+  .execute();
+await token.confidentialTransfer(recipient, encryptedAmount);
 
 // Check indicator (not real balance!)
-uint256 indicator = token.balanceOf(user); // Returns indicator value
+const indicator = await token.balanceOf(user); // Returns indicator value
 
 // Check real encrypted balance (only accessible to user)
-euint64 encBalance = token.confidentialBalanceOf(user);
+const encBalance = await token.confidentialBalanceOf(user);
 ```
 
 ---
