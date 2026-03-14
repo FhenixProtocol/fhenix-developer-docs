@@ -140,7 +140,7 @@ We will pay special attention to the following updates that need to be made:
 1. **Constant time computation**
 2. **Handling the `if/else` case**
 3. **Handling the `require` case**
-4. **Revealing the result with `FHE.decrypt`**
+4. **Revealing the result with the decrypt-with-proof pattern**
 
 ## Migrating the Contract
 
@@ -372,9 +372,9 @@ function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
 It is critical to ensure that `FHE.allowThis` is used on encrypted variables that need to be used later in the contract's lifecycle. Contracts must have access to variables in order to perform FHE operations on those variables.
 </Warning>
 
-### Step 9: Finalize the voting with `FHE.decrypt`
+### Step 9: Finalize the voting with `FHE.allowPublic`
 
-Because the votes are encrypted for the lifetime of the proposal, after the proposal has ended, we need to decrypt the results and reveal the winner. Let's start by adding a `finalizeVote` function:
+Because the votes are encrypted for the lifetime of the proposal, after the proposal has ended, we need to decrypt the results and reveal the winner. Let's start by adding a `finalizeVote` function that marks the vote counts as publicly decryptable:
 
 ```solidity
 function finalizeVote(uint256 _proposalId) external {
@@ -385,16 +385,67 @@ function finalizeVote(uint256 _proposalId) external {
     if (block.timestamp < proposal.deadline) revert DeadlineNotReached();
 
     for (uint8 i = 0; i < proposal.options.length; i++) {
-        FHE.decrypt(proposal.options[i].votes);
+        FHE.allowPublic(proposal.options[i].votes);
     }
 }
 ```
 
-As you can see, we perform a `FHE.decrypt` request on each of the proposal's options' vote counts. These decryption results are performed asynchronously, and the decrypted results are posted to the chain as soon as they are available.
+`FHE.allowPublic` marks each vote count as eligible for public decryption. Anyone can now request the plaintext values off-chain.
 
-### Step 10: Checking the results with `FHE.getDecryptResultSafe`
+### Step 10: Reveal the results with `FHE.publishDecryptResult`
 
-Finally, we can update our `getProposal` function to check the final state of the proposal:
+After `finalizeVote` is called, the vote counts need to be decrypted off-chain and published on-chain with proof. We add a `revealResults` function that accepts the decrypted values and their Threshold Network signatures:
+
+```solidity
+function revealResults(
+    uint256 _proposalId,
+    uint64[] calldata _decryptedVotes,
+    bytes[] calldata _signatures
+) external {
+    Proposal storage proposal = proposals[_proposalId];
+    if (!proposal.exists) revert ProposalNotFound();
+    require(
+        _decryptedVotes.length == proposal.options.length,
+        "Mismatched lengths"
+    );
+
+    for (uint8 i = 0; i < proposal.options.length; i++) {
+        FHE.publishDecryptResult(
+            proposal.options[i].votes,
+            _decryptedVotes[i],
+            _signatures[i]
+        );
+    }
+}
+```
+
+The client-side flow looks like this:
+
+```typescript
+// 1. Finalize the vote (owner only)
+await voting.finalizeVote(proposalId);
+
+// 2. Decrypt each option's vote count off-chain
+const proposal = await voting.getProposal(proposalId);
+const decryptedVotes = [];
+const signatures = [];
+
+for (const option of proposal.options) {
+    const result = await client
+        .decryptForTx(option.votes)
+        .withoutPermit()
+        .execute();
+    decryptedVotes.push(result.decryptedValue);
+    signatures.push(result.signature);
+}
+
+// 3. Publish all results on-chain
+await voting.revealResults(proposalId, decryptedVotes, signatures);
+```
+
+### Step 11: Checking the results with `FHE.getDecryptResultSafe`
+
+Finally, we can update our `getProposal` function to check the final state of the proposal. Once the results have been published, `FHE.getDecryptResultSafe` will return the plaintext values:
 
 ```solidity
 function getProposal(
@@ -463,7 +514,9 @@ In this tutorial, we walked through migrating a simple voting contract to use Co
 
 1. Changing the vote counts from plain `uint64` to encrypted values using `euint64`
 2. Modifying the voting function to use encrypted addition instead of plain addition
-3. Updating the getter function to handle decryption of results safely
+3. Using `FHE.allowPublic` to mark values as decryptable after the voting deadline
+4. Adding a `revealResults` function that publishes decrypted values on-chain with `FHE.publishDecryptResult`
+5. Updating the getter function to handle decryption of results safely
 
 The resulting contract provides the same functionality as the original, but with the added privacy benefit that individual votes are not visible on-chain until the final tally is decrypted. This demonstrates how CoFHE can be used to add privacy to existing contracts with minimal changes to the core logic.
 
@@ -587,7 +640,28 @@ contract FHEVotingExample {
         if (block.timestamp < proposal.deadline) revert DeadlineNotReached();
 
         for (uint8 i = 0; i < proposal.options.length; i++) {
-            FHE.decrypt(proposal.options[i].votes);
+            FHE.allowPublic(proposal.options[i].votes);
+        }
+    }
+
+    function revealResults(
+        uint256 _proposalId,
+        uint64[] calldata _decryptedVotes,
+        bytes[] calldata _signatures
+    ) external {
+        Proposal storage proposal = proposals[_proposalId];
+        if (!proposal.exists) revert ProposalNotFound();
+        require(
+            _decryptedVotes.length == proposal.options.length,
+            "Mismatched lengths"
+        );
+
+        for (uint8 i = 0; i < proposal.options.length; i++) {
+            FHE.publishDecryptResult(
+                proposal.options[i].votes,
+                _decryptedVotes[i],
+                _signatures[i]
+            );
         }
     }
 

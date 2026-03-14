@@ -203,7 +203,7 @@ Wraps standard ERC20 tokens into confidential FHERC20 tokens and handles unwrapp
 <Card title="FHERC20UnwrapClaim" icon="hand-holding-dollar" href="/fhe-library/confidential-contracts/fherc20/unwrap-claims">
 **Claim Management**
 
-Abstract contract providing claim functionality for managing unwrap operations with decrypt-with-proof verification.
+Abstract contract providing claim functionality for managing unwrap operations and decryption results.
 </Card>
 </CardGroup>
 
@@ -231,20 +231,16 @@ contract MyConfidentialToken is FHERC20 {
 
 Using the token:
 
-```typescript
-import { Encryptable } from '@cofhe/sdk';
-
+```solidity
 // User encrypts amount off-chain, then submits
-const [encryptedAmount] = await cofheClient
-  .encryptInputs([Encryptable.uint64(100n)])
-  .execute();
-await token.confidentialTransfer(recipient, encryptedAmount);
+InEuint64 memory encryptedAmount = cofhe.encrypt(100);
+token.confidentialTransfer(recipient, encryptedAmount);
 
 // Check indicator (not real balance!)
-const indicator = await token.balanceOf(user); // Returns indicator value
+uint256 indicator = token.balanceOf(user); // Returns indicator value
 
 // Check real encrypted balance (only accessible to user)
-const encBalance = await token.confidentialBalanceOf(user);
+euint64 encBalance = token.confidentialBalanceOf(user);
 ```
 
 ---

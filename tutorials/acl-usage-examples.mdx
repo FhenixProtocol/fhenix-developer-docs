@@ -53,7 +53,7 @@ contract A {
     }
 
     function doSomethingWithResult() {
-        FHE.decrypt(result);      // Allowed
+        FHE.allowPublic(result);  // Allowed — marks result as publicly decryptable
         FHE.add(handle1, result); // ACLNotAllowed (handle1 is not owned persistently)
     }
 }
@@ -88,7 +88,7 @@ contract A {
 ```
 
 <Tip>
-When allowing users to decrypt their own encrypted values, use `FHE.allow()` to grant persistent access. This enables users to decrypt values off-chain using Cofhejs without requiring additional transactions.
+When allowing users to decrypt their own encrypted values, use `FHE.allow()` to grant persistent access. This enables users to decrypt values off-chain using `decryptForView` without requiring additional transactions.
 </Tip>
 
 ## Allow Other Contracts

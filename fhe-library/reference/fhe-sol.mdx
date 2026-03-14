@@ -957,6 +957,61 @@ if (decrypted) {
 }
 ```
 
+### publishDecryptResult
+
+Publishes a decrypted result on-chain by verifying the Threshold Network signature. The plaintext is stored on-chain and can be read by anyone. Use this when the decrypted value should be publicly visible after verification.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Ciphertext handle of the encrypted value that was decrypted off-chain
+</ParamField>
+
+<ParamField body="plaintext" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
+The decrypted plaintext value returned by `decryptForTx`
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The Threshold Network signature proving the plaintext is authentic
+</ParamField>
+
+<Warning>
+The transaction reverts if the signature is invalid. The encrypted value must have been granted public access via `allowPublic` before decryption was requested off-chain.
+</Warning>
+
+```solidity
+// Publish the decrypted result — plaintext is stored on-chain
+FHE.publishDecryptResult(encryptedBid, bidPlaintext, bidSignature);
+
+// The value is now publicly readable
+```
+
+### verifyDecryptResult
+
+Verifies a Threshold Network signature for a decrypted value without storing the plaintext on-chain. Use this when you need to act on the decrypted value within the transaction but don't want to persist it publicly.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Ciphertext handle of the encrypted value that was decrypted off-chain
+</ParamField>
+
+<ParamField body="plaintext" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
+The decrypted plaintext value returned by `decryptForTx`
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The Threshold Network signature proving the plaintext is authentic
+</ParamField>
+
+<Tip>
+Use `verifyDecryptResult` instead of `publishDecryptResult` when you only need to use the decrypted value within the transaction logic without making it permanently public.
+</Tip>
+
+```solidity
+// Verify the proof and use the value — plaintext is NOT stored on-chain
+FHE.verifyDecryptResult(encryptedAmount, amount, signature);
+
+// Use the verified plaintext in transaction logic
+require(amount >= minThreshold, "Below minimum");
+```
+
 ## Access Control
 
 ### allow
@@ -1018,6 +1073,26 @@ Encrypted value to grant access to
 
 ```solidity
 FHE.allowSender(encryptedValue);
+```
+
+### allowPublic
+
+Marks an encrypted value as eligible for public decryption. Once called, anyone can request decryption of this value off-chain via `decryptForTx` without needing a permit.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to allow public decryption for
+</ParamField>
+
+<Warning>
+Once `allowPublic` is called, the value can be decrypted by anyone. Only use this when you intend to reveal the value publicly (e.g., after an auction closes or when unwrapping tokens).
+</Warning>
+
+```solidity
+// Allow anyone to decrypt the winning bid after auction closes
+FHE.allowPublic(highestBid);
+FHE.allowPublic(highestBidder);
+
+// Now anyone can call decryptForTx off-chain without a permit
 ```
 
 ### allowTransient

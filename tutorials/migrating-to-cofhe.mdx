@@ -3,6 +3,10 @@ title: "Migrating to CoFHE"
 description: "Comprehensive guide for migrating from other FHE solutions to CoFHE"
 ---
 
+<Warning>
+This guide covers migrating from Fhenix L2 to CoFHE. It uses the older decryption pattern (`FHE.decrypt` + `getDecryptResultSafe`). For the current decryption flow using `FHE.allowPublic`, `decryptForTx`, and `FHE.publishDecryptResult`, see [Decryption Operations](/fhe-library/core-concepts/decryption-operations).
+</Warning>
+
 ## Overview
 
 Want to upgrade your Fhenix L2 contract to use CoFHE? Let's walk through it with a simple example - a privacy-enabled ERC20 token.
