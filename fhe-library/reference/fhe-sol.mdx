@@ -957,6 +957,103 @@ if (decrypted) {
 }
 ```
 
+## Decrypt Result Publishing & Verification
+
+### publishDecryptResult
+
+Publishes a signed decrypt result from the Threshold Network to the chain. The TaskManager verifies the ECDSA signature before storing the result. Anyone holding a valid signature can call this.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress | uint256" required>
+The ciphertext hash to publish a result for
+</ParamField>
+
+<ParamField body="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address | uint256" required>
+The decrypted plaintext value (type matches the ctHash type)
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The ECDSA signature from the Threshold Network's Dispatcher
+</ParamField>
+
+```solidity
+// Publish a decrypt result for a euint64
+FHE.publishDecryptResult(myEncryptedValue, uint64(42), signature);
+
+// Publish for an ebool
+FHE.publishDecryptResult(myEncryptedBool, true, signature);
+```
+
+### publishDecryptResultBatch
+
+Publishes multiple signed decrypt results in a single transaction for gas efficiency.
+
+<ParamField body="ctHashes" type="uint256[]" required>
+Array of ciphertext hashes
+</ParamField>
+
+<ParamField body="results" type="uint256[]" required>
+Array of decrypted plaintext values
+</ParamField>
+
+<ParamField body="signatures" type="bytes[]" required>
+Array of ECDSA signatures (one per result)
+</ParamField>
+
+```solidity
+FHE.publishDecryptResultBatch(ctHashes, results, signatures);
+```
+
+### verifyDecryptResult
+
+Verifies a decrypt result signature without publishing. Reverts if the signature is invalid.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress | uint256" required>
+The ciphertext hash
+</ParamField>
+
+<ParamField body="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address | uint256" required>
+The decrypted plaintext value
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The ECDSA signature to verify
+</ParamField>
+
+<ResponseField name="valid" type="bool">
+Returns `true` if the signature is valid. Reverts otherwise.
+</ResponseField>
+
+```solidity
+bool valid = FHE.verifyDecryptResult(myEncryptedValue, uint64(42), signature);
+```
+
+### verifyDecryptResultSafe
+
+Same as `verifyDecryptResult`, but returns `false` instead of reverting on invalid signatures.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress | uint256" required>
+The ciphertext hash
+</ParamField>
+
+<ParamField body="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address | uint256" required>
+The decrypted plaintext value
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The ECDSA signature to verify
+</ParamField>
+
+<ResponseField name="valid" type="bool">
+Returns `true` if valid, `false` if invalid (never reverts on bad signature)
+</ResponseField>
+
+```solidity
+bool valid = FHE.verifyDecryptResultSafe(myEncryptedValue, uint64(42), signature);
+if (!valid) {
+    revert("Invalid decrypt result signature");
+}
+```
+
 ## Access Control
 
 ### allow

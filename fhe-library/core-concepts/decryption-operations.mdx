@@ -43,12 +43,23 @@ Decryption is requested off-chain via an RPC query, returning the result only to
 Read more about RPC query decryption and get examples in the [CoFHEjs](/cofhejs) documentation.
 </Note>
 
+### 3. Client-Published Decryption (Signature-Verified)
+
+The client decrypts off-chain via cofhejs, receives the plaintext result along with an **ECDSA signature** from the Threshold Network's Dispatcher, and then publishes the result on-chain by calling `FHE.publishDecryptResult()`. The TaskManager verifies the signature on-chain before storing the result.
+
+This combines the best of both worlds: the client controls when the result lands on-chain, while the contract can still use the decrypted value.
+
+<Note>
+The signature cryptographically proves the result came from the authorized Threshold Network. No trust in the publisher is required — anyone holding a valid signature can submit it.
+</Note>
+
 ### Comparison Table
 
 | Method | Visibility | Gas Cost | Smart Contract Usable | Best For |
 |--------|-----------|----------|----------------------|----------|
 | **Transaction (on-chain)** | Public (on-chain) | High | Yes | Public results, contract logic |
 | **Query (off-chain)** | Private (off-chain) | None | No | Confidential data, external apps |
+| **Client-Published (signature)** | Public (on-chain) | Medium | Yes | Client-driven settlement, permissionless delivery |
 
 ---
 
@@ -282,7 +293,35 @@ function getRevealedValue() external view onlyOwner returns (uint32, bool) {
 }
 ```
 
-### Pattern 2: Batch Decryption
+### Pattern 2: Client-Published Decryption with Signature Verification
+
+In this pattern, the client decrypts off-chain and publishes the signed result on-chain. This is useful when you want the client to control result delivery timing, or when building permissionless relayer patterns.
+
+```solidity
+// Contract that accepts client-published decrypt results
+contract SignatureVerifiedDecrypt {
+    euint64 public encryptedValue;
+    uint64 public revealedValue;
+
+    // The client calls cofhejs.decrypt(), receives result + signature,
+    // then submits this transaction
+    function publishResult(uint64 result, bytes memory signature) external {
+        FHE.publishDecryptResult(encryptedValue, result, signature);
+        revealedValue = result;
+    }
+
+    // Optionally verify without publishing
+    function checkSignature(uint64 result, bytes memory signature) external view returns (bool) {
+        return FHE.verifyDecryptResultSafe(encryptedValue, result, signature);
+    }
+}
+```
+
+<Note>
+The signature is verified against the `decryptResultSigner` registered in the TaskManager. If the signer is `address(0)`, verification is skipped (debug mode only).
+</Note>
+
+### Pattern 3: Batch Decryption
 
 ```solidity
 function decryptMultipleValues() external onlyOwner {
@@ -302,6 +341,31 @@ function retrieveDecryptedValues() external view onlyOwner
     return (val1, val2, val3, allReady);
 }
 ```
+
+### Pattern 4: Batch Client-Published Decryption
+
+```solidity
+function publishMultipleResults(
+    uint256[] memory ctHashes,
+    uint256[] memory results,
+    bytes[] memory signatures
+) external {
+    FHE.publishDecryptResultBatch(ctHashes, results, signatures);
+}
+```
+
+---
+
+## Signature Verification Functions
+
+When using client-published decryption, two verification functions are available:
+
+| Function | Behavior on Invalid Signature |
+|----------|-------------------------------|
+| `FHE.verifyDecryptResult(ctHash, result, signature)` | Reverts |
+| `FHE.verifyDecryptResultSafe(ctHash, result, signature)` | Returns `false` |
+
+Both functions accept type-specific overloads for `ebool`, `euint8`, `euint16`, `euint32`, `euint64`, `euint128`, and `eaddress`.
 
 ---
 

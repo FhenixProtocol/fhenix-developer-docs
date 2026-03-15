@@ -1,6 +1,6 @@
 ---
 title: TaskManager
-description: "On-chain entry point for CoFHE integration that initiates FHE operations and generates unique handles for encrypted computation tasks"
+description: "On-chain entry point for CoFHE integration that initiates FHE operations, generates unique handles, and verifies decrypt result signatures"
 ---
 
 
@@ -8,6 +8,39 @@ description: "On-chain entry point for CoFHE integration that initiates FHE oper
 |---------|-------------|
 | **Type** | Contract deployed on the destination blockchain |
 | **Function** | Acts as the on-chain entry point for CoFHE integration |
-| **Responsibilities** | • Initiates FHE operations by serving as the on-chain entry point. The dApp contract calls the FHE.sol library which triggers the TaskManager contract to submit a new encrypted computation task. <br/>• Generates unique handles that act as references to the results of FHE operations. These results are computed asynchronously off-chain. <br/>• Emits structured events containing the unique handle of the ciphertext, operation type, and other required metadata. |
+| **Responsibilities** | • Initiates FHE operations by serving as the on-chain entry point. The dApp contract calls the FHE.sol library which triggers the TaskManager contract to submit a new encrypted computation task. <br/>• Generates unique handles that act as references to the results of FHE operations. These results are computed asynchronously off-chain. <br/>• Emits structured events containing the unique handle of the ciphertext, operation type, and other required metadata. <br/>• Verifies ECDSA signatures on client-published decrypt results and stores them on-chain. |
 | **Deployment** | A separate Task Manager Contract is deployed for each supported destination chain, enabling chain-specific integrations |
+
+## Decrypt Result Signature Verification
+
+The TaskManager supports **permissionless publishing of decrypt results**. Anyone holding a valid ECDSA signature from the Threshold Network's Dispatcher can publish a decrypt result on-chain. The TaskManager verifies the signature before storing the result.
+
+### Key State
+
+| Variable | Description |
+|----------|-------------|
+| `decryptResultSigner` | Address of the authorized Threshold Network signer. Set to `address(0)` to skip verification (debug mode). |
+
+### Functions
+
+| Function | Description |
+|----------|-------------|
+| `publishDecryptResult(ctHash, result, signature)` | Verify signature and store the decrypt result on-chain. Emits `DecryptionResult`. |
+| `publishDecryptResultBatch(ctHashes[], results[], signatures[])` | Batch publish multiple results in one transaction for gas efficiency. |
+| `verifyDecryptResult(ctHash, result, signature)` | Verify a signature without publishing (view). Reverts on failure. |
+| `verifyDecryptResultSafe(ctHash, result, signature)` | Verify a signature without publishing (view). Returns `false` on failure. |
+| `setDecryptResultSigner(address)` | Admin-only. Set the authorized signer address. |
+
+### Signature Message Format
+
+The signed message is a fixed **76-byte** buffer:
+
+| Field | Size | Encoding |
+|-------|------|----------|
+| `result` | 32 bytes | uint256, big-endian, left-padded with zeros |
+| `enc_type` | 4 bytes | i32, big-endian (extracted from ctHash metadata) |
+| `chain_id` | 8 bytes | u64, big-endian (from `block.chainid`) |
+| `ct_hash` | 32 bytes | uint256, big-endian |
+
+The message is hashed with `keccak256` and verified using OpenZeppelin's `ECDSA.tryRecover`. The `enc_type` and `chain_id` are derived on-chain, binding each signature to a specific ciphertext type and chain.
 

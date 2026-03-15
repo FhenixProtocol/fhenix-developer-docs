@@ -105,7 +105,9 @@ export const convertViaUtype = <U extends FheTypes>(
 };
 ```
 
-3. **The result is returned as a `Result` type**. The `Result<T>` type looks like this:
+3. **The signature is available for on-chain publishing.** The Dispatcher's ECDSA signature is included in the response. If you need the decrypt result available on-chain (e.g., for use in smart contract logic), you can publish it using `FHE.publishDecryptResult(ctHash, result, signature)`. See [Decryption Operations](/fhe-library/core-concepts/decryption-operations) for details.
+
+4. **The result is returned as a `Result` type**. The `Result<T>` type looks like this:
 
 ```typescript
 export type Result<T, E = string> =
