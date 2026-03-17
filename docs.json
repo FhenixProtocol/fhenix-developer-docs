@@ -103,13 +103,6 @@
             ]
           },
           {
-            "group": "Examples",
-            "pages": [
-              "client-sdk/examples/end-to-end",
-              "client-sdk/examples/templates"
-            ]
-          },
-          {
             "group": "Reference",
             "pages": [
               "client-sdk/reference/sdk-reference",
