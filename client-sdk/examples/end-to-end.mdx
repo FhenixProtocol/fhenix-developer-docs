@@ -1,0 +1,172 @@
+---
+title: End-to-End Example
+description: "A complete encrypt → store → decrypt flow using @cofhe/sdk"
+---
+
+This example demonstrates the full lifecycle of working with encrypted data: initialize the SDK, encrypt a value, send it to a contract, and decrypt the result — both for UI display and for on-chain verification.
+
+## The contract
+
+A simple contract that stores an encrypted `uint64` balance and allows the owner to set and read it.
+
+```solidity contracts/ConfidentialVault.sol
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.28;
+
+import '@fhenixprotocol/cofhe-contracts/FHE.sol';
+
+contract ConfidentialVault {
+    mapping(address => euint64) private _balances;
+
+    function deposit(InEuint64 calldata encryptedAmount) external {
+        euint64 amount = FHE.asEuint64(encryptedAmount);
+        _balances[msg.sender] = FHE.add(_balances[msg.sender], amount);
+        FHE.allowThis(_balances[msg.sender]);
+        FHE.allowSender(_balances[msg.sender]);
+    }
+
+    function getBalance() public view returns (euint64) {
+        return _balances[msg.sender];
+    }
+
+    function publishBalance(
+        euint64 ctHash,
+        uint64 plaintext,
+        bytes calldata signature
+    ) external {
+        FHE.publishDecryptResult(ctHash, plaintext, signature);
+    }
+}
+```
+
+## SDK: full flow
+
+<CodeGroup>
+
+```typescript Web (viem)
+import { createCofheConfig, createCofheClient } from '@cofhe/sdk/web';
+import { Encryptable, FheTypes } from '@cofhe/sdk';
+import { chains } from '@cofhe/sdk/chains';
+import { createPublicClient, createWalletClient, http, custom } from 'viem';
+import { sepolia } from 'viem/chains';
+
+// 1. Initialize
+const config = createCofheConfig({
+  supportedChains: [chains.sepolia],
+});
+const client = createCofheClient(config);
+
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
+const walletClient = createWalletClient({
+  chain: sepolia,
+  transport: custom(window.ethereum),
+});
+
+await client.connect(publicClient, walletClient);
+
+// 2. Create a permit
+await client.permits.getOrCreateSelfPermit();
+
+// 3. Encrypt and deposit
+const [encryptedAmount] = await client
+  .encryptInputs([Encryptable.uint64(100n)])
+  .onStep((step, ctx) => {
+    if (ctx?.isStart) console.log(`Encrypting: ${step}...`);
+  })
+  .execute();
+
+await contract.deposit(encryptedAmount);
+
+// 4. Decrypt for UI display
+const ctHash = await contract.getBalance();
+const balance = await client
+  .decryptForView(ctHash, FheTypes.Uint64)
+  .execute();
+
+console.log('Balance:', balance); // 100n
+
+// 5. Decrypt for on-chain verification
+const { decryptedValue, signature } = await client
+  .decryptForTx(ctHash)
+  .withPermit()
+  .execute();
+
+await contract.publishBalance(ctHash, decryptedValue, signature);
+```
+
+```typescript Node (ethers v6)
+import { createCofheConfig, createCofheClient } from '@cofhe/sdk/node';
+import { Encryptable, FheTypes } from '@cofhe/sdk';
+import { Ethers6Adapter } from '@cofhe/sdk/adapters';
+import { chains } from '@cofhe/sdk/chains';
+import { ethers } from 'ethers';
+
+// 1. Initialize
+const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.org');
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
+const config = createCofheConfig({
+  supportedChains: [chains.sepolia],
+});
+const client = createCofheClient(config);
+
+const { publicClient, walletClient } = await Ethers6Adapter(provider, wallet);
+await client.connect(publicClient, walletClient);
+
+// 2. Create a permit
+await client.permits.getOrCreateSelfPermit();
+
+// 3. Encrypt and deposit
+const [encryptedAmount] = await client
+  .encryptInputs([Encryptable.uint64(100n)])
+  .execute();
+
+await contract.deposit(encryptedAmount);
+
+// 4. Decrypt for UI display
+const ctHash = await contract.getBalance();
+const balance = await client
+  .decryptForView(ctHash, FheTypes.Uint64)
+  .execute();
+
+console.log('Balance:', balance); // 100n
+```
+
+```typescript Hardhat test
+import hre from 'hardhat';
+import { CofheClient, Encryptable, FheTypes } from '@cofhe/sdk';
+import { expect } from 'chai';
+
+describe('ConfidentialVault', () => {
+  let cofheClient: CofheClient;
+
+  before(async () => {
+    const [signer] = await hre.ethers.getSigners();
+    cofheClient = await hre.cofhe.createClientWithBatteries(signer);
+  });
+
+  it('deposits and reads an encrypted balance', async () => {
+    const Factory = await hre.ethers.getContractFactory('ConfidentialVault');
+    const vault = await Factory.deploy();
+
+    // Encrypt and deposit
+    const [encrypted] = await cofheClient
+      .encryptInputs([Encryptable.uint64(100n)])
+      .execute();
+    await (await vault.deposit(encrypted)).wait();
+
+    // Decrypt and verify
+    const ctHash = await vault.getBalance();
+    const balance = await cofheClient
+      .decryptForView(ctHash, FheTypes.Uint64)
+      .execute();
+
+    expect(balance).to.equal(100n);
+  });
+});
+```
+
+</CodeGroup>

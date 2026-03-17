@@ -84,9 +84,11 @@
             "pages": [
               "client-sdk/guides/client-setup",
               "client-sdk/guides/encrypting-inputs",
+              "client-sdk/guides/writing-encrypted-data",
               "client-sdk/guides/permits",
               "client-sdk/guides/decrypt-to-view",
               "client-sdk/guides/decrypt-to-tx",
+              "client-sdk/guides/writing-decrypt-result",
               "client-sdk/guides/error-handling"
             ]
           },

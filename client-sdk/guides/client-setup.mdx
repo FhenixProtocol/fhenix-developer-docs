@@ -1,0 +1,178 @@
+---
+title: Client Setup
+description: "Configure and connect the @cofhe/sdk client with viem, Ethers, or wagmi"
+---
+
+This page covers the core SDK lifecycle:
+
+1. Create config (`createCofheConfig`)
+2. Create client (`createCofheClient`)
+3. Connect (`client.connect`)
+4. Manage connection (change account / disconnect)
+
+## 1. Create config
+
+Import `createCofheConfig` from the entrypoint that matches your runtime:
+
+- Browser apps: `@cofhe/sdk/web`
+- Node.js scripts/backends: `@cofhe/sdk/node`
+
+The only required field is `supportedChains`.
+
+```typescript
+import { createCofheConfig } from '@cofhe/sdk/web';
+import { chains } from '@cofhe/sdk/chains';
+
+const config = createCofheConfig({
+  supportedChains: [chains.sepolia],
+
+  // Optional knobs
+  // defaultPermitExpiration: 60 * 60 * 24 * 30,
+  // useWorkers: true,
+});
+```
+
+## 2. Create the client
+
+```typescript
+import { createCofheConfig, createCofheClient } from '@cofhe/sdk/web';
+import { chains } from '@cofhe/sdk/chains';
+
+const config = createCofheConfig({ supportedChains: [chains.sepolia] });
+const cofheClient = createCofheClient(config);
+
+cofheClient.connected; // false
+cofheClient.connecting; // false
+```
+
+## 3. Connect
+
+The SDK connects to CoFHE using viem clients:
+
+- `PublicClient`: read-only chain access
+- `WalletClient`: signing + sending transactions
+
+If you already have viem clients, pass them directly.
+
+```typescript
+import { createPublicClient, createWalletClient, http } from 'viem';
+import { sepolia } from 'viem/chains';
+
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
+
+const walletClient = createWalletClient({
+  chain: sepolia,
+  transport: http(),
+});
+
+await cofheClient.connect(publicClient, walletClient);
+
+cofheClient.connected; // true
+```
+
+### Using adapters
+
+If you use a different wallet/provider stack, `@cofhe/sdk/adapters` provides adapters that convert into viem-shaped clients.
+
+<CodeGroup>
+
+```typescript Ethers v6
+import { Ethers6Adapter } from '@cofhe/sdk/adapters';
+import { ethers } from 'ethers';
+
+const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.org');
+const signer = new ethers.Wallet('0xYOUR_PRIVATE_KEY', provider);
+
+const { publicClient, walletClient } = await Ethers6Adapter(
+  provider,
+  signer
+);
+
+await cofheClient.connect(publicClient, walletClient);
+```
+
+```typescript Ethers v5
+import { Ethers5Adapter } from '@cofhe/sdk/adapters';
+import { ethers } from 'ethers5';
+
+const provider = new ethers.providers.JsonRpcProvider(
+  'https://rpc.sepolia.org'
+);
+const signer = new ethers.Wallet('0xYOUR_PRIVATE_KEY').connect(provider);
+
+const { publicClient, walletClient } = await Ethers5Adapter(
+  provider,
+  signer
+);
+
+await cofheClient.connect(publicClient, walletClient);
+```
+
+```typescript Wagmi
+import { WagmiAdapter } from '@cofhe/sdk/adapters';
+import { createPublicClient, createWalletClient, http } from 'viem';
+import { sepolia } from 'viem/chains';
+
+const wagmiPublicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
+const wagmiWalletClient = createWalletClient({
+  chain: sepolia,
+  transport: http(),
+});
+
+const { publicClient, walletClient } = await WagmiAdapter(
+  wagmiWalletClient,
+  wagmiPublicClient
+);
+
+await cofheClient.connect(publicClient, walletClient);
+```
+
+</CodeGroup>
+
+## 4. Managing connections
+
+### Reconnect behavior
+
+Calling `connect` again with the same clients is a no-op. Calling it with new clients replaces the connection state.
+
+### Changing connected account
+
+To switch the client's connected account, call `cofheClient.connect()` with updated viem clients.
+
+```typescript
+const bobWalletClient = createWalletClient({
+  chain: sepolia,
+  transport: http(),
+  account: bobAddress,
+});
+const aliceWalletClient = createWalletClient({
+  chain: sepolia,
+  transport: http(),
+  account: aliceAddress,
+});
+
+// Connect as Bob
+await cofheClient.connect(publicClient, bobWalletClient);
+cofheClient.connection.account; // Bob's address
+
+// Switch to Alice
+await cofheClient.connect(publicClient, aliceWalletClient);
+cofheClient.connection.account; // Alice's address
+```
+
+### Disconnecting
+
+To manually disconnect, call `cofheClient.disconnect()`. This clears the in-memory connection state (clients/account/chainId) and marks the client as disconnected.
+
+It does **not** delete persisted permits or stored FHE keys.
+
+```typescript
+cofheClient.disconnect();
+cofheClient.connected; // false
+```
