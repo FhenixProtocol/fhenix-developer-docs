@@ -49,46 +49,72 @@
             ]
           }
         ]
-      },      {
-        "tab": "Cofhejs",
-            "global": {
-              "anchors": [
-                {
-                  "anchor": "Github",
-                  "href": "https://github.com/FhenixProtocol/cofhejs",
-                  "icon": "github"
-                }
-              ]
-            },
+      },
+      {
+        "tab": "Client SDK",
+        "global": {
+          "anchors": [
+            {
+              "anchor": "Github",
+              "href": "https://github.com/FhenixProtocol/cofhesdk",
+              "icon": "github"
+            }
+          ]
+        },
         "groups": [
           {
             "group": "Introduction",
             "pages": [
-              "cofhejs/introduction/overview",
-              "cofhejs/introduction/mental-model",
-              "cofhejs/introduction/installation"
+              "client-sdk/introduction/overview",
+              "client-sdk/introduction/mental-model",
+              "client-sdk/introduction/installation",
+              "client-sdk/introduction/migrating-from-cofhejs"
+            ]
+          },
+          {
+            "group": "Quick Start",
+            "pages": [
+              "client-sdk/quick-start/javascript",
+              "client-sdk/quick-start/hardhat",
+              "client-sdk/quick-start/react"
             ]
           },
           {
             "group": "Guides",
             "pages": [
-              "cofhejs/guides/encryption",
-              "cofhejs/guides/permits-management",
-              "cofhejs/guides/sealing-unsealing",
-              "cofhejs/guides/error-handling"
-            ]
-          }, 
-          {
-            "group": "Examples",
-            "pages": [
-              "cofhejs/examples/end-to-end"            
+              "client-sdk/guides/client-setup",
+              "client-sdk/guides/encrypting-inputs",
+              "client-sdk/guides/writing-encrypted-data",
+              "client-sdk/guides/permits",
+              "client-sdk/guides/decrypt-to-view",
+              "client-sdk/guides/decrypt-to-tx",
+              "client-sdk/guides/writing-decrypt-result",
+              "client-sdk/guides/error-handling"
             ]
           },
           {
-            "group": "Resources",
+            "group": "Hardhat Plugin",
             "pages": [
-              "cofhejs/resources/templates"
-            ] 
+              "client-sdk/hardhat-plugin/getting-started",
+              "client-sdk/hardhat-plugin/client",
+              "client-sdk/hardhat-plugin/mock-contracts",
+              "client-sdk/hardhat-plugin/logging",
+              "client-sdk/hardhat-plugin/testing"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "client-sdk/examples/end-to-end",
+              "client-sdk/examples/templates"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "client-sdk/reference/sdk-reference",
+              "client-sdk/reference/hardhat-reference"
+            ]
           }
         ]
       },
@@ -200,6 +226,49 @@
             "pages": [
               "deep-dive/research/future-plans",
               "deep-dive/research/research-in-fhenix"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Cofhejs (Legacy)",
+            "global": {
+              "anchors": [
+                {
+                  "anchor": "Github",
+                  "href": "https://github.com/FhenixProtocol/cofhejs",
+                  "icon": "github"
+                }
+              ]
+            },
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "cofhejs/introduction/overview",
+              "cofhejs/introduction/mental-model",
+              "cofhejs/introduction/installation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "cofhejs/guides/encryption",
+              "cofhejs/guides/permits-management",
+              "cofhejs/guides/sealing-unsealing",
+              "cofhejs/guides/error-handling"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "cofhejs/examples/end-to-end"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "cofhejs/resources/templates"
             ]
           }
         ]

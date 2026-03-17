@@ -1,0 +1,29 @@
+---
+title: Templates & Starters
+description: "Ready-to-use project templates for building with @cofhe/sdk"
+---
+
+Get started quickly with pre-configured project templates.
+
+## Hardhat Starter
+
+A minimal Hardhat project with `@cofhe/hardhat-plugin` pre-configured, including a sample contract and test.
+
+<Card title="cofhe-hardhat-starter" icon="github" href="https://github.com/FhenixProtocol/cofhe-hardhat-starter">
+  Clone this template to start building FHE contracts with Hardhat immediately.
+</Card>
+
+```bash
+git clone https://github.com/FhenixProtocol/cofhe-hardhat-starter.git
+cd cofhe-hardhat-starter
+npm install
+npx hardhat test
+```
+
+## What's included
+
+- `@cofhe/hardhat-plugin` and `@cofhe/sdk` pre-installed
+- `hardhat.config.ts` with `evmVersion: 'cancun'` and the plugin imported
+- A sample FHE contract
+- A test demonstrating the encrypt → store → decrypt flow
+- Pre-configured network settings for local development and testnets

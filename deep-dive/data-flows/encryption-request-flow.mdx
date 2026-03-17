@@ -1,18 +1,18 @@
 ---
 title: Encryption Request Flow
-description: "Complete flow of the encryption request process using Cofhejs for encrypting data for private computation with smart contracts"
+description: "Complete flow of the encryption request process using the Client SDK for encrypting data for private computation with smart contracts"
 ---
 
 ## Overview
 
-This document outlines the complete flow of the encryption request process using Cofhejs, a TypeScript library designed to help users encrypt data for private computation with smart contracts. Understanding this process is essential for developers who want to enable their users to interact with privacy-preserving smart contracts using encrypted inputs.
+This document outlines the complete flow of the encryption request process using the `@cofhe/sdk` Client SDK, a TypeScript library designed to help users encrypt data for private computation with smart contracts. Understanding this process is essential for developers who want to enable their users to interact with privacy-preserving smart contracts using encrypted inputs.
 
 ## Key Components
 
 | Component | Description |
 |-----------|-------------|
 | **dApp** | The decentralized application that interacts with the user and the contracts |
-| **Cofhejs** | TypeScript package designed for seamless interaction Fhenix's co-processor |
+| **Client SDK** (`@cofhe/sdk`) | TypeScript package designed for seamless interaction with Fhenix's co-processor |
 | **Threshold Network** | (When applicable) Handles secure decryption operations |
 
 ## Flow Diagram
@@ -28,15 +28,16 @@ The following diagram illustrates the complete flow of an Encryption request in 
 ## Step-by-Step Flow
 
 <Steps>
-<Step title="Install and initialize Cofhejs">
-Install, include and initialize Cofhejs in your project (full details [here](/cofhejs/introduction/installation)).
+<Step title="Install and initialize the Client SDK">
+Install, include and initialize the Client SDK in your project (full details [here](/client-sdk/introduction/installation)).
 
 ```bash
-npm install cofhejs
+npm install @cofhe/sdk
 ```
 
 ```javascript
-const { cofhejs, FheTypes, Encryptable } = require("cofhejs/node");
+const { Encryptable, FheTypes } = require("@cofhe/sdk");
+const { createCofheConfig, createCofheClient } = require("@cofhe/sdk/node");
 ```
 </Step>
 
@@ -60,6 +61,6 @@ The user can send the value handle to the contract as an encrypted input. This h
 </Steps>
 
 <Note>
-Read more about the implementation details [here](/cofhejs/guides/encryption)
+Read more about the implementation details [here](/client-sdk/guides/encrypting-inputs)
 </Note>
 

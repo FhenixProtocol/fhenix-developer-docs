@@ -1,0 +1,73 @@
+---
+title: SDK Reference
+description: "Complete API reference for @cofhe/sdk"
+---
+
+<Info>
+This page is under construction. A full API reference documenting all functions, parameters, and return types will be added here.
+</Info>
+
+## Entrypoints
+
+| Entrypoint | Contents |
+| --- | --- |
+| `@cofhe/sdk` | Core types: `Encryptable`, `FheTypes`, `EncryptStep`, `CofheError`, `CofheErrorCode`, `isCofheError`, `assertCorrectEncryptedItemInput` |
+| `@cofhe/sdk/web` | `createCofheConfig`, `createCofheClient` (browser defaults) |
+| `@cofhe/sdk/node` | `createCofheConfig`, `createCofheClient` (Node.js defaults) |
+| `@cofhe/sdk/permits` | `PermitUtils`, `setPermit`, `setActivePermitHash`, `getPermit`, `getActivePermitHash` |
+| `@cofhe/sdk/adapters` | `Ethers5Adapter`, `Ethers6Adapter`, `WagmiAdapter`, `HardhatSignerAdapter` |
+| `@cofhe/sdk/chains` | `chains`, `getChainById`, `getChainByName`, `hardhat` |
+
+## Core types
+
+### `Encryptable`
+
+Factory for creating encryptable input items.
+
+| Method | Input type | Solidity param |
+| --- | --- | --- |
+| `Encryptable.bool(value)` | `boolean` | `InEbool` |
+| `Encryptable.uint8(value)` | `bigint \| string` | `InEuint8` |
+| `Encryptable.uint16(value)` | `bigint \| string` | `InEuint16` |
+| `Encryptable.uint32(value)` | `bigint \| string` | `InEuint32` |
+| `Encryptable.uint64(value)` | `bigint \| string` | `InEuint64` |
+| `Encryptable.uint128(value)` | `bigint \| string` | `InEuint128` |
+| `Encryptable.address(value)` | `bigint \| string` | `InEaddress` |
+| `Encryptable.create(type, value)` | varies | varies |
+
+### `FheTypes`
+
+Enum of supported FHE types used with `decryptForView`.
+
+| Value | JS return type |
+| --- | --- |
+| `FheTypes.Bool` | `boolean` |
+| `FheTypes.Uint8` | `bigint` |
+| `FheTypes.Uint16` | `bigint` |
+| `FheTypes.Uint32` | `bigint` |
+| `FheTypes.Uint64` | `bigint` |
+| `FheTypes.Uint128` | `bigint` |
+| `FheTypes.Uint160` | `string` (checksummed address) |
+
+### `EncryptedItemInput`
+
+```typescript
+type EncryptedItemInput = {
+  ctHash: bigint;
+  securityZone: number;
+  utype: FheTypes;
+  signature: string;
+};
+```
+
+### `EncryptStep`
+
+Enum values fired during the encryption pipeline:
+
+| Value | Description |
+| --- | --- |
+| `EncryptStep.InitTfhe` | Initialize TFHE WASM module |
+| `EncryptStep.FetchKeys` | Fetch FHE public key and CRS |
+| `EncryptStep.Pack` | Pack plaintext values |
+| `EncryptStep.Prove` | Generate ZK proof |
+| `EncryptStep.Verify` | Submit to CoFHE verifier |

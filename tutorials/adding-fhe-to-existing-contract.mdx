@@ -236,9 +236,9 @@ contract VotingExample {
 We now need to handle the user's vote casting. The first thing that we need to do is hide which option the user is voting for. We can do this by replacing the `vote` function parameter `uint256 _optionIndex` with `InEuint8 memory _optionIndex`. `InEuint8` is an encrypted input type. We then need to convert the `InEuint8` to an `euint8` for use in computation.
 
 <Note>
-Encrypting inputs requires the use of [**cofhejs**](/cofhejs/introduction/overview).
+Encrypting inputs requires the use of the [**Client SDK**](/client-sdk/introduction/overview) (`@cofhe/sdk`).
 
-Read more about [**encrypted inputs**](/cofhejs/guides/encryption).
+Read more about [**encrypted inputs**](/client-sdk/guides/encrypting-inputs).
 </Note>
 
 ```solidity

@@ -1,0 +1,142 @@
+---
+title: Decrypt to View
+description: "Reveal encrypted values locally for UI display using permits"
+---
+
+Use `decryptForView` to reveal a confidential (encrypted) value locally in your app so you can display it in the UI.
+
+Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not** return an on-chain-verifiable signature, and it is **not** meant to be published on-chain.
+
+## Flow
+
+1. Read the encrypted handle (`ctHash`) from your contract.
+2. Ensure you have a permit that authorizes decryption of that value.
+3. Call `decryptForView(ctHash, utype).execute()` to get the plaintext.
+
+<Note>
+`decryptForView` always decrypts using a permit (there is no `.withoutPermit()` mode). If your protocol intends for the plaintext to become publicly visible on-chain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
+</Note>
+
+## Prerequisites
+
+1. [Create and connect a client](/client-sdk/guides/client-setup).
+2. Know the encrypted handle (`ctHash`) and the encrypted type (`utype`).
+3. Have a [permit](/client-sdk/guides/permits) available for the connected `chainId + account`.
+
+<Tip>
+**Getting `ctHash`**: In most apps, `ctHash` comes from reading a stored encrypted value, an event arg, or a return value from a `view` call.
+</Tip>
+
+<Tip>
+**Providing `utype`**: `utype` must match the ciphertext's underlying FHE type. The SDK uses it to convert the decrypted `bigint` into a convenient JS type.
+
+Supported `utype`s:
+- `FheTypes.Bool` → returns a `boolean`
+- `FheTypes.Uint160` (address) → returns a checksummed `0x...` string
+- `FheTypes.Uint8 | Uint16 | Uint32 | Uint64 | Uint128` → returns a `bigint`
+</Tip>
+
+## Permit setup
+
+If you don't have a permit yet, create one once after connecting:
+
+```typescript
+await client.connect(publicClient, walletClient);
+
+// Creates a permit if needed, stores it, and selects it as the active permit.
+await client.permits.getOrCreateSelfPermit();
+```
+
+## Decrypt for UI
+
+Choose the pattern that matches how your app manages permits:
+
+<CodeGroup>
+
+```typescript Active permit
+await client.connect(publicClient, walletClient);
+await client.permits.getOrCreateSelfPermit();
+
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .execute();
+```
+
+```typescript Permit object
+const permit = await client.permits.getOrCreateSelfPermit();
+
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint64)
+  .withPermit(permit)
+  .execute();
+```
+
+```typescript Permit hash
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint8)
+  .withPermit(permitHash)
+  .execute();
+```
+
+</CodeGroup>
+
+## What `decryptForView` returns
+
+Running `.execute()` resolves to a scalar JS value:
+
+- Integer utypes (`Uint8`, `Uint16`, `Uint32`, `Uint64`, `Uint128`): a `bigint`
+- `FheTypes.Bool`: a `boolean`
+- `FheTypes.Uint160` (address): a checksummed `0x...` address string
+
+## Builder API
+
+### `.execute()` — required, call last
+
+Runs the decryption and returns a UI-friendly scalar value.
+
+### `.withPermit(...)` — optional
+
+Select which permit to use:
+
+- `.withPermit()` — uses the active permit
+- `.withPermit(permitHash)` — fetches a stored permit by hash
+- `.withPermit(permit)` — uses the provided permit object
+
+If you don't call `.withPermit(...)`, the active permit is used by default.
+
+### `.setAccount(address)` — optional
+
+Overrides the account used to resolve the active/stored permit.
+
+### `.setChainId(chainId)` — optional
+
+Overrides the chain used to resolve the Threshold Network URL and permits.
+
+## Common UI patterns
+
+<CodeGroup>
+
+```typescript Format bigint for display
+import { formatUnits } from 'viem';
+
+const decimals = 6;
+const display = formatUnits(amount, decimals);
+```
+
+```typescript Bigint → number (range-check)
+const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+const asNumber = amount <= MAX_SAFE ? Number(amount) : undefined;
+```
+
+```typescript Booleans & addresses
+const statusLabel = decryptedIsAllowed ? 'Allowed' : 'Not allowed';
+const shortOwner = `${decryptedOwner.slice(0, 6)}…${decryptedOwner.slice(-4)}`;
+```
+
+</CodeGroup>
+
+## Common pitfalls
+
+- **Missing permit**: `decryptForView` will fail if there is no active permit for the current `chainId + account`.
+- **Wrong `utype`**: you must pass the correct FHE type for the ciphertext.
+- **Wrong chain/account**: permits are scoped to `chainId + account`. If the user switches wallets or networks, create/select the correct permit.
