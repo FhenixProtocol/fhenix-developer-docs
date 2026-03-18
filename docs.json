@@ -222,49 +222,6 @@
             ]
           }
         ]
-      },
-      {
-        "tab": "Cofhejs (Legacy)",
-            "global": {
-              "anchors": [
-                {
-                  "anchor": "Github",
-                  "href": "https://github.com/FhenixProtocol/cofhejs",
-                  "icon": "github"
-                }
-              ]
-            },
-        "groups": [
-          {
-            "group": "Introduction",
-            "pages": [
-              "cofhejs/introduction/overview",
-              "cofhejs/introduction/mental-model",
-              "cofhejs/introduction/installation"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "cofhejs/guides/encryption",
-              "cofhejs/guides/permits-management",
-              "cofhejs/guides/sealing-unsealing",
-              "cofhejs/guides/error-handling"
-            ]
-          },
-          {
-            "group": "Examples",
-            "pages": [
-              "cofhejs/examples/end-to-end"
-            ]
-          },
-          {
-            "group": "Resources",
-            "pages": [
-              "cofhejs/resources/templates"
-            ]
-          }
-        ]
       }
     ]
   },
