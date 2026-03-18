@@ -1,0 +1,348 @@
+---
+title: "Migrating from FHE.decrypt to the New Decryption Flow"
+description: "Step-by-step guide for migrating Solidity contracts from FHE.decrypt to the new allowPublic + publishDecryptResult pattern"
+---
+
+## Overview
+
+The old decryption pattern used `FHE.decrypt(ctHash)` to trigger an asynchronous decryption, followed by `FHE.getDecryptResultSafe(ctHash)` to read the result once available. The new pattern replaces `FHE.decrypt` with an off-chain decryption step using the Client SDK, and uses `FHE.publishDecryptResult` to submit the result on-chain with a cryptographic proof.
+
+This guide walks through concrete before/after Solidity examples.
+
+## What changed
+
+| | Old pattern | New pattern |
+|---|---|---|
+| **Trigger decrypt** | `FHE.decrypt(ctHash)` (on-chain) | `FHE.allowPublic(ctHash)` (on-chain) + `client.decryptForTx(ctHash)` (off-chain) |
+| **Submit result** | Automatic (async, no proof) | `FHE.publishDecryptResult(ctHash, plaintext, signature)` |
+| **Verify only** | N/A | `FHE.verifyDecryptResult(ctHash, plaintext, signature)` |
+| **Read result** | `FHE.getDecryptResultSafe(ctHash)` | `FHE.getDecryptResultSafe(ctHash)` (same) |
+
+<Note>
+The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow requires a Threshold Network signature, ensuring the plaintext is cryptographically verified before being used on-chain.
+</Note>
+
+---
+
+## The New Decryption Flow
+
+<Steps>
+<Step title="Grant decryption permission (on-chain)">
+Instead of calling `FHE.decrypt()`, mark the value as decryptable:
+
+```solidity
+// Anyone can request decryption (replaces FHE.decrypt)
+FHE.allowPublic(encryptedValue);
+
+// Or restrict to specific address
+FHE.allow(encryptedValue, authorizedAddress);
+```
+</Step>
+
+<Step title="Decrypt off-chain (client-side)">
+The client requests decryption from the Threshold Network, which returns the plaintext and a signature:
+
+```typescript
+const result = await client
+    .decryptForTx(ctHash)
+    .withoutPermit()  // use .withPermit() if FHE.allow was used instead of allowPublic
+    .execute();
+
+// result.decryptedValue — the plaintext (bigint)
+// result.signature      — Threshold Network signature
+```
+</Step>
+
+<Step title="Submit result on-chain with proof">
+The decrypted value and signature are submitted to your contract:
+
+```solidity
+// Publishes the result on-chain (readable via getDecryptResultSafe)
+FHE.publishDecryptResult(encryptedValue, plaintext, signature);
+
+// Or verify without storing
+FHE.verifyDecryptResult(encryptedValue, plaintext, signature);
+```
+</Step>
+</Steps>
+
+---
+
+## Example 1: Simple counter
+
+A minimal example showing how the reveal pattern changes.
+
+<CodeGroup>
+```solidity Before (FHE.decrypt)
+contract Counter {
+    euint64 public counter;
+
+    function increment() external {
+        counter = FHE.add(counter, FHE.asEuint64(1));
+        FHE.allowThis(counter);
+    }
+
+    // Old: trigger async decryption on-chain
+    function request_reveal() external {
+        FHE.decrypt(counter);
+    }
+
+    // Old: read the result once available
+    function get_counter_value() external view returns (uint256) {
+        (uint256 value, bool decrypted) = FHE.getDecryptResultSafe(counter);
+        if (!decrypted) revert("Value is not ready");
+        return value;
+    }
+}
+```
+
+```solidity After (new flow)
+contract Counter {
+    euint64 public counter;
+
+    function increment() external {
+        counter = FHE.add(counter, FHE.asEuint64(1));
+        FHE.allowThis(counter);
+    }
+
+    // New: mark as publicly decryptable
+    function allow_counter_publicly() external {
+        FHE.allowPublic(counter);
+    }
+
+    // New: accept decrypted value with Threshold Network proof
+    function reveal_counter(uint64 _decrypted, bytes memory _signature) external {
+        FHE.publishDecryptResult(counter, _decrypted, _signature);
+    }
+
+    // Same: read the published result
+    function get_counter_value() external view returns (uint256) {
+        (uint256 value, bool decrypted) = FHE.getDecryptResultSafe(counter);
+        if (!decrypted) revert("Value is not ready");
+        return value;
+    }
+}
+```
+</CodeGroup>
+
+**Client-side flow (new):**
+
+```typescript
+// 1. Allow public decryption
+await counter.allow_counter_publicly();
+
+// 2. Decrypt off-chain
+const ctHash = await counter.counter();
+const result = await client
+    .decryptForTx(ctHash)
+    .withoutPermit()
+    .execute();
+
+// 3. Publish on-chain with proof
+await counter.reveal_counter(result.decryptedValue, result.signature);
+
+// 4. Read the result
+const value = await counter.get_counter_value();
+```
+
+---
+
+## Example 2: Token unshield (FHERC20Wrapper)
+
+The unshield flow is where `FHE.decrypt` was most commonly used. It already followed a two-step pattern (unshield + claim), which maps naturally to the new flow.
+
+<CodeGroup>
+```solidity Before (FHE.decrypt)
+function unshield(address to, uint64 value) public {
+    if (to == address(0)) to = msg.sender;
+    euint64 burned = _burn(msg.sender, value);
+
+    // Old: trigger async decryption on-chain
+    FHE.decrypt(burned);
+
+    _createClaim(to, value, burned);
+    emit UnshieldedERC20(msg.sender, to, value);
+}
+
+function claimUnshielded(bytes32 ctHash) public {
+    Claim memory claim = _claims[ctHash];
+    if (claim.to == address(0)) revert ClaimNotFound();
+    if (claim.claimed) revert AlreadyClaimed();
+
+    // Old: read the async decryption result
+    (uint256 amount, bool decrypted) = FHE.getDecryptResultSafe(euint64.wrap(ctHash));
+    if (!decrypted) revert("Not yet decrypted");
+
+    claim.claimed = true;
+    _erc20.safeTransfer(claim.to, amount);
+    emit ClaimedUnshieldedERC20(msg.sender, claim.to, amount);
+}
+```
+
+```solidity After (new flow)
+function unshield(address to, uint64 value) public {
+    if (to == address(0)) to = msg.sender;
+    euint64 burned = _burn(msg.sender, value);
+
+    // New: mark as publicly decryptable (replaces FHE.decrypt)
+    FHE.allowPublic(burned);
+
+    _createClaim(to, value, burned);
+    emit UnshieldedERC20(msg.sender, to, value);
+}
+
+function claimUnshielded(
+    bytes32 ctHash,
+    uint64 decryptedAmount,
+    bytes memory decryptionSignature
+) public {
+    // New: verify and publish the decryption proof
+    FHE.publishDecryptResult(
+        euint64.wrap(ctHash),
+        decryptedAmount,
+        decryptionSignature
+    );
+
+    Claim memory claim = _claims[ctHash];
+    if (claim.to == address(0)) revert ClaimNotFound();
+    if (claim.claimed) revert AlreadyClaimed();
+
+    claim.claimed = true;
+    _erc20.safeTransfer(claim.to, decryptedAmount);
+    emit ClaimedUnshieldedERC20(msg.sender, claim.to, decryptedAmount);
+}
+```
+</CodeGroup>
+
+**Key differences:**
+- `FHE.decrypt(burned)` → `FHE.allowPublic(burned)` — no on-chain decryption is triggered, just a permission grant
+- `claimUnshielded(bytes32 ctHash)` → `claimUnshielded(bytes32 ctHash, uint64 decryptedAmount, bytes signature)` — the caller now provides the decrypted value + proof
+- `FHE.getDecryptResultSafe` → `FHE.publishDecryptResult` — the contract verifies the Threshold Network signature instead of polling for a result
+
+**Client-side flow (new):**
+
+```typescript
+// 1. Request unshield
+await token.unshield(recipientAddress, 100n);
+
+// 2. Get the ctHash of the burned amount (from the event or storage)
+const ctHash = /* ... from UnshieldedERC20 event ... */;
+
+// 3. Decrypt off-chain
+const result = await client
+    .decryptForTx(ctHash)
+    .withoutPermit()
+    .execute();
+
+// 4. Claim with proof
+await token.claimUnshielded(
+    result.ctHash,
+    result.decryptedValue,
+    result.signature
+);
+```
+
+---
+
+## Example 3: Revealing a vote result
+
+A simple pattern: revealing a single encrypted vote count after a deadline.
+
+<CodeGroup>
+```solidity Before (FHE.decrypt)
+euint64 public totalVotes;
+
+function closeVoting() external onlyOwner {
+    require(block.timestamp >= deadline, "Not ended");
+
+    // Old: trigger async decryption on-chain
+    FHE.decrypt(totalVotes);
+}
+
+function getResult() external view returns (uint256) {
+    // Old: poll for the async result
+    (uint256 result, bool decrypted) = FHE.getDecryptResultSafe(totalVotes);
+    if (!decrypted) revert("Not yet decrypted");
+    return result;
+}
+```
+
+```solidity After (new flow)
+euint64 public totalVotes;
+
+function closeVoting() external onlyOwner {
+    require(block.timestamp >= deadline, "Not ended");
+
+    // New: mark as publicly decryptable
+    FHE.allowPublic(totalVotes);
+}
+
+function revealResult(uint64 plaintext, bytes calldata signature) external {
+    // New: publish with Threshold Network proof
+    FHE.publishDecryptResult(totalVotes, plaintext, signature);
+}
+
+function getResult() external view returns (uint256) {
+    // Same: read the published result
+    (uint256 result, bool decrypted) = FHE.getDecryptResultSafe(totalVotes);
+    if (!decrypted) revert("Not yet decrypted");
+    return result;
+}
+```
+</CodeGroup>
+
+---
+
+## `publishDecryptResult` vs `verifyDecryptResult`
+
+| Method | Stores result on-chain | Others can read it | Use case |
+|---|---|---|---|
+| `publishDecryptResult` | Yes | Yes, via `getDecryptResultSafe` | Revealing results publicly (auctions, votes, counters) |
+| `verifyDecryptResult` | No | No | One-time verification (transfers, burns) |
+
+Use `verifyDecryptResult` when you only need to confirm the plaintext is authentic and don't need other contracts or future calls to read it:
+
+```solidity
+function transferToPublic(
+    bytes32 ctHash,
+    uint32 plaintext,
+    bytes calldata signature
+) external {
+    // Verify authenticity without publishing
+    require(
+        FHE.verifyDecryptResult(euint32.wrap(ctHash), plaintext, signature),
+        "Invalid decrypt proof"
+    );
+
+    _transfer(msg.sender, recipient, plaintext);
+}
+```
+
+---
+
+## Migration checklist
+
+<Steps>
+<Step title="Find all FHE.decrypt calls">
+Search your contracts for `FHE.decrypt(`. Each call needs to be replaced.
+</Step>
+
+<Step title="Replace FHE.decrypt with FHE.allowPublic">
+In the function that previously called `FHE.decrypt(ctHash)`, replace it with `FHE.allowPublic(ctHash)`.
+</Step>
+
+<Step title="Add a finalize function">
+Create a new function that accepts `(plaintext, signature)` parameters and calls `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`.
+</Step>
+
+<Step title="Update client code">
+Add the off-chain decryption step using `client.decryptForTx()` between the two on-chain calls.
+</Step>
+</Steps>
+
+## Next Steps
+
+- Read about [Decryption Operations](/fhe-library/core-concepts/decryption-operations) for the full reference
+- See [Adding FHE to an Existing Contract](/tutorials/adding-fhe-to-existing-contract) for a complete contract migration
+- Learn about [Access Control](/fhe-library/core-concepts/access-control) for managing decrypt permissions
+- Check the [Client SDK decrypt guide](/client-sdk/guides/decrypt-to-tx) for the full client-side API

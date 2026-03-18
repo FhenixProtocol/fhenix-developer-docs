@@ -179,9 +179,9 @@
             "group": "Tutorials",
             "pages": [
               "tutorials/overview",
+              "tutorials/migrating-from-fhe-decrypt",
               "tutorials/your-first-fhe-contract",
               "tutorials/adding-fhe-to-existing-contract",
-              "tutorials/migrating-to-cofhe",
               "tutorials/acl-usage-examples"
             ]
           }
