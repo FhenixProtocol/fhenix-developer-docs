@@ -21,9 +21,11 @@ You can develop and test locally using mock contracts, then deploy to any of the
 
 The Fhenix development environment consists of several key components:
 
+{/* @SDK */}
+
 - **cofhe-hardhat-starter**: Template Hardhat project to clone and use as a starting point
 - **cofhe-hardhat-plugin**: Hardhat plugin that deploys mock contracts and exposes utilities
-- **cofhejs**: JavaScript library for interacting with FHE contracts and the CoFHE coprocessor
+- **@cofhe/sdk**: JavaScript library for interacting with FHE contracts and the CoFHE coprocessor
 - **cofhe-mock-contracts**: Mock contracts that mimic CoFHE coprocessor behavior for local testing
 - **cofhe-contracts**: Solidity libraries and smart contracts for FHE operations
 
@@ -71,10 +73,10 @@ All dependencies are installed and ready to use.
 ## Project Structure
 
 The starter kit provides a well-organized directory structure to help you get started quickly:
-
+{/* @SDK */}
 - **`contracts/`**: Contains all your Solidity smart contract source files
   - `Counter.sol`: An example FHE-enabled counter contract demonstrating basic FHE operations
-- **`test/`**: Houses tests that utilize cofhejs and utilities to interact with FHE-enabled contracts
+- **`test/`**: Houses tests that utilize `@cofhe/sdk` and utilities to interact with FHE-enabled contracts
 - **`tasks/`**: Tasks to deploy and interact with the Counter contract on Arbitrum Sepolia
 - **`hardhat.config.ts`**: Imports the CoFHE Hardhat plugin to deploy mock contracts
 
@@ -133,20 +135,22 @@ it('Should increment the counter', async function () {
 })
 ```
 
-```typescript Full Cofhejs Flow
-it('Full cofhejs flow', async function () {
+{/* @SDK */}
+```typescript Full Client SDK Flow
+it('Full Client SDK flow', async function () {
     const [bob] = await hre.ethers.getSigners()
 
     const CounterFactory = await hre.ethers.getContractFactory('Counter')
     const counter = await CounterFactory.connect(bob).deploy()
 
-    // Initialize cofhejs
-    expectResultSuccess(await cofhejs_initializeWithHardhatSigner(bob))
+    // Create a connected client (batteries included)
+    const client = await hre.cofhe.createClientWithBatteries(bob)
 
     // Encrypt a value
-    const [encryptedInput] = expectResultSuccess(
-        await cofhejs.encrypt((step) => 
-            console.log(`Encrypt step - ${step}`), [Encryptable.uint32(5n)]))
+    const [encryptedInput] = await client
+        .encryptInputs([Encryptable.uint32(5n)])
+        .onStep((step) => console.log(`Encrypt step - ${step}`))
+        .execute()
 
     // Use the encrypted input to reset the counter
     await counter.connect(bob).reset(encryptedInput)
@@ -154,12 +158,14 @@ it('Full cofhejs flow', async function () {
     // Fetch the hash of the encrypted counter value
     const encryptedValue = await counter.count()
 
-    // Unseal an encrypted value
-    const unsealedResult = expectResultSuccess(
-        await cofhejs.unseal(encryptedValue, FheTypes.Uint32))
+    // Decrypt the value (view decryption)
+    const result = await client
+        .decryptForView(encryptedValue, FheTypes.Uint32)
+        .withPermit()
+        .execute()
 
-    // Check the unsealed result
-    expect(unsealedResult).equal(5n)
+    // Check the decrypted result
+    expect(result).equal(5n)
 })
 ```
 </CodeGroup>
@@ -222,7 +228,8 @@ This plugin provides essential tools for developing FHE contracts:
 - **Testing Utilities**: Helpers for testing FHE contracts
 - **Mock Integration**: Sets up mock contracts for local testing
 
-### Cofhejs
+{/* @SDK */}
+### Client SDK (`@cofhe/sdk`)
 
 The JavaScript library for working with FHE contracts:
 
@@ -266,7 +273,7 @@ CoFHE supports multiple development environments:
 - Available on Ethereum Sepolia and Arbitrum Sepolia
 
 <Info>
-Environment detection happens automatically in most cases. When testing on the Hardhat network with mocks deployed (e.g., in unit tests), `cofhejs_initializeWithHardhatSigner` will detect the Hardhat network and set `environment: "MOCK"` in the underlying `cofhejs.initialize(...)` call. When using tasks that connect to networks like `arb-sepolia`, the environment will automatically be set to `environment: "TESTNET"`. This environment setting is crucial as it determines how `cofhejs` handles encryption and unsealing operations.
+Environment detection happens automatically in most cases. When testing on the Hardhat network with mocks deployed (e.g., in unit tests), `hre.cofhe.createClientWithBatteries` will detect the Hardhat network and configure the client for the mock environment. When using tasks that connect to networks like `arb-sepolia`, the environment will automatically be set to testnet mode. This environment setting is crucial as it determines how the SDK handles encryption and decryption operations.
 </Info>
 
 ## Creating Custom Tasks
@@ -281,7 +288,7 @@ task("increment-counter", "Increment the counter on the deployed contract")
     // Get the signer
     const [signer] = await ethers.getSigners();
     console.log(`Using account: ${signer.address}`);
-    await cofhejs_initializeWithHardhatSigner(signer);
+    await hre.cofhe.createClientWithBatteries(signer);
 
     // Interact with your contract
     // ...
@@ -316,13 +323,13 @@ Now that you have your development environment set up, you can:
 
 - Explore the [FHE Library documentation](/fhe-library) to learn about encrypted data types and operations
 - Review the [Counter contract example](https://github.com/FhenixProtocol/cofhe-hardhat-starter/blob/main/contracts/Counter.sol) to see FHE in action
-- Check out [Cofhejs documentation](/cofhejs/introduction/overview) for client-side integration
+- Check out the [Client SDK documentation](/client-sdk/introduction/overview) for client-side integration
 - Learn about [access control mechanisms](/fhe-library) for managing encrypted data permissions
 
 ## Resources
 
 - [Fhenix Documentation](https://docs.fhenix.zone)
-- [Cofhejs GitHub](https://github.com/FhenixProtocol/cofhejs)
+- [Client SDK GitHub](https://github.com/FhenixProtocol/cofhesdk)
 - [CoFHE Contracts GitHub](https://github.com/FhenixProtocol/cofhe-contracts)
 - [cofhe-hardhat-starter GitHub](https://github.com/fhenixprotocol/cofhe-hardhat-starter)
 

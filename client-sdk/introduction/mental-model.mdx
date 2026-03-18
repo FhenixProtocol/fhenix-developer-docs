@@ -1,0 +1,137 @@
+---
+title: Mental Model
+description: "Understand how data flows through FHE-enabled dApps using the @cofhe/sdk"
+---
+
+To understand how `@cofhe/sdk` fits into the Fhenix framework, you'll explore a simple mental model using a Counter smart contract example. This will show you how data flows through FHE-enabled dApps—from encryption to computation to decryption.
+
+## The Counter Example
+
+Imagine a smart contract called **Counter** where each user has their own private counter. Users can increment their counter and read its value with complete privacy—no one, including the smart contract itself, can see the actual counter values.
+
+### Key Concepts
+
+- **Public Key** = A lock that anyone can use to seal data
+- **Private Key** = The unique key to unlock sealed data
+- **CoFHE Co-Processor** = Fhenix's off-chain service that handles FHE operations
+- **Ciphertext** = Encrypted data that can be computed on without decryption
+
+<Steps>
+
+<Step title="Encrypting Input Data">
+
+When a user wants to add `5` to their counter, the data must first be encrypted before being sent to the smart contract.
+
+**What happens:**
+
+1. The user's plaintext value `5` is encrypted using `client.encryptInputs([Encryptable.uint32(5n)]).execute()`
+2. The SDK generates a ZK proof and submits the encrypted value to the CoFHE verifier
+3. The returned `EncryptedItemInput` is sent to the smart contract on-chain
+4. The blockchain sees only encrypted data, never the actual value `5`
+
+### The "Locked Box" Analogy
+
+Think of this as placing the value `5` in a box and locking it with the CoFHE co-processor's public key. The locked box (ciphertext) can be sent to the smart contract, but no one can see what's inside without the private key.
+
+</Step>
+
+<Step title="Performing Computations on Encrypted Data">
+
+Once the encrypted data reaches the smart contract, FHE magic happens. The smart contract can perform arithmetic operations directly on the ciphertext without ever decrypting it.
+
+**What happens:**
+
+1. The smart contract receives the encrypted value
+2. It retrieves the user's encrypted counter from storage (also encrypted)
+3. Using FHE operations, it adds the encrypted values together
+4. The result is stored as encrypted data
+5. **Critical**: At no point does the smart contract, blockchain, or anyone else see the actual numbers
+
+### FHE Computation Magic
+
+This is where Fully Homomorphic Encryption shines. The CoFHE co-processor enables the smart contract to:
+- Add encrypted values together
+- Compare encrypted values
+- Perform other arithmetic operations
+- All while the data remains encrypted and private
+
+</Step>
+
+<Step title="Retrieving Encrypted Output">
+
+When a user wants to read their counter value, they use one of the SDK's two decryption methods depending on their goal.
+
+**For UI display (`decryptForView`):**
+
+1. The user reads the encrypted handle (`ctHash`) from the contract
+2. A permit authorizes decryption — created via `client.permits.getOrCreateSelfPermit()`
+3. The SDK requests re-encryption from the Threshold Network using the permit's sealing key
+4. The plaintext is returned locally for display
+
+**For on-chain use (`decryptForTx`):**
+
+1. The user reads the encrypted handle (`ctHash`) from the contract
+2. The SDK requests decryption from the Threshold Network
+3. The plaintext and a verifiable signature are returned
+4. The signature can be verified on-chain via `FHE.verifyDecryptResult(...)`
+
+### The "Lock Exchange" Analogy
+
+This is like exchanging locks on the box:
+- The box starts locked with the CoFHE co-processor's lock
+- The user sends their own lock to the co-processor (via the permit's sealing key)
+- The co-processor removes its lock and applies the user's lock
+- The box remains locked throughout, but now only the user can open it
+- The data remains private at every step
+
+</Step>
+
+</Steps>
+
+## The Complete Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant SDK as "@cofhe/sdk (Client)"
+    participant Contract as "Smart Contract"
+    participant CoFHE as "CoFHE Co-Processor"
+    participant Blockchain as "Blockchain"
+
+    Note over User,SDK: Step 1: Encrypting Input Data
+    User->>SDK: Add value 5 to counter
+    SDK->>SDK: encryptInputs([Encryptable.uint32(5n)])
+    SDK->>CoFHE: Submit ZK proof + encrypted value
+    CoFHE-->>SDK: Signed EncryptedItemInput
+    SDK->>Blockchain: Send transaction with encrypted value
+    Blockchain->>Contract: increment(encryptedValue)
+
+    Note over Contract,Blockchain: Step 2: Performing Computations
+    Contract->>Contract: Retrieve encrypted counter
+    Contract->>Contract: FHE.add(encryptedCounter, encryptedValue)
+    Contract->>Blockchain: Store encrypted result
+    Blockchain-->>Contract: Transaction confirmed
+
+    Note over User,CoFHE: Step 3: Retrieving Encrypted Output
+    User->>SDK: Read counter value
+    SDK->>Blockchain: Request encrypted counter
+    Blockchain->>Contract: getCounter(userAddress)
+    Contract-->>SDK: ctHash (encrypted handle)
+
+    SDK->>SDK: Use permit with sealing key
+    SDK->>CoFHE: decryptForView(ctHash, FheTypes.Uint32)
+    CoFHE->>CoFHE: Re-encrypt with user's sealing key
+    CoFHE-->>SDK: Re-encrypted data
+    SDK->>SDK: Unseal with private key
+    SDK-->>User: Counter value: 5
+```
+
+## Key Takeaways
+
+1. **Encryption happens client-side**: The SDK encrypts data with ZK proofs before it reaches the blockchain
+2. **Computation happens on-chain**: Smart contracts perform operations on encrypted data via `FHE.sol`
+3. **FHE enables privacy-preserving computation**: The blockchain never sees plaintext values
+4. **Permits enable access control**: EIP-712 signed permits authorize who can decrypt specific data
+5. **Two decryption paths**: `decryptForView` for UI display, `decryptForTx` for on-chain verification
+
+This architecture ensures that sensitive data remains private throughout its entire lifecycle—from input to computation to output—while still enabling powerful decentralized applications.

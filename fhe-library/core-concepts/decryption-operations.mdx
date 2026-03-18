@@ -7,170 +7,153 @@ description: "Understanding how to decrypt encrypted data in FHE smart contracts
 
 Decryption is the process of converting encrypted data back into its original form. In the context of Fully Homomorphic Encryption (FHE), decryption allows for the retrieval of results after performing computations on encrypted data.
 
+Decryption in CoFHE is a multi-step process that involves both off-chain and on-chain components:
+
+1. A client requests decryption off-chain and receives the plaintext along with a Threshold Network signature.
+2. The plaintext and signature are submitted on-chain, where the contract publishes or verifies the result.
+
 <Tip>
-Learn more about our unique MPC decryption threshold network in the [Threshold Network](/fhe-library/architecture/internal-utilities/threshold-network) guide.
+Learn more about our unique MPC decryption threshold network in the [Threshold Network](/deep-dive/cofhe-components/threshold-network) guide.
 </Tip>
 
 ---
 
-## Understanding Asynchronous Decryption
+## Decryption Methods: Transaction vs View
 
-Like all other FHE operations in CoFHE, decryption is executed asynchronously. This means:
+CoFHE provides two primary ways to perform decryption, each suited for different use cases:
 
-1. **You request decryption** - Call the decrypt function
-2. **The operation takes time to complete** - Processing happens off-chain
-3. **Results are stored on-chain** - Once ready, you can retrieve them
+### 1. Decrypt for Transaction (`decryptForTx`)
 
-<Tip>
-To understand why FHE operations (including decryption) are asynchronous, read more in the [Data Evaluation](/fhe-library/core-concepts/data-evaluation) guide.
-</Tip>
+The client calls `decryptForTx(ctHash)` off-chain to obtain the plaintext and a Threshold Network signature. These are then submitted on-chain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`, making the result verifiable by the contract.
 
----
+**Common examples:**
+- **Unshield a confidential token**: reveal the encrypted amount so the contract can finalize the public transfer.
+- **Finalize a private auction / game move**: bids or moves are submitted encrypted, and the winner is revealed later in a verifiable way.
 
-## Decryption Methods: Query vs Transaction
+### 2. Decrypt for View (`decryptForView`)
 
-Fhenix provides two primary ways to perform decryption, each suited for different use cases:
+The client calls `decryptForView` off-chain to obtain the plaintext for display in a UI. No on-chain transaction or signature is needed.
 
-### 1. Decryption via Solidity Contract Transaction
-
-Decryption is requested in a smart contract transaction, storing the result on-chain for all to access. This ensures auditability but incurs higher gas costs and makes the result public.
-
-### 2. Decryption via RPC Query
-
-Decryption is requested off-chain via an RPC query, returning the result only to the requester. This method keeps data private and reduces gas costs but prevents smart contract usage of the decrypted value.
+**Common examples:**
+- Displaying a user's confidential balance in a wallet UI.
+- Showing the current state of an encrypted value without revealing it on-chain.
 
 <Note>
-Read more about RPC query decryption and get examples in the [CoFHEjs](/cofhejs) documentation.
+Use `decryptForTx` when you need to act on the decrypted value in a smart contract. Use `decryptForView` when you only need to display the value in a UI.
 </Note>
 
 ### Comparison Table
 
 | Method | Visibility | Gas Cost | Smart Contract Usable | Best For |
 |--------|-----------|----------|----------------------|----------|
-| **Transaction (on-chain)** | Public (on-chain) | High | Yes | Public results, contract logic |
-| **Query (off-chain)** | Private (off-chain) | None | No | Confidential data, external apps |
+| **`decryptForTx`** | Public (once published on-chain) | Gas for the publish/verify tx | Yes | Public results, contract logic |
+| **`decryptForView`** | Private (off-chain only) | None | No | UI display, confidential data |
 
 ---
 
-## Asynchronous On-Chain Decryption
+## The Decryption Flow
 
-When decrypting data on-chain, you first request decryption using `FHE.decrypt()`, then later retrieve the results. There are two ways to retrieve decryption results: the **safe way** (recommended) and the **unsafe way**.
+### Step 1: Grant decryption permissions (on-chain)
 
-<CodeGroup>
-```solidity Safe Method (Recommended)
-// ------------------------------------------------------
-// Step 1. Request on-chain decryption (in transaction)
-// ------------------------------------------------------
+Before anyone can request decryption, the ciphertext handle must have the appropriate ACL permissions. Use one of the following in your contract:
+
+- `FHE.allowPublic(ctHash)` — anyone can request decryption (common for unshield flows)
+- `FHE.allow(ctHash, address)` — only a specific address can request decryption
+- `FHE.allowSender(ctHash)` — only `msg.sender` can request decryption
+
+```solidity
+// Example: allow anyone to decrypt when the auction closes
 function closeBidding() external onlyAuctioneer {
-    FHE.decrypt(highestBid);
+    FHE.allowPublic(highestBid);
     auctionClosed = true;
-}
-
-// ------------------------------------------------------
-// Step 2. Process the decrypted result
-// ------------------------------------------------------
-function safelyRevealWinner() external onlyAuctioneer {
-    (uint64 bidValue, bool bidReady) = FHE.getDecryptResultSafe(highestBid);
-    require(bidReady, "Bid not yet decrypted");
-
-    winningBid = bidValue;
-    emit RevealedWinningBid(highestBidder, bidValue);
 }
 ```
 
-```solidity Unsafe Method
-// ------------------------------------------------------
-// Step 1. Request on-chain decryption (in transaction)
-// ------------------------------------------------------
-function closeBidding() external onlyAuctioneer {
-    FHE.decrypt(highestBid);
-    auctionClosed = true;
-}
+<Note>
+See [Access Control](/fhe-library/core-concepts/access-control) for the full list of permission methods, including `FHE.allowPublic()`.
+</Note>
 
-// ------------------------------------------------------
-// Step 2. Process the decrypted result
-// ------------------------------------------------------
-function unsafeRevealWinner() external onlyAuctioneer {
-    uint64 bidValue = FHE.getDecryptResult(highestBid);
+### Step 2: Request decryption off-chain (client-side)
 
-    winningBid = bidValue;
-    emit RevealedWinningBid(highestBidder, bidValue);
-}
+The client calls `decryptForTx(ctHash)` to obtain the plaintext and a Threshold Network signature. Choose the permit mode that matches the contract's ACL policy:
+
+<CodeGroup>
+```typescript No permit (allowPublic)
+const decryptResult = await client
+   .decryptForTx(ctHash)
+   .withoutPermit()
+   .execute();
+
+// decryptResult.ctHash        — the ciphertext handle
+// decryptResult.decryptedValue — the plaintext (bigint)
+// decryptResult.signature      — the Threshold Network signature
+```
+
+```typescript With permit (restricted access)
+const decryptResult = await client
+   .decryptForTx(ctHash)
+   .withPermit()
+   .execute();
 ```
 </CodeGroup>
 
----
+<Note>
+`decryptForTx` always returns the plaintext as a `bigint`. Your contract determines whether that value is interpreted as `uint32`, `uint64`, etc.
+</Note>
 
-## Safe vs Unsafe Decryption
+### Step 3: Publish or verify on-chain
 
-<AccordionGroup>
-<Accordion title="Safe Decryption - FHE.getDecryptResultSafe()" icon="shield-check" defaultOpen>
-**Recommended for most use cases**
+Submit the plaintext and signature to your contract. You have two options:
 
-Use `FHE.getDecryptResultSafe(eParam)` to get both the decrypted value and a plaintext boolean success indicator:
+#### Option A: `FHE.publishDecryptResult`
 
-```solidity
-(uint64 decryptedValue, bool isReady) = FHE.getDecryptResultSafe(encryptedValue);
+Publishes the decrypted value on-chain, making it available for any contract to read.
 
-if (isReady) {
-    // Use the decrypted value
-    processValue(decryptedValue);
-} else {
-    // Handle the case where decryption isn't ready yet
-    revert("Decryption not ready, try again later");
+<CodeGroup>
+```solidity Solidity
+import "@fhenixprotocol/cofhe-contracts/FHE.sol";
+
+function revealWinner(euint64 ctHash, uint64 plaintext, bytes calldata signature) external onlyAuctioneer {
+    FHE.publishDecryptResult(ctHash, plaintext, signature);
+    winningBid = plaintext;
+    emit RevealedWinningBid(highestBidder, plaintext);
 }
 ```
 
-**Advantages:**
-- Returns a boolean indicating readiness
-- Allows custom error handling
-- Better user experience with informative messages
-- More flexible control flow
+```typescript TypeScript
+const tx = await myContract.revealWinner(
+  decryptResult.ctHash,
+  decryptResult.decryptedValue,
+  decryptResult.signature
+);
+await tx.wait();
+```
+</CodeGroup>
 
-**Best for:**
-- Production applications
-- User-facing operations
-- When you need graceful error handling
-</Accordion>
+#### Option B: `FHE.verifyDecryptResult`
 
-<Accordion title="Unsafe Decryption - FHE.getDecryptResult()" icon="triangle-exclamation" defaultOpen>
-**Use with caution**
-
-The `FHE.getDecryptResult(eParam)` function doesn't check readiness for you. If decryption is ready, you get the decrypted value; otherwise, the execution reverts.
+Verifies the signature without publishing the result globally. Use this when your contract only needs to confirm the plaintext is authentic.
 
 ```solidity
-uint64 decryptedValue = FHE.getDecryptResult(encryptedValue);
-// Transaction reverts here if not ready
-processValue(decryptedValue);
+import "@fhenixprotocol/cofhe-contracts/FHE.sol";
+
+function unshield(bytes32 ctHash, uint32 plaintext, bytes calldata signature) external {
+    require(FHE.verifyDecryptResult(ctHash, plaintext, signature), "Invalid decrypt signature");
+    // ...continue with protocol logic...
+}
 ```
-
-<Warning>
-The unsafe method will revert the entire transaction if the decryption results aren't ready yet.
-</Warning>
-
-**Advantages:**
-- Simpler, more concise code
-- Fail-fast behavior
-- Less code to write
-
-**Best for:**
-- Internal operations where revert is acceptable
-- When you want to fail fast
-- Testing and development
-</Accordion>
-</AccordionGroup>
 
 ---
 
 ## Full Example Contract
 
-Here's a complete example showing both safe and unsafe decryption in an auction contract:
+Here's a complete example showing the new decryption flow in an auction contract:
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@fhenixprotocol/contracts/FHE.sol";
+import "@fhenixprotocol/cofhe-contracts/FHE.sol";
 
 contract EncryptedAuction {
     euint64 public highestBid;
@@ -209,37 +192,47 @@ contract EncryptedAuction {
         emit BidPlaced(msg.sender);
     }
 
-    // Close the auction and request decryption
+    // Close the auction and allow public decryption of the winning bid
     function closeBidding() external onlyAuctioneer {
         require(!auctionClosed, "Auction already closed");
 
-        FHE.decrypt(highestBid);
+        FHE.allowPublic(highestBid);
         auctionClosed = true;
 
         emit AuctionClosed();
     }
 
-    // Safe method: Reveal winner with readiness check
-    function safelyRevealWinner() external onlyAuctioneer {
+    // Reveal the winner by publishing the decrypted result with proof
+    function revealWinner(euint64 ctHash, uint64 plaintext, bytes calldata signature) external {
         require(auctionClosed, "Auction must be closed first");
 
-        (uint64 bidValue, bool bidReady) = FHE.getDecryptResultSafe(highestBid);
-        require(bidReady, "Bid not yet decrypted - please try again later");
+        FHE.publishDecryptResult(ctHash, plaintext, signature);
 
-        winningBid = bidValue;
-        emit RevealedWinningBid(highestBidder, bidValue);
-    }
-
-    // Unsafe method: Reveal winner (reverts if not ready)
-    function unsafeRevealWinner() external onlyAuctioneer {
-        require(auctionClosed, "Auction must be closed first");
-
-        uint64 bidValue = FHE.getDecryptResult(highestBid);
-
-        winningBid = bidValue;
-        emit RevealedWinningBid(highestBidder, bidValue);
+        winningBid = plaintext;
+        emit RevealedWinningBid(highestBidder, plaintext);
     }
 }
+```
+
+The client-side flow to reveal the winner:
+
+```typescript
+// 1. Read the encrypted highest bid from the contract
+const ctHash = await auctionContract.highestBid();
+
+// 2. Request decryption off-chain (no permit needed since allowPublic was used)
+const decryptResult = await client
+  .decryptForTx(ctHash)
+  .withoutPermit()
+  .execute();
+
+// 3. Submit the result on-chain
+const tx = await auctionContract.revealWinner(
+  decryptResult.ctHash,
+  decryptResult.decryptedValue,
+  decryptResult.signature
+);
+await tx.wait();
 ```
 
 ---
@@ -247,61 +240,31 @@ contract EncryptedAuction {
 ## Best Practices
 
 <CardGroup cols={2}>
-<Card title="Always Use Safe Decryption in Production" icon="shield">
-Prefer `FHE.getDecryptResultSafe()` for production applications to provide better user feedback when decryption isn't ready yet.
+<Card title="Use allowPublic for values meant to be revealed" icon="lock-open">
+When a value is intended to become public (e.g. unshielding, auction reveals), use `FHE.allowPublic()` so anyone can trigger the decryption without needing a permit.
 </Card>
 
 <Card title="Check Access Control Before Decrypting" icon="lock">
-Ensure only authorized parties can request decryption. Remember that decryption requires proper ACL permissions on the ciphertext handle.
+Ensure only authorized parties can request decryption. Use `FHE.allow()` or `FHE.allowSender()` for restricted access. See [Access Control](/fhe-library/core-concepts/access-control).
 </Card>
 
-<Card title="Handle Decryption Delays Gracefully" icon="clock">
-Inform users that decryption is asynchronous and may take time. Provide clear feedback about when to check back for results.
+<Card title="Choose the right on-chain method" icon="shield">
+Use `FHE.publishDecryptResult` when you want the result stored publicly on-chain. Use `FHE.verifyDecryptResult` when you only need to confirm the plaintext is authentic without publishing it.
 </Card>
 
-<Card title="Consider Gas Costs" icon="gas-pump">
-On-chain decryption has higher gas costs. For confidential results, consider using off-chain RPC query decryption instead.
+<Card title="Use decryptForView for UI-only reads" icon="eye">
+If you only need to display a value in your UI and don't need an on-chain-verifiable signature, use `decryptForView` instead of `decryptForTx` to avoid unnecessary on-chain transactions.
 </Card>
 </CardGroup>
 
 ---
 
-## Common Patterns
+## Common Pitfalls
 
-### Pattern 1: Two-Step Decryption
-
-```solidity
-// Transaction 1: Request decryption
-function requestReveal() external onlyOwner {
-    FHE.decrypt(secretValue);
-}
-
-// Transaction 2: Retrieve result
-function getRevealedValue() external view onlyOwner returns (uint32, bool) {
-    return FHE.getDecryptResultSafe(secretValue);
-}
-```
-
-### Pattern 2: Batch Decryption
-
-```solidity
-function decryptMultipleValues() external onlyOwner {
-    FHE.decrypt(value1);
-    FHE.decrypt(value2);
-    FHE.decrypt(value3);
-}
-
-function retrieveDecryptedValues() external view onlyOwner
-    returns (uint32 v1, uint32 v2, uint32 v3, bool allReady)
-{
-    (uint32 val1, bool ready1) = FHE.getDecryptResultSafe(value1);
-    (uint32 val2, bool ready2) = FHE.getDecryptResultSafe(value2);
-    (uint32 val3, bool ready3) = FHE.getDecryptResultSafe(value3);
-
-    allReady = ready1 && ready2 && ready3;
-    return (val1, val2, val3, allReady);
-}
-```
+- **Missing ACL permissions**: If no `allow*` was called for the ciphertext handle, decryption requests will be denied. Make sure to grant permissions before the client requests decryption.
+- **Permit mode must be selected**: When using `decryptForTx`, you must call exactly one of `.withPermit(...)` or `.withoutPermit()` before `.execute()`.
+- **Wrong chain/account**: Permits are scoped to `chainId + account`. If you get an ACL/permit error, double-check you're connected to the expected chain and account.
+- **Type mismatch**: `decryptedValue` is always a `bigint`. If your Solidity function expects a smaller integer type (e.g. `uint32`), make sure the value is within range.
 
 ---
 
@@ -309,4 +272,4 @@ function retrieveDecryptedValues() external view onlyOwner
 
 - Learn about access control requirements in [Access Control](/fhe-library/core-concepts/access-control)
 - Understand asynchronous operations in [Data Evaluation](/fhe-library/core-concepts/data-evaluation)
-- Explore off-chain decryption in [CoFHEjs](/cofhejs/introduction/overview)
+- Explore the decryption request flow in [Decryption Request Flow](/deep-dive/data-flows/decryption-request-flow)

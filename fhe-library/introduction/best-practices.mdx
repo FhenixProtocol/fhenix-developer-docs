@@ -17,18 +17,18 @@ Before reading this guide, you should:
 
 ## Security Considerations
 
-### Decrypt Carefully
+### Publish Decrypted Data Carefully
 
-When working with encrypted data, always consider what information you're exposing through decryption operations.
+Decryption is a multi-step process: the client requests a plaintext + signature off-chain via `decryptForTx`, then publishes or verifies the result on-chain using `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`. Once published, the plaintext is visible to everyone on the blockchain.
 
 **Key principles:**
 
-- **Evaluate information leakage**: Before decrypting data, evaluate what information you're exposing, how your code branches based on decrypted values, and what an observer might learn
-- **Minimize decryption operations**: Only decrypt when absolutely necessary and after all sensitive computations are complete
-- **Consider timing attacks**: Be aware that decryption timing can leak information about your data
+- **Evaluate information leakage**: Before publishing a decrypted value on-chain, consider what information you're exposing and what an observer might learn from it
+- **Minimize published values**: Only publish decrypted results when your protocol truly requires the plaintext on-chain. Use `decryptForView` if you only need to display the value in a UI
+- **Use `verifyDecryptResult` when possible**: If your contract only needs to confirm a value without storing it publicly, prefer `FHE.verifyDecryptResult` over `FHE.publishDecryptResult`
 
 <Warning>
-Decrypting data exposes it to the blockchain and any observers. Always consider whether decryption is necessary for your use case.
+Publishing a decrypted value on-chain makes it permanently visible to all observers. Always consider whether you need `decryptForTx` (on-chain proof) or `decryptForView` (UI-only) for your use case.
 </Warning>
 
 ### Always update permissions
@@ -57,8 +57,9 @@ Without calling `FHE.allowThis()`, your contract won't be able to access the enc
 
 <CodeGroup>
 ```solidity Don't Do This
-// Don't decrypt to make branching decisions
-if (FHE.decrypt(condition)) {
+// Don't reveal encrypted values to make branching decisions
+FHE.publishDecryptResult(condition, plaintext, signature);
+if (plaintext > 0) {
     result = a;
 } else {
     result = b;
@@ -126,23 +127,35 @@ CoFHE operations are asynchronous by nature. Design your application to handle t
 
 **Example UI pattern:**
 
+Use `.onStep(callback)` to track encryption progress. The callback fires at the start and end of each step, receiving the current `EncryptStep` enum value and a context object with `isStart`, `isEnd`, and `duration` (milliseconds, only meaningful on `isEnd`).
+
 ```typescript
-// Show loading state during encryption
+import { createCofheClient, createCofheConfig } from '@cofhe/sdk/web';
+import { Encryptable, EncryptStep } from '@cofhe/sdk';
+import { chains } from '@cofhe/sdk/chains';
+
 const [isEncrypting, setIsEncrypting] = useState(false);
+const [currentStep, setCurrentStep] = useState<string | null>(null);
 
 const handleEncrypt = async () => {
   setIsEncrypting(true);
   try {
-    const result = await cofhejs.encrypt([Encryptable.uint32(5n)], (step) => {
-      console.log(`Encryption step: ${step}`);
-      // Update UI with progress
-    });
+    const result = await cofheClient
+      .encryptInputs([Encryptable.uint32(5n)])
+      .onStep((step, ctx) => {
+        if (ctx?.isStart) setCurrentStep(step);
+        if (ctx?.isEnd) console.log(`${step} done in ${ctx.duration}ms`);
+      })
+      .execute();
     // Handle result
   } finally {
     setIsEncrypting(false);
+    setCurrentStep(null);
   }
 };
 ```
+
+The `EncryptStep` enum values fire in order: `InitTfhe` → `FetchKeys` → `Pack` → `Prove` → `Verify`.
 
 <Info>
 CoFHE operations may take time to complete, especially on testnets. Always provide user feedback during these operations to improve user experience.

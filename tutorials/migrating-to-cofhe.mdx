@@ -3,6 +3,10 @@ title: "Migrating to CoFHE"
 description: "Comprehensive guide for migrating from other FHE solutions to CoFHE"
 ---
 
+<Warning>
+This guide covers migrating from Fhenix L2 to CoFHE. It uses the older decryption pattern (`FHE.decrypt` + `getDecryptResultSafe`). For the current decryption flow using `FHE.allowPublic`, `decryptForTx`, and `FHE.publishDecryptResult`, see [Decryption Operations](/fhe-library/core-concepts/decryption-operations).
+</Warning>
+
 ## Overview
 
 Want to upgrade your Fhenix L2 contract to use CoFHE? Let's walk through it with a simple example - a privacy-enabled ERC20 token.
@@ -46,9 +50,9 @@ This approach is compatible with asynchronous operations and preserves privacy.
 
 ### 3. Remove `FHE.sealoutput()`
 
-Sealoutput will be available through Cofhejs only, make sure to allow the issuer of the permit, in order to be able to request sealoutput later.
+Sealoutput will be available through the Client SDK only, make sure to allow the issuer of the permit, in order to be able to request sealoutput later.
 
-For more info see [permit management](/cofhejs/guides/permits-management) and [sealing-unsealing](/cofhejs/guides/sealing-unsealing)
+For more info see [permit management](/client-sdk/guides/permits) and [decrypt to view](/client-sdk/guides/decrypt-to-view)
 
 ```solidity
 // Transfers an encrypted amount.
@@ -67,7 +71,7 @@ function _transferImpl(address from, address to, euint128 amount) internal retur
     return amountToSend;
 }
 
-// Remove this function - sealoutput is now handled by Cofhejs
+// Remove this function - sealoutput is now handled by the Client SDK
 // function balanceOfEncrypted(
 //    address account, Permission memory auth
 // ) virtual public view onlyPermitted(auth, account) returns (string memory) {
@@ -106,7 +110,7 @@ contract WrappingERC20 is ERC20, Permissioned {
         
         // Allow the contract to operate on the encrypted balance for future operations
         FHE.allowThis(_encBalances[msg.sender]);
-        // Allow the users to use decrypt\sealoutput on their balances
+        // Allow the users to use decrypt/view decryption on their balances
         FHE.allow(_encBalances[msg.sender], msg.sender);
     }
 
@@ -121,7 +125,7 @@ contract WrappingERC20 is ERC20, Permissioned {
         
         // Allow the contract to operate on the encrypted balance for future operations
         FHE.allowThis(_encBalances[msg.sender]);
-        // Allow the users to use decrypt\sealoutput on their balances
+        // Allow the users to use decrypt/view decryption on their balances
         FHE.allow(_encBalances[msg.sender], msg.sender);
         
         // add amount to caller's public balance by calling the `mint` function
@@ -141,18 +145,18 @@ contract WrappingERC20 is ERC20, Permissioned {
         // Allow the contract to operate on the encrypted balance for future operations
         FHE.allowThis(_encBalances[msg.sender]);
         FHE.allowThis(_encBalances[to]);
-        // Allow the users to use decrypt\sealoutput on their balances
+        // Allow the users to use decrypt/view decryption on their balances
         FHE.allow(_encBalances[msg.sender], msg.sender);
         FHE.allow(_encBalances[to], to);
     }
 }
 ```
 
-In the above example since we're allowing the users on every step of the way, the users can use decrypt/sealoutput directly from Cofhejs or using `FHE.decrypt` as above while listening on the event `DecryptResult`.
+In the above example since we're allowing the users on every step of the way, the users can use `decryptForView` or `decryptForTx` from the Client SDK, or use `FHE.decrypt` as above while listening on the event `DecryptResult`.
 
-## Frontend: Fhenix.js to Cofhejs
+## Frontend: Fhenix.js to Client SDK (`@cofhe/sdk`)
 
-The main difference between Fhenix.js and Cofhejs is that Cofhejs is asynchronous and uses symbolic execution.
+The main difference between Fhenix.js and the Client SDK is that the SDK is asynchronous and uses symbolic execution.
 
 This means that the encrypted values are not revealed until the user requests a decryption.
 
@@ -162,31 +166,30 @@ This means that the encrypted values are not revealed until the user requests a 
 // Old Fhenix.js
 // const fhenixClient = new fhenixjs.FhenixClient({ provider: provider })
 
-// New Cofhejs
-await cofhejs.initializeWithEthers({
-    provider,
-    signer,
-    environment: 'TESTNET',
-})
+// New Client SDK
+import { createCofheConfig, createCofheClient } from '@cofhe/sdk/web';
+import { Ethers6Adapter } from '@cofhe/sdk/adapters';
+import { sepolia } from '@cofhe/sdk/chains';
+
+const config = createCofheConfig({ supportedChains: [sepolia] });
+const client = createCofheClient(config);
+const { publicClient, walletClient } = await Ethers6Adapter(provider, signer);
+await client.connect(publicClient, walletClient);
 ```
 
 ### 2. Encrypting values
 
-With Cofhejs the encryption is done asynchronously, for this reason we can provide a callback function to log the encryption state (read about it [here](/cofhejs/guides/encryption)):
+With the Client SDK the encryption is done asynchronously, for this reason we can provide a callback function to log the encryption state (read about it [here](/client-sdk/guides/encrypting-inputs)):
 
 ```javascript
 // Old Fhenix.js
 // const envValue = await fhenixClient.encrypt_uint128(value)
 
-// New Cofhejs
-const logState = (state) => {
-    console.log(`Log Encrypt State :: ${state}`)
-}
-
-const encryptedValues = await cofhejs.encrypt([
-    Encryptable.uint32(10n), 
-    Encryptable.uint64(20n)
-], logState)
+// New Client SDK
+const [encrypted32, encrypted64] = await client
+    .encryptInputs([Encryptable.uint32(10n), Encryptable.uint64(20n)])
+    .onStep((step) => console.log(`Encrypt step - ${step}`))
+    .execute()
 ```
 
 ### 3. Permits and Unsealing
@@ -197,11 +200,11 @@ The application required to request a permit for each contract address.
 
 In addition, to unseal the value, the contract function needs to use the permit in order to seal the value.
 
-In Cofhejs the permit system is tied to the user address (issuer).
+In the Client SDK the permit system is tied to the user address (issuer).
 
-The user can use default permit or create a new one using the `createPermit` function (read about it [here](/cofhejs/guides/permits-management)).
+The user can use the active permit or create a new one using `client.permits.createSelf()` (read about it [here](/client-sdk/guides/permits)).
 
-To unseal the value, the contract need to return the encrypted value handle and the sealing process done off-chain.
+To decrypt the value, the contract returns the encrypted value handle and the decryption is done off-chain.
 
 ```javascript
 // Old Fhenix.js
@@ -220,23 +223,23 @@ To unseal the value, the contract need to return the encrypted value handle and 
 // const permit = await getExtractedPermit(CONTRACT_ADDRESS)
 // const sealedValue = await contract.getSealedValue(permit)
 
-// New Cofhejs - use default permit
+// New Client SDK - use active permit (auto-created on connect)
 const encryptedValueHandle = await contract.getEncryptedValue()
-const unsealed = await cofhejs.unseal(encryptedValueHandle, FheTypes.Uint32)
+const result = await client
+    .decryptForView(encryptedValueHandle, FheTypes.Uint32)
+    .withPermit()
+    .execute()
 
-// Or generate a new permit
-const permit = await cofhejs.createPermit({
-    type: 'self',
+// Or create a specific permit first
+const permit = await client.permits.createSelf({
     issuer: wallet.address,
 })
 
-const encryptedValueHandle = await contract.getEncryptedValue()
-const unsealed = await cofhejs.unseal(
-    encryptedValueHandle, 
-    FheTypes.Uint32, 
-    permit.data.issuer, 
-    permit.data.getHash()
-)
+const encryptedValueHandle2 = await contract.getEncryptedValue()
+const result2 = await client
+    .decryptForView(encryptedValueHandle2, FheTypes.Uint32)
+    .withPermit(permit)
+    .execute()
 ```
 
 ### 4. Decryption
@@ -245,13 +248,23 @@ In Fhenix L2 the decryption was done on-chain using the `FHE.decrypt` function.
 
 With Fhenix Co-Processor the decryption can be done in two ways:
 
-1. Using `FHE.decrypt` in your Solidity contract
-2. Off-chain using the `cofhejs.decrypt` function
+1. **View decryption** — off-chain only, for displaying values in a UI (uses `decryptForView`)
+2. **Transaction decryption** — returns a signed result you can submit on-chain (uses `decryptForTx` + `FHE.publishDecryptResult`)
 
 ```javascript
-// New Cofhejs - off-chain decryption
+// New Client SDK - view decryption (off-chain only)
 const encryptedValueHandle = await contract.getEncryptedValue()
-const decrypted = await cofhejs.decrypt(encryptedValueHandle, FheTypes.Uint32)
+const value = await client
+    .decryptForView(encryptedValueHandle, FheTypes.Uint32)
+    .withPermit()
+    .execute()
+
+// New Client SDK - transaction decryption (for on-chain use)
+const result = await client
+    .decryptForTx(encryptedValueHandle)
+    .withoutPermit()
+    .execute()
+// Submit result.decryptedValue and result.signature to your contract
 ```
 
 ## Summary
@@ -260,8 +273,8 @@ The key changes when migrating from Fhenix L2 to CoFHE are:
 
 1. **Add `FHE.allowThis()`** calls after modifying encrypted values
 2. **Replace `FHE.req()`** with `FHE.select()` for conditional logic
-3. **Remove `FHE.sealoutput()`** - use Cofhejs for sealing/unsealing
-4. **Update client code** to use Cofhejs instead of Fhenix.js
+3. **Remove `FHE.sealoutput()`** - use the Client SDK for decryption
+4. **Update client code** to use `@cofhe/sdk` instead of Fhenix.js
 5. **Handle asynchronous operations** - encryption and decryption are now async
 
 <Check>
@@ -272,4 +285,4 @@ By following these migration steps, you can successfully upgrade your Fhenix L2 
 
 - Review [Adding FHE to an Existing Contract](/tutorials/adding-fhe-to-existing-contract) for more migration examples
 - Explore [ACL Usage Examples](/tutorials/acl-usage-examples) for access control patterns
-- Check the [Cofhejs Guides](/cofhejs/guides/encryption) for client-side integration
+- Check the [Client SDK Guides](/client-sdk/guides/encrypting-inputs) for client-side integration

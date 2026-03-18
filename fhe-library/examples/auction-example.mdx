@@ -15,8 +15,7 @@ In this example, you'll see practical implementations of:
 - **Encrypted comparisons** - Finding the highest bid without revealing values
 - **Conditional logic with `select`** - Updating the highest bidder based on encrypted conditions
 - **Access control management** - Properly managing permissions for encrypted data
-- **Asynchronous decryption** - The two-step process of requesting and retrieving decrypted results
-- **Safe vs unsafe decryption** - Both approaches to handling decryption results
+- **Decrypt-with-proof pattern** - Using `decryptForTx` off-chain and `publishDecryptResult` on-chain to reveal the winner
 
 ---
 
@@ -34,11 +33,15 @@ Participants submit bids by sending plaintext amounts that are immediately encry
 </Step>
 
 <Step title="Close Auction">
-The auctioneer closes the auction and requests decryption of the highest bid and bidder address. This triggers the asynchronous decryption process.
+The auctioneer closes the auction and calls `FHE.allowPublic` on the highest bid and bidder, making them eligible for public decryption.
+</Step>
+
+<Step title="Decrypt Off-Chain">
+Anyone can call `decryptForTx` off-chain to obtain the plaintext values and Threshold Network signatures for the winning bid and bidder.
 </Step>
 
 <Step title="Reveal Winner">
-After decryption completes, the auctioneer can reveal the winner. The contract provides both safe and unsafe methods for retrieving the decrypted results.
+The decrypted values and signatures are submitted on-chain via `revealWinner`, which calls `FHE.publishDecryptResult` to verify the proofs and store the results.
 </Step>
 </Steps>
 
@@ -68,20 +71,26 @@ highestBid = FHE.max(emount, highestBid);         // Take the maximum
 highestBidder = FHE.select(isHigher, newBidder, currentBidder);  // Update bidder
 ```
 
-### 3. Two-Step Decryption Process
+### 3. Decrypt-with-Proof Pattern
 
-The contract demonstrates the asynchronous nature of FHE decryption:
+The contract demonstrates the new decryption flow:
 
-**Step 1:** Request decryption (in a transaction)
+**Step 1:** Close auction and allow public decryption (on-chain)
 ```solidity
-FHE.decrypt(highestBid);
-FHE.decrypt(highestBidder);
+FHE.allowPublic(highestBid);
+FHE.allowPublic(highestBidder);
 ```
 
-**Step 2:** Retrieve results (in a later transaction)
+**Step 2:** Request decryption off-chain (client-side)
+```typescript
+const bidResult = await client.decryptForTx(bidCtHash).withoutPermit().execute();
+const bidderResult = await client.decryptForTx(bidderCtHash).withoutPermit().execute();
+```
+
+**Step 3:** Publish results on-chain with proof
 ```solidity
-(uint64 bidValue, bool bidReady) = FHE.getDecryptResultSafe(highestBid);
-(address bidderValue, bool bidderReady) = FHE.getDecryptResultSafe(highestBidder);
+FHE.publishDecryptResult(highestBid, plaintext, signature);
+FHE.publishDecryptResult(highestBidder, plaintextAddress, bidderSignature);
 ```
 
 ---
@@ -146,47 +155,34 @@ contract AuctionExample {
         emit BidPlaced(msg.sender);
     }
 
-    // ------------------------------------------------------
-    // Step 1. Request on-chain decryption (in transaction)
-    // ------------------------------------------------------
+    // Close the auction and allow public decryption
     function closeBidding() external onlyAuctioneer {
         require(!auctionClosed, "Auction is already closed");
-        FHE.decrypt(highestBid);
-        FHE.decrypt(highestBidder);
+
+        FHE.allowPublic(highestBid);
+        FHE.allowPublic(highestBidder);
         auctionClosed = true;
 
         emit AuctionClosed();
     }
 
-    // ------------------------------------------------------
-    // Step 2. Process the decrypted result (Safe Method)
-    // ------------------------------------------------------
-    function safelyRevealWinner() external onlyAuctioneer {
+    // Reveal the winner by publishing decrypted results with proof
+    function revealWinner(
+        euint64 bidCtHash,
+        uint64 bidPlaintext,
+        bytes calldata bidSignature,
+        eaddress bidderCtHash,
+        address bidderPlaintext,
+        bytes calldata bidderSignature
+    ) external {
         require(auctionClosed, "Auction isn't closed");
 
-        (uint64 bidValue, bool bidReady) = FHE.getDecryptResultSafe(highestBid);
-        require(bidReady, "Bid not yet decrypted");
+        FHE.publishDecryptResult(bidCtHash, bidPlaintext, bidSignature);
+        FHE.publishDecryptResult(bidderCtHash, bidderPlaintext, bidderSignature);
 
-        (address bidderValue, bool bidderReady) = FHE.getDecryptResultSafe(highestBidder);
-        require(bidderReady, "Bidder not yet decrypted");
-
-        winningBid = bidValue;
-        winningBidder = bidderValue;
-        emit RevealedWinningBid(bidderValue, bidValue);
-    }
-
-    // ------------------------------------------------------
-    // Step 2. Process the decrypted result (Unsafe Method)
-    // ------------------------------------------------------
-    function unsafeRevealWinner() external onlyAuctioneer {
-        require(auctionClosed, "Auction isn't closed");
-
-        uint64 bidValue = FHE.getDecryptResult(highestBid);
-        address bidderValue = FHE.getDecryptResult(highestBidder);
-
-        winningBid = bidValue;
-        winningBidder = bidderValue;
-        emit RevealedWinningBid(bidderValue, bidValue);
+        winningBid = bidPlaintext;
+        winningBidder = bidderPlaintext;
+        emit RevealedWinningBid(bidderPlaintext, bidPlaintext);
     }
 }
 ```
@@ -254,64 +250,51 @@ Notice how the contract never reveals the current highest bid to bidders. All co
 
 ### Closing the Auction
 
-The auctioneer closes the auction and requests decryption:
+The auctioneer closes the auction and allows public decryption of the winning bid and bidder:
 
 ```solidity
 function closeBidding() external onlyAuctioneer {
     require(!auctionClosed, "Auction is already closed");
 
-    // Request asynchronous decryption
-    FHE.decrypt(highestBid);
-    FHE.decrypt(highestBidder);
+    // Allow anyone to request decryption of the results
+    FHE.allowPublic(highestBid);
+    FHE.allowPublic(highestBidder);
 
     auctionClosed = true;
     emit AuctionClosed();
 }
 ```
 
-This starts the decryption process, but results aren't immediately available.
+Since `FHE.allowPublic` is used, anyone can request decryption off-chain without needing a permit. The values are not revealed until someone submits the proof on-chain.
 
 ### Revealing the Winner
 
-The contract provides two methods to reveal the winner:
+The `revealWinner` function accepts the decrypted values and their Threshold Network signatures, then publishes them on-chain:
 
-<CodeGroup>
-```solidity Safe Method (Recommended)
-function safelyRevealWinner() external onlyAuctioneer {
+```solidity
+function revealWinner(
+    euint64 bidCtHash,
+    uint64 bidPlaintext,
+    bytes calldata bidSignature,
+    eaddress bidderCtHash,
+    address bidderPlaintext,
+    bytes calldata bidderSignature
+) external {
     require(auctionClosed, "Auction isn't closed");
 
-    // Check if bid decryption is ready
-    (uint64 bidValue, bool bidReady) = FHE.getDecryptResultSafe(highestBid);
-    require(bidReady, "Bid not yet decrypted");
+    // Verify and publish both decrypted results
+    FHE.publishDecryptResult(bidCtHash, bidPlaintext, bidSignature);
+    FHE.publishDecryptResult(bidderCtHash, bidderPlaintext, bidderSignature);
 
-    // Check if bidder decryption is ready
-    (address bidderValue, bool bidderReady) = FHE.getDecryptResultSafe(highestBidder);
-    require(bidderReady, "Bidder not yet decrypted");
-
-    winningBid = bidValue;
-    winningBidder = bidderValue;
-    emit RevealedWinningBid(bidderValue, bidValue);
+    winningBid = bidPlaintext;
+    winningBidder = bidderPlaintext;
+    emit RevealedWinningBid(bidderPlaintext, bidPlaintext);
 }
 ```
 
-```solidity Unsafe Method
-function unsafeRevealWinner() external onlyAuctioneer {
-    require(auctionClosed, "Auction isn't closed");
-
-    // Will revert if decryption isn't ready
-    uint64 bidValue = FHE.getDecryptResult(highestBid);
-    address bidderValue = FHE.getDecryptResult(highestBidder);
-
-    winningBid = bidValue;
-    winningBidder = bidderValue;
-    emit RevealedWinningBid(bidderValue, bidValue);
-}
-```
-</CodeGroup>
-
-<Warning>
-The unsafe method will revert the entire transaction if decryption results aren't ready. The safe method allows you to handle this gracefully with a custom error message.
-</Warning>
+<Note>
+`FHE.publishDecryptResult` verifies the Threshold Network signature before accepting the plaintext. If the signature is invalid, the transaction reverts.
+</Note>
 
 ---
 
@@ -319,14 +302,14 @@ The unsafe method will revert the entire transaction if decryption results aren'
 
 ### 1. Deploy the Contract
 
-```javascript
+```typescript
 const auction = await AuctionExample.deploy();
 await auction.waitForDeployment();
 ```
 
 ### 2. Place Bids
 
-```javascript
+```typescript
 await auction.connect(bidder1).bid(1000);
 await auction.connect(bidder2).bid(1500);
 await auction.connect(bidder3).bid(1200);
@@ -334,19 +317,37 @@ await auction.connect(bidder3).bid(1200);
 
 ### 3. Close the Auction
 
-```javascript
+```typescript
 await auction.connect(auctioneer).closeBidding();
 ```
 
-### 4. Wait for Decryption
+### 4. Decrypt Off-Chain and Reveal the Winner
 
-Wait a few blocks for the decryption to complete (timing varies by network).
+```typescript
+// Read the encrypted handles from the contract
+const bidCtHash = await auction.highestBid();
+const bidderCtHash = await auction.highestBidder();
 
-### 5. Reveal the Winner
+// Request decryption off-chain (no permit needed since allowPublic was used)
+const bidResult = await client
+  .decryptForTx(bidCtHash)
+  .withoutPermit()
+  .execute();
 
-```javascript
-// Using the safe method
-await auction.connect(auctioneer).safelyRevealWinner();
+const bidderResult = await client
+  .decryptForTx(bidderCtHash)
+  .withoutPermit()
+  .execute();
+
+// Submit the proofs on-chain to reveal the winner
+await auction.revealWinner(
+  bidResult.ctHash,
+  bidResult.decryptedValue,
+  bidResult.signature,
+  bidderResult.ctHash,
+  bidderResult.decryptedValue,
+  bidderResult.signature
+);
 
 // Check the results
 const winner = await auction.winningBidder();
@@ -368,11 +369,11 @@ The contract uses `FHE.gt()`, `FHE.max()`, and `FHE.select()` to update the high
 </Card>
 
 <Card title="Access Control" icon="key">
-Every encrypted value created must have permissions granted via `FHE.allowThis()` for the contract to access it later.
+Every encrypted value created must have permissions granted via `FHE.allowThis()` for the contract to access it later. Use `FHE.allowPublic()` when values are ready to be revealed.
 </Card>
 
-<Card title="Asynchronous Decryption" icon="hourglass">
-Decryption is a two-step process: request it in one transaction, retrieve results in another after processing completes.
+<Card title="Decrypt-with-Proof" icon="shield-check">
+Decryption happens off-chain via `decryptForTx`, and results are verified on-chain via `FHE.publishDecryptResult` with a Threshold Network signature.
 </Card>
 </CardGroup>
 

@@ -1,0 +1,67 @@
+---
+title: Hardhat Plugin Reference
+description: "Complete API reference for @cofhe/hardhat-plugin"
+---
+
+<Info>
+This page is under construction. A full API reference documenting all functions, parameters, and return types will be added here.
+</Info>
+
+## `hre.cofhe`
+
+The plugin extends the Hardhat Runtime Environment with a `cofhe` namespace.
+
+### Client creation
+
+| Method | Description |
+| --- | --- |
+| `hre.cofhe.createClientWithBatteries(signer?)` | Creates a fully configured `CofheClient` with a self-permit. Uses the first signer if none provided. |
+| `hre.cofhe.createConfig(options)` | Wraps `createCofheConfig` with Hardhat defaults (`environment: 'hardhat'`, `encryptDelay: 0`). |
+| `hre.cofhe.createClient(config)` | Creates a `CofheClient` from a config object. |
+| `hre.cofhe.connectWithHardhatSigner(client, signer)` | Connects a client using a `HardhatEthersSigner`. |
+| `hre.cofhe.hardhatSignerAdapter(signer)` | Returns `{ publicClient, walletClient }` from a Hardhat signer. |
+
+### `hre.cofhe.mocks`
+
+| Method | Description |
+| --- | --- |
+| `hre.cofhe.mocks.deployMocks()` | Programmatically deploy mock contracts. |
+| `hre.cofhe.mocks.getPlaintext(ctHash)` | Returns the plaintext `bigint` for a ciphertext hash. |
+| `hre.cofhe.mocks.expectPlaintext(ctHash, expected)` | Chai assertion shorthand for `getPlaintext`. |
+| `hre.cofhe.mocks.getMockTaskManager()` | Returns the `MockTaskManager` contract instance. |
+| `hre.cofhe.mocks.getMockACL()` | Returns the `MockACL` contract instance. |
+| `hre.cofhe.mocks.getMockThresholdNetwork()` | Returns the `MockThresholdNetwork` contract instance. |
+| `hre.cofhe.mocks.getMockZkVerifier()` | Returns the `MockZkVerifier` contract instance. |
+| `hre.cofhe.mocks.getTestBed()` | Returns the `TestBed` contract instance. |
+| `hre.cofhe.mocks.withLogs(name, fn)` | Wraps a function with labeled FHE operation logging. |
+| `hre.cofhe.mocks.enableLogs(label?)` | Enables FHE operation logging. |
+| `hre.cofhe.mocks.disableLogs()` | Disables FHE operation logging. |
+
+## Hardhat config
+
+```typescript hardhat.config.ts
+import '@cofhe/hardhat-plugin';
+
+export default {
+  solidity: '0.8.28',
+  cofhe: {
+    logMocks: true,    // Log FHE operations (default: true)
+    gasWarning: true,  // Warn on high mock gas usage (default: true)
+  },
+};
+```
+
+## Hardhat tasks
+
+| Task | Description |
+| --- | --- |
+| `task:cofhe-mocks:deploy` | Deploy mock contracts. Options: `--deployTestBed`, `--silent`. |
+| `task:cofhe-mocks:setlogops` | Toggle FHE operation logging. Options: `--enable`. |
+
+## Pre-configured networks
+
+| Network | URL | Chain ID |
+| --- | --- | --- |
+| `localcofhe` | `http://127.0.0.1:42069` | — |
+| `eth-sepolia` | Ethereum Sepolia public RPC | `11155111` |
+| `arb-sepolia` | Arbitrum Sepolia public RPC | `421614` |

@@ -179,7 +179,9 @@ await token.connect(holder).setOperator(
 );
 
 // 2. Operator can now transfer on behalf of holder
-const encryptedAmount = await cofhe.encrypt(100);
+const [encryptedAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(100n)])
+  .execute();
 await token.connect(operator).confidentialTransferFrom(
     holderAddress,
     recipientAddress,

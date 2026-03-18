@@ -39,11 +39,15 @@ User can now transfer the wrapped tokens confidentially using all FHERC20 featur
 </Step>
 
 <Step title="Unwrap Request">
-When ready to exit, user burns confidential tokens and requests decryption of the burned amount.
+When ready to exit, user burns confidential tokens. The burned amount is marked as publicly decryptable via `FHE.allowPublic`, and a claim is created.
+</Step>
+
+<Step title="Decrypt Off-Chain">
+The user (or anyone) requests decryption of the burned amount off-chain via `decryptForTx`, receiving the plaintext and a Threshold Network signature.
 </Step>
 
 <Step title="Claim Tokens">
-After decryption completes, user claims their original ERC20 tokens from the wrapper contract.
+The user submits the plaintext and signature on-chain via `claimUnwrapped`. The contract verifies the proof and transfers the ERC20 tokens.
 </Step>
 </Steps>
 
@@ -81,7 +85,9 @@ await wrapper.wrap(recipientAddress, amount);
 const encBalance = await wrapper.confidentialBalanceOf(recipientAddress);
 
 // 4. Transfer confidentially
-const encAmount = await cofhe.encrypt(100);
+const [encAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(100n)])
+  .execute();
 await wrapper.confidentialTransfer(anotherAddress, encAmount);
 ```
 
@@ -89,21 +95,21 @@ await wrapper.confidentialTransfer(anotherAddress, encAmount);
 
 ## Unwrapping Tokens
 
-Unwrapping is a two-step process due to the asynchronous nature of FHE decryption.
+Unwrapping is a three-step process: burn on-chain, decrypt off-chain, then claim with proof.
 
-### Step 1: Unwrap (Burn and Request Decryption)
+### Step 1: Unwrap (Burn and Allow Public Decryption)
 
 ```solidity
-function unwrap(address to, uint64 value) external;
+function unwrap(address to, uint64 value) public;
 ```
 
 **Parameters:**
-- `to`: Address to receive the unwrapped ERC20 tokens
+- `to`: Address to receive the unwrapped ERC20 tokens (defaults to `msg.sender` if `address(0)`)
 - `value`: Amount of confidential tokens to unwrap
 
 This function:
-1. Burns the specified amount of confidential tokens from caller
-2. Requests decryption of the burned amount
+1. Burns the specified amount of confidential tokens from the caller
+2. Calls `FHE.allowPublic(burned)` so anyone can request decryption of the burned amount
 3. Creates a claim for the recipient
 
 ```javascript
@@ -111,65 +117,59 @@ This function:
 await wrapper.unwrap(myAddress, 100);
 
 // A claim is created, but ERC20 tokens aren't sent yet
-// (waiting for decryption to complete)
+// The burned amount is now publicly decryptable
 ```
 
 <Note>
 Due to the [zero-replacement behavior](/fhe-library/confidential-contracts/fherc20/core-features#the-update-function), if you attempt to unwrap more than your balance, zero tokens will be burned and you'll have a claim for zero tokens.
 </Note>
 
-### Step 2: Claim Unwrapped Tokens
+### Step 2: Decrypt Off-Chain
 
-After decryption completes, claim your ERC20 tokens:
+Retrieve the claim's `ctHash` using `getUserClaims`, then request decryption via `decryptForTx`. Since `FHE.allowPublic` was called, no permit is needed:
 
-#### Claim Specific Amount
+```typescript
+// Get the user's pending claims
+const claims = await wrapper.getUserClaims(myAddress);
+const claimableCtHash = claims[0].ctHash;
+
+// Optionally inspect the claim details
+const claim = await wrapper.getClaim(claimableCtHash);
+
+// Request decryption off-chain (no permit needed)
+const decryptResult = await client
+  .decryptForTx(claimableCtHash)
+  .withoutPermit()
+  .execute();
+
+// decryptResult.decryptedValue — the plaintext amount
+// decryptResult.signature      — the Threshold Network signature
+```
+
+### Step 3: Claim Unwrapped Tokens
+
+Submit the plaintext and signature to the contract. The contract verifies the proof and transfers the ERC20 tokens:
 
 ```solidity
-function claimUnwrapped(uint256 ctHash) external;
+function claimUnwrapped(bytes32 ctHash, uint64 decryptedAmount, bytes memory decryptionSignature) public;
 ```
 
 **Parameters:**
-- `ctHash`: The ciphertext hash identifying the specific claim
+- `ctHash`: The ciphertext hash identifying the claim
+- `decryptedAmount`: The plaintext value returned by `decryptForTx`
+- `decryptionSignature`: The Threshold Network signature proving the plaintext is authentic
 
-```javascript
-// Get the ciphertext hash from the unwrap transaction
-const tx = await wrapper.unwrap(myAddress, 100);
-const receipt = await tx.wait();
-
-// Extract ctHash from event (implementation specific)
-const ctHash = extractCtHashFromReceipt(receipt);
-
-// Wait for decryption to complete (a few blocks)
-await waitForDecryption();
-
-// Claim your ERC20 tokens
-await wrapper.claimUnwrapped(ctHash);
+```typescript
+// Claim your ERC20 tokens by submitting the proof
+const tx = await wrapper.claimUnwrapped(
+  decryptResult.ctHash,
+  decryptResult.decryptedValue,
+  decryptResult.signature
+);
+await tx.wait();
 
 // Check ERC20 balance
 const balance = await erc20Token.balanceOf(myAddress);
-```
-
-#### Claim All Unwrapped Tokens
-
-```solidity
-function claimAllUnwrapped() external;
-```
-
-Claims all pending unwrap requests for the caller:
-
-```javascript
-// Unwrap multiple times
-await wrapper.unwrap(myAddress, 50);
-await wrapper.unwrap(myAddress, 30);
-await wrapper.unwrap(myAddress, 20);
-
-// Wait for all decryptions
-await waitForDecryptions();
-
-// Claim everything at once
-await wrapper.claimAllUnwrapped();
-
-// Receives 50 + 30 + 20 = 100 ERC20 tokens
 ```
 
 ---
@@ -179,51 +179,51 @@ await wrapper.claimAllUnwrapped();
 ### Getting Claim Information
 
 ```solidity
-function getClaim(uint256 ctHash) external view returns (Claim memory);
+function getClaim(bytes32 ctHash) public view returns (Claim memory);
 ```
 
 Returns claim details:
 
 ```solidity
 struct Claim {
+    bytes32 ctHash;          // Ciphertext hash identifying the claim
+    uint64 requestedAmount;  // Original requested unwrap amount
+    uint64 decryptedAmount;  // Actual decrypted amount (set after claim)
+    bool decrypted;          // Whether the claim has been fulfilled
     address to;              // Recipient address
-    uint64 value;           // Original requested amount
-    uint64 decryptedAmount; // Actual decrypted amount (after zero-replacement)
-    bool decrypted;         // Whether decryption is complete
-    bool claimed;           // Whether tokens have been claimed
+    bool claimed;            // Whether ERC20 tokens have been claimed
 }
 ```
 
-```javascript
+```typescript
 // Get claim info
 const claim = await wrapper.getClaim(ctHash);
 
 console.log(`To: ${claim.to}`);
-console.log(`Requested: ${claim.value}`);
-console.log(`Actual: ${claim.decryptedAmount}`);
-console.log(`Ready: ${claim.decrypted}`);
+console.log(`Requested: ${claim.requestedAmount}`);
+console.log(`Decrypted: ${claim.decryptedAmount}`);
+console.log(`Fulfilled: ${claim.decrypted}`);
 console.log(`Claimed: ${claim.claimed}`);
 ```
 
 ### Getting User Claims
 
 ```solidity
-function getUserClaims(address user) external view returns (uint256[] memory);
+function getUserClaims(address user) public view returns (Claim[] memory);
 ```
 
-Returns all claim hashes for a user:
+Returns all claims for a user:
 
-```javascript
-// Get all pending claims
-const claimHashes = await wrapper.getUserClaims(myAddress);
+```typescript
+// Get all claims
+const claims = await wrapper.getUserClaims(myAddress);
 
-console.log(`You have ${claimHashes.length} pending claims`);
+console.log(`You have ${claims.length} claims`);
 
-// Check each claim
-for (const hash of claimHashes) {
-    const claim = await wrapper.getClaim(hash);
-    if (claim.decrypted && !claim.claimed) {
-        console.log(`Claim ${hash} is ready to claim!`);
+// Find claims ready to be fulfilled
+for (const claim of claims) {
+    if (!claim.claimed) {
+        console.log(`Claim ${claim.ctHash} can be claimed`);
     }
 }
 ```
@@ -234,20 +234,15 @@ for (const hash of claimHashes) {
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
-import "@fhenixprotocol/contracts/FHERC20Wrapper.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { FHERC20Wrapper } from "@fhenixprotocol/confidential-contracts/FHERC20Wrapper.sol";
 
 // Deploy a wrapper for an existing ERC20 token
 contract MyTokenWrapper is FHERC20Wrapper {
-    constructor(address underlyingToken)
-        FHERC20Wrapper(
-            underlyingToken,
-            "Wrapped MyToken",
-            "wMTK",
-            18
-        )
+    constructor(IERC20 underlyingToken)
+        FHERC20Wrapper(underlyingToken, "eMTK")
     {}
 }
 ```
@@ -292,24 +287,32 @@ FHERC20Wrapper only works with standard ERC20 tokens. It will NOT work with:
 Always test with the specific token before deploying to production.
 </Accordion>
 
-<Accordion title="Unwrap Timing" icon="clock" defaultOpen>
-Unwrapping requires waiting for decryption:
+<Accordion title="Claim Flow" icon="clock" defaultOpen>
+Claiming requires completing the off-chain decryption step first:
 
-```javascript
-// Unwrap initiates decryption
+```typescript
+// 1. Unwrap burns tokens and allows public decryption
 await wrapper.unwrap(user.address, amount);
 
-// ⏳ Must wait for decryption (typically 1-10 blocks)
+// 2. Get the claim's ctHash
+const claims = await wrapper.getUserClaims(user.address);
+const ctHash = claims[0].ctHash;
 
-// Too early - will revert
-await wrapper.claimUnwrapped(ctHash); // ❌ Reverts
+// 3. Decrypt off-chain
+const decryptResult = await client
+  .decryptForTx(ctHash)
+  .withoutPermit()
+  .execute();
 
-// After waiting
-await waitForBlocks(5);
-await wrapper.claimUnwrapped(ctHash); // ✅ Success
+// 4. Claim with proof
+await wrapper.claimUnwrapped(
+  decryptResult.ctHash,
+  decryptResult.decryptedValue,
+  decryptResult.signature
+); // ✅ Success
 ```
 
-Implement proper UI feedback for this waiting period.
+Implement proper UI feedback for the decryption step.
 </Accordion>
 
 <Accordion title="Zero-Replacement" icon="circle-xmark" defaultOpen>
@@ -331,17 +334,32 @@ Always ensure sufficient balance before unwrapping.
 </Accordion>
 
 <Accordion title="Claim Management" icon="list-check" defaultOpen>
-Users can accumulate multiple pending claims:
+Users can accumulate multiple pending claims. Each must be claimed individually with its own decryption proof:
 
-```javascript
+```typescript
 // Multiple unwraps
 await wrapper.unwrap(user.address, 50);  // Claim 1
 await wrapper.unwrap(user.address, 30);  // Claim 2
 await wrapper.unwrap(user.address, 20);  // Claim 3
 
-// Each must be claimed individually or use claimAllUnwrapped
+// Get all claims
 const claims = await wrapper.getUserClaims(user.address);
 console.log(`${claims.length} pending claims`);
+
+// Decrypt and claim each one
+for (const claim of claims) {
+    if (!claim.claimed) {
+        const result = await client
+          .decryptForTx(claim.ctHash)
+          .withoutPermit()
+          .execute();
+        await wrapper.claimUnwrapped(
+          result.ctHash,
+          result.decryptedValue,
+          result.signature
+        );
+    }
+}
 ```
 
 Provide UI to track and manage multiple claims.

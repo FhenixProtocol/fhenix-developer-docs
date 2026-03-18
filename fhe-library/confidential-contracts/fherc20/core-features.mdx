@@ -204,7 +204,7 @@ function _update(
         FHE.allow(transferred, to);
     }
 
-    // Allow the caller to decrypt the transferred amount
+    // Allow the caller to access the transferred amount
     FHE.allow(transferred, msg.sender);
 
     // Hide totalSupply
@@ -247,11 +247,14 @@ euint64 balance = token.confidentialBalanceOf(user);
 euint64 doubled = balance + balance;
 ```
 
-```javascript Off-Chain (with CoFHEjs)
-// Request decryption with permission
+```typescript Off-Chain (with @cofhe/sdk)
+// Request decryption for UI display
 const encBalance = await token.confidentialBalanceOf(userAddress);
-const decrypted = await cofhe.unseal(userAddress, encBalance);
-console.log(`Balance: ${decrypted}`);
+const result = await client
+  .decryptForView(encBalance)
+  .withPermit()
+  .execute();
+console.log(`Balance: ${result.decryptedValue}`);
 ```
 </CodeGroup>
 
@@ -539,7 +542,9 @@ contract PrivacyToken is FHERC20 {
 
 Usage:
 
-```javascript
+```typescript
+import { Encryptable } from '@cofhe/sdk';
+
 // Deploy
 const token = await PrivacyToken.deploy();
 
@@ -551,7 +556,9 @@ const indicator = await token.balanceOf(userAddress);
 console.log(`Indicator: ${indicator}`); // e.g., 5001
 
 // Encrypt amount off-chain
-const encryptedAmount = await cofhe.encrypt(100);
+const [encryptedAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(100n)])
+  .execute();
 
 // Confidential transfer
 await token.confidentialTransfer(recipientAddress, encryptedAmount);

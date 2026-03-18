@@ -20,7 +20,6 @@ contract SimpleCounter {
 
     euint64 counter;
     euint64 delta;
-    euint64 lastDecryptedCounter;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can access that function");
@@ -52,13 +51,16 @@ contract SimpleCounter {
         FHE.allowThis(counter);
     }
 
-    function decrypt_counter() external onlyOwner {
-        lastDecryptedCounter = counter;
-        FHE.decrypt(lastDecryptedCounter);
+    function allow_counter_publicly() external onlyOwner {
+        FHE.allowPublic(counter);
     }
 
-    function get_counter_value() external view returns(uint128) {
-        (uint128 value, bool decrypted) = FHE.getDecryptResultSafe(lastDecryptedCounter);
+    function reveal_counter(uint64 _decrypted, bytes memory _signature) external {
+        FHE.publishDecryptResult(counter, _decrypted, _signature);
+    }
+
+    function get_counter_value() external view returns(uint256) {
+        (uint256 value, bool decrypted) = FHE.getDecryptResultSafe(counter);
         if (!decrypted)
             revert("Value is not ready");
 
@@ -92,7 +94,6 @@ Next, we define some state variables for the contract:
 ```solidity
 euint64 counter;
 euint64 delta;
-euint64 lastDecryptedCounter;
 ```
 
 ### Constructor Initialization
@@ -152,27 +153,52 @@ FHE.allowThis(counter);
 
 In the `reset_counter` function, we receive an `InEuint64` value, which is a type that represents an encrypted value that can be used to reset the counter.
 
-This value is an encrypted value that we created using Cofhejs (read more about it [here](/cofhejs/guides/encryption)).
+This value is an encrypted value that we created client-side using the SDK (read more about it [here](/client-sdk/guides/encrypting-inputs)).
 
-### Decryption Functions
+### Decryption: Allow Public and Reveal
 
-Now, let's take a look at the `decrypt_counter` and `get_counter_value` functions.
+Decryption follows a two-step on-chain pattern, with an off-chain step in between.
 
-The `decrypt_counter` function creates a new decrypt request for the counter.
+**Step 1: Allow public decryption (on-chain)**
 
-Since we want to allow users to call `get_counter_value` function at any given time, we need to store the handle in the `lastDecryptedCounter` variable.
-
-The result will be valid until the next `decrypt_counter` call.
-
-In the `get_counter_value` function, we use the `FHE.getDecryptResultSafe` function to get the decrypted value of the counter.
-
-Since the decryption is asynchronous, we need to check if the result is ready by checking the `decrypted` boolean.
-
-If the result is not ready, we revert the transaction with an error message.
+The owner calls `allow_counter_publicly` to mark the counter as eligible for public decryption:
 
 ```solidity
-function get_counter_value() external view returns(uint128) {
-    (uint128 value, bool decrypted) = FHE.getDecryptResultSafe(lastDecryptedCounter);
+function allow_counter_publicly() external onlyOwner {
+    FHE.allowPublic(counter);
+}
+```
+
+**Step 2: Decrypt off-chain**
+
+Anyone can now request decryption off-chain using `decryptForTx`, which returns the plaintext value and a Threshold Network signature:
+
+```typescript
+const countCtHash = await counter.counter();
+
+const result = await client
+  .decryptForTx(countCtHash)
+  .withoutPermit()
+  .execute();
+```
+
+**Step 3: Publish on-chain with proof**
+
+The decrypted value and signature are submitted on-chain. `FHE.publishDecryptResult` verifies the signature and stores the plaintext — if the signature is invalid, the transaction reverts:
+
+```solidity
+function reveal_counter(uint64 _decrypted, bytes memory _signature) external {
+    FHE.publishDecryptResult(counter, _decrypted, _signature);
+}
+```
+
+### Reading the Decrypted Value
+
+Once the result has been published, anyone can read the counter's value using `get_counter_value`. This function uses `FHE.getDecryptResultSafe` to check if a published result is available:
+
+```solidity
+function get_counter_value() external view returns(uint256) {
+    (uint256 value, bool decrypted) = FHE.getDecryptResultSafe(counter);
     if (!decrypted)
         revert("Value is not ready");
 
@@ -180,17 +206,17 @@ function get_counter_value() external view returns(uint128) {
 }
 ```
 
+If the result has not been published yet, the function reverts. Otherwise, it returns the plaintext value.
+
 ## Privacy Considerations
 
-In this contract, only the owner can request for a decryption. Once requested, everyone can read the counter's value at any given time.
+In this contract, only the owner can allow public decryption. Once `reveal_counter` is called, the plaintext value is published on-chain and visible to everyone.
 
-The owner needs to send a transaction to the `decrypt_counter`.
-
-What if we want to allow the owner to privately read the value without sending a transaction that calls `FHE.decrypt`, exposing the counter to everyone?
+What if we want to allow the owner to privately read the value without revealing it publicly?
 
 For that, we need to add a call for `FHE.allow(counter, owner)` or `FHE.allowSender(counter)` every time that we change the counter's value.
 
-This will allow the owner to read the encrypted counter's value using the `get_encrypted_counter_value` function and decrypt it using Cofhejs.
+This will allow the owner to read the encrypted counter's value using the `get_encrypted_counter_value` function and decrypt it privately off-chain using `decryptForView`:
 
 ```solidity
 function increment_counter() external onlyOwner {
@@ -204,16 +230,20 @@ function get_encrypted_counter_value() external view returns(euint64) {
 }
 ```
 
-In the [next section](/cofhejs/examples/end-to-end) we will see how to use Cofhejs to privately decrypt this encrypted contract variable.
+```typescript
+// Decrypt privately off-chain (no on-chain transaction, no public reveal)
+const countCtHash = await counter.get_encrypted_counter_value();
 
-## Exercise
+const result = await client
+  .decryptForView(countCtHash)
+  .withPermit()
+  .execute();
 
-<Tip>
-Try to modify the contract to allow the owner to read the counter's value without sending a transaction every time. You will need it in order to make the Cofhejs example work.
-</Tip>
+console.log(`Counter value (private): ${result.decryptedValue}`);
+```
 
 ## Next Steps
 
-- Learn how to use [Cofhejs](/cofhejs/examples/end-to-end) to interact with this contract
 - Explore [Adding FHE to an Existing Contract](/tutorials/adding-fhe-to-existing-contract)
 - Review [ACL Usage Examples](/tutorials/acl-usage-examples) for more access control patterns
+- Understand [Decryption Operations](/fhe-library/core-concepts/decryption-operations) in detail

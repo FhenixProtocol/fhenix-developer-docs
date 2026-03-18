@@ -42,7 +42,7 @@ These encrypted balances:
 - Cannot be read by anyone (including the contract)
 - Can be operated on using FHE operations
 - Maintain their encrypted state throughout all computations
-- Only decrypt when explicitly authorized
+- Are only revealed when explicitly published on-chain with a valid proof
 
 ### 2. Confidential Transfers
 
@@ -97,7 +97,7 @@ Recipients must implement the `IFHERC20Receiver` interface to accept these trans
 
 <Steps>
 <Step title="Client-Side Encryption">
-Users encrypt their transaction data (amounts, recipients) off-chain using the CoFHEjs library before submitting to the blockchain.
+Users encrypt their transaction data (amounts, recipients) off-chain using the Client SDK (`@cofhe/sdk`) before submitting to the blockchain.
 </Step>
 
 <Step title="On-Chain FHE Operations">
@@ -271,4 +271,4 @@ Security considerations, gas optimization, and recommended patterns.
 
 - Learn about FHE operations in [Encrypted Operations](/fhe-library/core-concepts/encrypted-operations)
 - Understand access control in [Access Control](/fhe-library/core-concepts/access-control)
-- Explore encryption with [CoFHEjs](/cofhejs/introduction/overview)
+- Explore encryption with the [Client SDK](/client-sdk/introduction/overview)
