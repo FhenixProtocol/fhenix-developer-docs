@@ -217,7 +217,7 @@ Here's a minimal example showing FHERC20 in action:
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@fhenixprotocol/contracts/FHERC20.sol";
+import { FHERC20 } from "fhenix-confidential-contracts/contracts/FHERC20.sol";
 
 contract MyConfidentialToken is FHERC20 {
     constructor() FHERC20("My Confidential Token", "MCT", 18) {}
