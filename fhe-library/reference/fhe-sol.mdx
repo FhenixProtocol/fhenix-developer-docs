@@ -957,59 +957,101 @@ if (decrypted) {
 }
 ```
 
+## Decrypt Result Publishing & Verification
+
 ### publishDecryptResult
 
-Publishes a decrypted result on-chain by verifying the Threshold Network signature. The plaintext is stored on-chain and can be read by anyone. Use this when the decrypted value should be publicly visible after verification.
+Publishes a signed decrypt result from the Threshold Network to the chain. The TaskManager verifies the ECDSA signature before storing the result. Anyone holding a valid signature can call this.
 
-<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
-Ciphertext handle of the encrypted value that was decrypted off-chain
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress | uint256" required>
+The ciphertext hash to publish a result for
 </ParamField>
 
-<ParamField body="plaintext" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
-The decrypted plaintext value returned by `decryptForTx`
+<ParamField body="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address | uint256" required>
+The decrypted plaintext value (type matches the ctHash type)
 </ParamField>
 
 <ParamField body="signature" type="bytes" required>
-The Threshold Network signature proving the plaintext is authentic
+The ECDSA signature from the Threshold Network's Dispatcher
 </ParamField>
 
-<Warning>
-The transaction reverts if the signature is invalid. The encrypted value must have been granted public access via `allowPublic` before decryption was requested off-chain.
-</Warning>
-
 ```solidity
-// Publish the decrypted result — plaintext is stored on-chain
-FHE.publishDecryptResult(encryptedBid, bidPlaintext, bidSignature);
+// Publish a decrypt result for a euint64
+FHE.publishDecryptResult(myEncryptedValue, uint64(42), signature);
 
-// The value is now publicly readable
+// Publish for an ebool
+FHE.publishDecryptResult(myEncryptedBool, true, signature);
 ```
 
 ### verifyDecryptResult
 
-Verifies a Threshold Network signature for a decrypted value without storing the plaintext on-chain. Use this when you need to act on the decrypted value within the transaction but don't want to persist it publicly.
+Verifies a decrypt result signature without publishing. Reverts if the signature is invalid.
 
-<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
-Ciphertext handle of the encrypted value that was decrypted off-chain
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress | uint256" required>
+The ciphertext hash
 </ParamField>
 
-<ParamField body="plaintext" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
-The decrypted plaintext value returned by `decryptForTx`
+<ParamField body="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address | uint256" required>
+The decrypted plaintext value
 </ParamField>
 
 <ParamField body="signature" type="bytes" required>
-The Threshold Network signature proving the plaintext is authentic
+The ECDSA signature to verify
 </ParamField>
 
-<Tip>
-Use `verifyDecryptResult` instead of `publishDecryptResult` when you only need to use the decrypted value within the transaction logic without making it permanently public.
-</Tip>
+<ResponseField name="valid" type="bool">
+Returns `true` if the signature is valid. Reverts otherwise.
+</ResponseField>
 
 ```solidity
-// Verify the proof and use the value — plaintext is NOT stored on-chain
-FHE.verifyDecryptResult(encryptedAmount, amount, signature);
+bool valid = FHE.verifyDecryptResult(myEncryptedValue, uint64(42), signature);
+```
 
-// Use the verified plaintext in transaction logic
-require(amount >= minThreshold, "Below minimum");
+### publishDecryptResultBatch
+
+Publishes multiple signed decrypt results in a single transaction for gas efficiency.
+
+<ParamField body="ctHashes" type="uint256[]" required>
+Array of ciphertext hashes
+</ParamField>
+
+<ParamField body="results" type="uint256[]" required>
+Array of decrypted plaintext values
+</ParamField>
+
+<ParamField body="signatures" type="bytes[]" required>
+Array of ECDSA signatures (one per result)
+</ParamField>
+
+```solidity
+FHE.publishDecryptResultBatch(ctHashes, results, signatures);
+```
+
+### verifyDecryptResultSafe
+
+Same as `verifyDecryptResult`, but returns `false` instead of reverting on invalid signatures.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress | uint256" required>
+The ciphertext hash
+</ParamField>
+
+<ParamField body="plaintext" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address | uint256" required>
+The decrypted plaintext value
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The ECDSA signature to verify
+</ParamField>
+
+<ResponseField name="valid" type="bool">
+Returns `true` if valid, `false` if invalid (never reverts on bad signature)
+</ResponseField>
+
+```solidity
+bool valid = FHE.verifyDecryptResultSafe(myEncryptedValue, uint64(42), signature);
+if (!valid) {
+    revert("Invalid decrypt result signature");
+}
 ```
 
 ## Access Control
