@@ -153,7 +153,7 @@ For values that should be accessible to everyone:
 ```solidity
 function setPublicValue(InEuint32 value) public onlyOwner {
     publicValue = FHE.asEuint32(value);
-    FHE.allowGlobal(publicValue); // Everyone can now access this value
+    FHE.allowPublic(publicValue); // Everyone can now access this value
 }
 ```
 

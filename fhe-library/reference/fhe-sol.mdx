@@ -1047,20 +1047,20 @@ euint32 counter = FHE.add(counter, FHE.asEuint32(1));
 FHE.allowThis(counter);  // Required for future access
 ```
 
-### allowGlobal
+### allowPublic
 
-Grants global permission to access the encrypted value.
+Grants public permission to access the encrypted value.
 
 <ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
-Encrypted value to grant global access to
+Encrypted value to grant public access to
 </ParamField>
 
 <Warning>
-Use `allowGlobal` with caution. It grants access to all accounts and contracts.
+Use `allowPublic` with caution. It grants access to all accounts and contracts.
 </Warning>
 
 ```solidity
-FHE.allowGlobal(encryptedValue);
+FHE.allowPublic(encryptedValue);
 ```
 
 ### allowSender
@@ -1200,7 +1200,7 @@ euint128 toU128 = a.toU128();    // Convert to euint128
 a.decrypt();                            // Decrypt
 a.allow(address);                       // Allow access
 a.allowThis();                          // Allow this contract
-a.allowGlobal();                        // Allow global access
+a.allowPublic();                        // Allow public access
 a.allowSender();                        // Allow sender
 a.allowTransient(address);              // Allow transient access
 bool hasAccess = a.isAllowed(address);  // Check access
