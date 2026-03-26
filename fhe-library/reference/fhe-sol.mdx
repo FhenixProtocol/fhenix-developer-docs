@@ -8,7 +8,7 @@ description: "Complete API reference for the FHE library - encrypted data types,
 The FHE library provides a comprehensive set of functions for working with Fully Homomorphic Encryption (FHE) in Solidity smart contracts. This library enables you to perform computations on encrypted data without decrypting it, ensuring privacy throughout your contract's execution.
 
 <Info>
-All functions in the FHE library are prefixed with `FHE.` when called. For example: `FHE.add(a, b)` or `FHE.decrypt(value)`.
+All functions in the FHE library are prefixed with `FHE.` when called. For example: `FHE.add(a, b)` or `FHE.allowPublic(value)`.
 </Info>
 
 ## Encrypted Data Types
@@ -870,53 +870,11 @@ ebool result = FHE.select(condition, trueValue, falseValue);
 eaddress result = FHE.select(condition, address1, address2);
 ```
 
-## Encryption and Decryption
-
-### encrypt
-
-Encrypts a plaintext value to its corresponding encrypted type.
-
-<ParamField body="value" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
-Plaintext value to encrypt
-</ParamField>
-
-<ResponseField name="result" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress">
-Encrypted value corresponding to the input type
-</ResponseField>
-
-```solidity
-ebool encrypted = FHE.encrypt(true);
-euint8 encrypted = FHE.encrypt(uint8(42));
-euint32 encrypted = FHE.encrypt(uint32(1000));
-eaddress encrypted = FHE.encrypt(0x1234...);
-```
-
-### decrypt
-
-Decrypts an encrypted value. The caller must have permission to access the encrypted value.
-
-<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
-Encrypted value to decrypt
-</ParamField>
-
-<ResponseField name="result" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address">
-Decrypted plaintext value
-</ResponseField>
-
-<Warning>
-Decryption reveals the plaintext value. Use with caution and ensure proper access control is in place.
-</Warning>
-
-```solidity
-bool decrypted = FHE.decrypt(encryptedBool);
-uint8 decrypted = FHE.decrypt(encryptedUint8);
-uint32 decrypted = FHE.decrypt(encryptedUint32);
-address decrypted = FHE.decrypt(encryptedAddress);
-```
+## Decryption Results
 
 ### getDecryptResult
 
-Retrieves the decrypted result of a previously decrypted value. This function should be called after requesting decryption with `decrypt()`.
+Retrieves a published decryption result. This function should be called after a result has been published via `publishDecryptResult`.
 
 <ParamField body="input" type="uint256" required>
 Hash of the encrypted value that was previously decrypted
@@ -1012,6 +970,118 @@ FHE.verifyDecryptResult(encryptedAmount, amount, signature);
 require(amount >= minThreshold, "Below minimum");
 ```
 
+### verifyDecryptResultSafe
+
+Like `verifyDecryptResult`, but returns `false` instead of reverting if the signature is invalid.
+
+<ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Ciphertext handle of the encrypted value
+</ParamField>
+
+<ParamField body="plaintext" type="bool | uint8 | uint16 | uint32 | uint64 | uint128 | address" required>
+The decrypted plaintext value
+</ParamField>
+
+<ParamField body="signature" type="bytes" required>
+The Threshold Network signature
+</ParamField>
+
+<ResponseField name="result" type="bool">
+True if the signature is valid, false otherwise (does not revert)
+</ResponseField>
+
+```solidity
+bool valid = FHE.verifyDecryptResultSafe(encryptedAmount, amount, signature);
+if (valid) {
+    // proceed with verified plaintext
+}
+```
+
+### publishDecryptResultBatch
+
+Publishes multiple decrypted results on-chain in a single call. Each element is verified independently.
+
+<ParamField body="ctHashes" type="ebool[] | euint8[] | euint16[] | euint32[] | euint64[] | euint128[] | eaddress[]" required>
+Array of ciphertext handles
+</ParamField>
+
+<ParamField body="plaintexts" type="bool[] | uint8[] | uint16[] | uint32[] | uint64[] | uint128[] | address[]" required>
+Array of decrypted plaintext values (must match ctHashes length and type)
+</ParamField>
+
+<ParamField body="signatures" type="bytes[]" required>
+Array of Threshold Network signatures (must match ctHashes length)
+</ParamField>
+
+```solidity
+euint64[] memory handles = new euint64[](2);
+handles[0] = encryptedBid1;
+handles[1] = encryptedBid2;
+
+uint64[] memory values = new uint64[](2);
+values[0] = bid1Plaintext;
+values[1] = bid2Plaintext;
+
+bytes[] memory sigs = new bytes[](2);
+sigs[0] = sig1;
+sigs[1] = sig2;
+
+FHE.publishDecryptResultBatch(handles, values, sigs);
+```
+
+### verifyDecryptResultBatch
+
+Verifies multiple Threshold Network signatures in a single call without storing results. Reverts if any signature is invalid.
+
+<ParamField body="ctHashes" type="ebool[] | euint8[] | euint16[] | euint32[] | euint64[] | euint128[] | eaddress[]" required>
+Array of ciphertext handles
+</ParamField>
+
+<ParamField body="plaintexts" type="bool[] | uint8[] | uint16[] | uint32[] | uint64[] | uint128[] | address[]" required>
+Array of decrypted plaintext values
+</ParamField>
+
+<ParamField body="signatures" type="bytes[]" required>
+Array of Threshold Network signatures
+</ParamField>
+
+<ResponseField name="result" type="bool">
+True if all signatures are valid (reverts otherwise)
+</ResponseField>
+
+```solidity
+bool allValid = FHE.verifyDecryptResultBatch(handles, values, sigs);
+```
+
+### verifyDecryptResultBatchSafe
+
+Like `verifyDecryptResultBatch`, but returns a `bool[]` indicating which entries are valid instead of reverting.
+
+<ParamField body="ctHashes" type="ebool[] | euint8[] | euint16[] | euint32[] | euint64[] | euint128[] | eaddress[]" required>
+Array of ciphertext handles
+</ParamField>
+
+<ParamField body="plaintexts" type="bool[] | uint8[] | uint16[] | uint32[] | uint64[] | uint128[] | address[]" required>
+Array of decrypted plaintext values
+</ParamField>
+
+<ParamField body="signatures" type="bytes[]" required>
+Array of Threshold Network signatures
+</ParamField>
+
+<ResponseField name="results" type="bool[]">
+Array of booleans — `true` for each valid signature, `false` for invalid
+</ResponseField>
+
+```solidity
+bool[] memory results = FHE.verifyDecryptResultBatchSafe(handles, values, sigs);
+for (uint i = 0; i < results.length; i++) {
+    if (results[i]) {
+        // entry i is valid
+    }
+}
+```
+
 ## Access Control
 
 ### allow
@@ -1049,38 +1119,10 @@ FHE.allowThis(counter);  // Required for future access
 
 ### allowPublic
 
-Grants public permission to access the encrypted value.
+Grants public permission to access the encrypted value. Once called, anyone can request decryption of this value off-chain via `decryptForTx` without needing a permit.
 
 <ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
 Encrypted value to grant public access to
-</ParamField>
-
-<Warning>
-Use `allowPublic` with caution. It grants access to all accounts and contracts.
-</Warning>
-
-```solidity
-FHE.allowPublic(encryptedValue);
-```
-
-### allowSender
-
-Grants permission to the message sender to access the encrypted value.
-
-<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
-Encrypted value to grant access to
-</ParamField>
-
-```solidity
-FHE.allowSender(encryptedValue);
-```
-
-### allowPublic
-
-Marks an encrypted value as eligible for public decryption. Once called, anyone can request decryption of this value off-chain via `decryptForTx` without needing a permit.
-
-<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
-Encrypted value to allow public decryption for
 </ParamField>
 
 <Warning>
@@ -1093,6 +1135,18 @@ FHE.allowPublic(highestBid);
 FHE.allowPublic(highestBidder);
 
 // Now anyone can call decryptForTx off-chain without a permit
+```
+
+### allowSender
+
+Grants permission to the message sender to access the encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to grant access to
+</ParamField>
+
+```solidity
+FHE.allowSender(encryptedValue);
 ```
 
 ### allowTransient
@@ -1129,6 +1183,76 @@ True if the account has permission, false otherwise
 
 ```solidity
 bool hasAccess = FHE.isAllowed(encryptedValue, userAddress);
+```
+
+### isPubliclyAllowed
+
+Checks if the encrypted value has been granted public access via `allowPublic`.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to check
+</ParamField>
+
+<ResponseField name="result" type="bool">
+True if the value is publicly accessible, false otherwise
+</ResponseField>
+
+```solidity
+bool isPublic = FHE.isPubliclyAllowed(encryptedValue);
+```
+
+## Utility Functions
+
+### isInitialized
+
+Checks whether an encrypted value has been initialized (i.e., is not a zero/empty handle).
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to check
+</ParamField>
+
+<ResponseField name="result" type="bool">
+True if the value has been initialized, false otherwise
+</ResponseField>
+
+```solidity
+if (FHE.isInitialized(encryptedBalance)) {
+    // safe to use
+}
+```
+
+### unwrap
+
+Extracts the raw `bytes32` handle from a typed encrypted value.
+
+<ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
+Encrypted value to unwrap
+</ParamField>
+
+<ResponseField name="result" type="bytes32">
+The underlying ciphertext handle
+</ResponseField>
+
+```solidity
+bytes32 handle = FHE.unwrap(encryptedValue);
+```
+
+### wrapEbool / wrapEuint8 / wrapEuint16 / wrapEuint32 / wrapEuint64 / wrapEuint128 / wrapEaddress
+
+Wraps a raw `bytes32` handle into a typed encrypted value. Use this when you have a raw handle (e.g., from storage or an event) and need to convert it to a typed encrypted value.
+
+<ParamField body="handle" type="bytes32" required>
+Raw ciphertext handle to wrap
+</ParamField>
+
+```solidity
+ebool val = FHE.wrapEbool(handle);
+euint8 val = FHE.wrapEuint8(handle);
+euint16 val = FHE.wrapEuint16(handle);
+euint32 val = FHE.wrapEuint32(handle);
+euint64 val = FHE.wrapEuint64(handle);
+euint128 val = FHE.wrapEuint128(handle);
+eaddress val = FHE.wrapEaddress(handle);
 ```
 
 ## Bindings
@@ -1196,8 +1320,11 @@ euint32 toU32 = a.toU32();       // Convert to euint32
 euint64 toU64 = a.toU64();       // Convert to euint64
 euint128 toU128 = a.toU128();    // Convert to euint128
 
+// Utility
+bool initialized = a.isInitialized();          // Check if initialized
+bytes32 handle = a.unwrap();                   // Get raw handle
+
 // Access control
-a.decrypt();                            // Decrypt
 a.allow(address);                       // Allow access
 a.allowThis();                          // Allow this contract
 a.allowPublic();                        // Allow public access
@@ -1214,7 +1341,7 @@ Always consider security implications when working with encrypted data.
 
 1. **Initialization**: All FHE functions check if their inputs are initialized and set them to 0 if not.
 
-2. **Decryption**: Decryption functions reveal the plaintext values and should be used with caution. Only decrypt when absolutely necessary.
+2. **Decryption**: Decryption is a two-phase process — mark values with `allowPublic` on-chain, decrypt off-chain via the Client SDK, then publish/verify the result with `publishDecryptResult` or `verifyDecryptResult`. Only reveal values when absolutely necessary.
 
 3. **Security Zones**: Some functions accept a `securityZone` parameter to isolate different encrypted computations. FHE operations can only be performed between ciphertexts that share the same security zone.
 
@@ -1244,9 +1371,13 @@ ebool isGreater = FHE.gt(b, a);      // Encrypted comparison
 // Conditional logic
 euint8 result = FHE.select(isGreater, sum, product);
 
-// Grant access and decrypt the result
+// Grant access for future use and allow public decryption
 FHE.allowThis(result);
-uint8 decryptedResult = FHE.decrypt(result);
+FHE.allowPublic(result);
+
+// Off-chain: client calls decryptForTx(ctHash) to get plaintext + signature
+// On-chain: publish the verified result
+// FHE.publishDecryptResult(result, plaintext, signature);
 ```
 
 ### Example with Bindings
@@ -1267,9 +1398,9 @@ ebool isGreater = b.gt(a);           // Encrypted comparison
 // Conditional logic
 euint8 result = isGreater.select(sum, product);
 
-// Grant access and decrypt the result
+// Grant access for future use and allow public decryption
 result.allowThis();
-uint8 decryptedResult = FHE.decrypt(result);
+result.allowPublic();
 ```
 
 ## Next Steps
