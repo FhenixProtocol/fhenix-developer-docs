@@ -39,3 +39,36 @@ The coordinator splits the CT into individual Learning With Errors (LWE) CT bloc
 
 The MPC protocol consists of multiple stages. In each stage, a partymember performs a calculation on a received input and returns the result (a.k.a. intermediate result) to the Coordinator. Each intermediate result gets sent back to the coordinator in order to get distributed among other partymembers as an input for the next stage.
 
+## Dispatcher Signing
+
+The Threshold Network's **Dispatcher** component signs every decrypt and sealoutput result with an ECDSA key. This signature enables on-chain verification — clients can publish signed decrypt results directly to the TaskManager contract via `FHE.publishDecryptResult()`.
+
+### Signed Message Format
+
+For decrypt results, the Dispatcher produces a fixed **76-byte** message before signing:
+
+| Field | Size | Encoding |
+|-------|------|----------|
+| `result` | 32 bytes | uint256, big-endian, left-padded with zeros |
+| `enc_type` | 4 bytes | i32, big-endian |
+| `chain_id` | 8 bytes | u64, big-endian |
+| `ct_hash` | 32 bytes | uint256, big-endian |
+
+This format is aligned with Solidity types so the TaskManager can reconstruct and verify the same hash on-chain using `_computeDecryptResultHash`.
+
+### Signature V Format
+
+The ECDSA recovery ID (`v` value) can be returned in two formats, controlled by the HTTP header `X-Signature-V-Format`:
+
+| Header Value | V Format | Use Case |
+|-------------|----------|----------|
+| `"raw"` (default) | 0-3 | General purpose, k256 native |
+| `"evm"` | 27-28 | Direct use with Solidity's `ecrecover` / OpenZeppelin `ECDSA.recover` |
+
+<Note>
+For on-chain verification via `FHE.publishDecryptResult()`, use `"evm"` format so the signature is directly compatible with the TaskManager's ECDSA verification.
+</Note>
+
+### Signer Registration
+
+The Dispatcher's signing key address is registered on-chain as `decryptResultSigner` in the TaskManager contract. Only results signed by this address are accepted. Setting it to `address(0)` disables verification (debug mode only).

@@ -55,18 +55,16 @@ The Threshold Network performs secure decryption:
 - Perform secure decryption
 </Step>
 
-<Step title="FheOS Notifies the Result Processor with the decrypt result">
+<Step title="Result Delivery">
 After decryption is complete: 7️⃣
 
-- Call appropriate callback function on the Result Processor
-- The Result Processor publishes the result back to the TaskManager on the host chain
-</Step>
+- The Threshold Network returns the plaintext along with an **ECDSA signature** to the client (via the Client SDK)
+- The client (or any relayer) calls `FHE.publishDecryptResult(ctHash, result, signature)` or `FHE.verifyDecryptResult(ctHash, result, signature)` on-chain
+- The on-chain contract verifies the signature before accepting the result
 
-<Step title="TaskManager emit event with decryption result">
-The TaskManager finalizes the decryption process: 8️⃣
-
-- Provide decrypted result by emitting an event `DecryptionResult`
-- The event consists of `ciphertext handle`, `result`, `requestor` (of that decrypt operation)
+<Note>
+This enables permissionless result delivery — anyone holding a valid signature can publish. This is useful for client-driven settlement or relayer patterns.
+</Note>
 </Step>
 </Steps>
 

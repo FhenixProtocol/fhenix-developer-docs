@@ -218,7 +218,7 @@
               "deep-dive/data-flows/encryption-request-flow",
               "deep-dive/data-flows/fhe-operation-request-flow",
               "deep-dive/data-flows/decryption-request-flow",
-              "deep-dive/data-flows/decrypt-from-cofhejs"
+              "deep-dive/data-flows/off-chain-decryption-flow"
             ]
           },
           { 

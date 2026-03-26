@@ -43,8 +43,9 @@ require(msg.sender == owner, "Not authorized");
 // Good - use select for encrypted logic
 euint32 result = FHE.select(encryptedCondition, valueA, valueB);
 
-// Bad - require on encrypted condition leaks information!
-require(FHE.decrypt(encryptedValue.gt(threshold)), "Value too low");
+// Bad - require on encrypted condition is not possible!
+// FHE.decrypt was removed — decryption is now off-chain only
+// require(FHE.decrypt(encryptedValue.gt(threshold)), "Value too low");
 ```
 
 ---

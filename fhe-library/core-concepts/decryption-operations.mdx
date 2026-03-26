@@ -42,12 +42,23 @@ The client calls `decryptForView` off-chain to obtain the plaintext for display 
 Use `decryptForTx` when you need to act on the decrypted value in a smart contract. Use `decryptForView` when you only need to display the value in a UI.
 </Note>
 
+### 3. Client-Published Decryption (Signature-Verified)
+
+The client decrypts off-chain via `decryptForTx`, receives the plaintext result along with an **ECDSA signature** from the Threshold Network's Dispatcher, and then publishes the result on-chain by calling `FHE.publishDecryptResult()`. The TaskManager verifies the signature on-chain before storing the result.
+
+This combines the best of both worlds: the client controls when the result lands on-chain, while the contract can still use the decrypted value.
+
+<Note>
+The signature cryptographically proves the result came from the authorized Threshold Network. No trust in the publisher is required — anyone holding a valid signature can submit it.
+</Note>
+
 ### Comparison Table
 
 | Method | Visibility | Gas Cost | Smart Contract Usable | Best For |
 |--------|-----------|----------|----------------------|----------|
 | **`decryptForTx`** | Public (once published on-chain) | Gas for the publish/verify tx | Yes | Public results, contract logic |
 | **`decryptForView`** | Private (off-chain only) | None | No | UI display, confidential data |
+| **Client-Published (signature)** | Public (on-chain) | Medium | Yes | Client-driven settlement, permissionless delivery |
 
 ---
 
@@ -234,6 +245,33 @@ const tx = await auctionContract.revealWinner(
 );
 await tx.wait();
 ```
+
+---
+
+## Batch Client-Published Decryption
+
+```solidity
+function publishMultipleResults(
+    uint256[] memory ctHashes,
+    uint256[] memory results,
+    bytes[] memory signatures
+) external {
+    FHE.publishDecryptResultBatch(ctHashes, results, signatures);
+}
+```
+
+---
+
+## Signature Verification Functions
+
+When using client-published decryption, two verification functions are available:
+
+| Function | Behavior on Invalid Signature |
+|----------|-------------------------------|
+| `FHE.verifyDecryptResult(ctHash, result, signature)` | Reverts |
+| `FHE.verifyDecryptResultSafe(ctHash, result, signature)` | Returns `false` |
+
+Both functions accept type-specific overloads for `ebool`, `euint8`, `euint16`, `euint32`, `euint64`, `euint128`, and `eaddress`.
 
 ---
 
