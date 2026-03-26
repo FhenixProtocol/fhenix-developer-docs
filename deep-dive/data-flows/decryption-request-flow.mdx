@@ -55,29 +55,16 @@ The Threshold Network performs secure decryption:
 - Perform secure decryption
 </Step>
 
-<Step title="Result Delivery (Two Paths)">
-After decryption is complete, the result can reach the chain via two paths: 7️⃣
+<Step title="Result Delivery">
+After decryption is complete: 7️⃣
 
-**Path A — Result Processor (default):**
-- FheOS calls the Result Processor with the decrypt result
-- The Result Processor publishes the result to the TaskManager on the host chain
-
-**Path B — Client-Published with Signature:**
-- The Dispatcher returns the decrypt result along with an **ECDSA signature** to the client (via cofhejs HTTP)
-- The client (or any relayer) calls `FHE.publishDecryptResult(ctHash, result, signature)` on-chain
-- The TaskManager verifies the signature against the registered `decryptResultSigner` before storing the result
+- The Threshold Network returns the plaintext along with an **ECDSA signature** to the client (via the Client SDK)
+- The client (or any relayer) calls `FHE.publishDecryptResult(ctHash, result, signature)` or `FHE.verifyDecryptResult(ctHash, result, signature)` on-chain
+- The on-chain contract verifies the signature before accepting the result
 
 <Note>
-Path B enables permissionless result delivery — anyone holding a valid signature can publish. This is useful for client-driven settlement or relayer patterns.
+This enables permissionless result delivery — anyone holding a valid signature can publish. This is useful for client-driven settlement or relayer patterns.
 </Note>
-</Step>
-
-<Step title="TaskManager emit event with decryption result">
-The TaskManager finalizes the decryption process: 8️⃣
-
-- Provide decrypted result by emitting an event `DecryptionResult`
-- The event consists of `ciphertext handle`, `result`, `requestor` (of that decrypt operation)
-- In Path B, `requestor` is `msg.sender` (the publisher), not the original decrypt requester
 </Step>
 </Steps>
 
