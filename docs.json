@@ -172,7 +172,20 @@
           {
             "group": "Reference",
             "pages": [
-              "fhe-library/reference/fhe-sol",
+              {
+                "group": "FHE.sol",
+                "pages": [
+                  "fhe-library/reference/fhe-sol/overview",
+                  "fhe-library/reference/fhe-sol/type-conversion",
+                  "fhe-library/reference/fhe-sol/arithmetic",
+                  "fhe-library/reference/fhe-sol/bitwise",
+                  "fhe-library/reference/fhe-sol/comparison",
+                  "fhe-library/reference/fhe-sol/decryption",
+                  "fhe-library/reference/fhe-sol/access-control",
+                  "fhe-library/reference/fhe-sol/utility",
+                  "fhe-library/reference/fhe-sol/bindings"
+                ]
+              },
               "fhe-library/reference/cofhe-errors",
               "fhe-library/reference/cofhe-errors-reference"
             ]

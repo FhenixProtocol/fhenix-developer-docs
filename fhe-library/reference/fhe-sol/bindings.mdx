@@ -1,0 +1,73 @@
+---
+title: "Bindings (Dot Notation)"
+description: "Use encrypted types with dot notation instead of FHE.* prefix"
+---
+
+The FHE library provides binding libraries that enable dot notation for all operations. Import them alongside FHE.sol — no extra setup required.
+
+```solidity
+// Without bindings
+euint8 sum = FHE.add(a, b);
+
+// With bindings
+euint8 sum = a.add(b);
+```
+
+## Full Example
+
+```solidity
+InEuint8 encryptedInputA;
+InEuint8 encryptedInputB;
+
+euint8 a = FHE.asEuint8(encryptedInputA);
+euint8 b = FHE.asEuint8(encryptedInputB);
+
+// Arithmetic
+euint8 sum = a.add(b);
+euint8 diff = a.sub(b);
+euint8 product = a.mul(b);
+euint8 quotient = a.div(b);
+euint8 remainder = a.rem(b);
+euint8 squared = a.square();
+
+// Bitwise
+euint8 bitwiseAnd = a.and(b);
+euint8 bitwiseOr = a.or(b);
+euint8 bitwiseXor = a.xor(b);
+euint8 bitwiseNot = a.not();
+euint8 shiftLeft = a.shl(b);
+euint8 shiftRight = a.shr(b);
+euint8 rotateLeft = a.rol(b);
+euint8 rotateRight = a.ror(b);
+
+// Comparison
+ebool isEqual = a.eq(b);
+ebool isNotEqual = a.ne(b);
+ebool isLessThan = a.lt(b);
+ebool isLessEqual = a.lte(b);
+ebool isGreaterThan = a.gt(b);
+ebool isGreaterEqual = a.gte(b);
+
+// Min/Max
+euint8 minimum = a.min(b);
+euint8 maximum = a.max(b);
+
+// Type conversion
+ebool converted = a.toBool();
+euint16 toU16 = a.toU16();
+euint32 toU32 = a.toU32();
+euint64 toU64 = a.toU64();
+euint128 toU128 = a.toU128();
+
+// Utility
+bool initialized = a.isInitialized();
+bytes32 handle = a.unwrap();
+
+// Access control
+a.allow(address);
+a.allowThis();
+a.allowPublic();
+a.allowSender();
+a.allowTransient(address);
+bool hasAccess = a.isAllowed(address);
+```

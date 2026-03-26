@@ -1,0 +1,55 @@
+---
+title: "Utility Functions"
+description: "isInitialized, unwrap, wrap — handle inspection and conversion utilities"
+---
+
+## isInitialized
+
+Checks whether an encrypted value has been initialized (i.e., is not a zero/empty handle). Works on all encrypted types.
+
+```solidity
+if (FHE.isInitialized(encryptedBalance)) {
+    // safe to use
+}
+```
+
+## unwrap
+
+Extracts the raw `bytes32` handle from a typed encrypted value.
+
+```solidity
+bytes32 handle = FHE.unwrap(encryptedValue);
+```
+
+## wrap
+
+Wraps a raw `bytes32` handle into a typed encrypted value. One function per type:
+
+```solidity
+ebool val    = FHE.wrapEbool(handle);
+euint8 val   = FHE.wrapEuint8(handle);
+euint16 val  = FHE.wrapEuint16(handle);
+euint32 val  = FHE.wrapEuint32(handle);
+euint64 val  = FHE.wrapEuint64(handle);
+euint128 val = FHE.wrapEuint128(handle);
+eaddress val = FHE.wrapEaddress(handle);
+```
+
+<Tip>
+Use `wrap` when you have a raw handle from storage or an event and need to convert it back to a typed encrypted value.
+</Tip>
+
+## Random Number Generation
+
+Generate random encrypted values. An optional `securityZone` parameter is supported.
+
+```solidity
+euint8 rand   = FHE.randomEuint8();
+euint16 rand  = FHE.randomEuint16();
+euint32 rand  = FHE.randomEuint32();
+euint64 rand  = FHE.randomEuint64();
+euint128 rand = FHE.randomEuint128();
+
+// With security zone
+euint32 rand = FHE.randomEuint32(1);
+```

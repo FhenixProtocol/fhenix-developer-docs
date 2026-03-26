@@ -1,0 +1,46 @@
+---
+title: "Arithmetic Operations"
+description: "add, sub, mul, div, rem, square — encrypted math operations"
+---
+
+All arithmetic operations work on `euint8 | euint16 | euint32 | euint64 | euint128`. Both operands must be the same type.
+
+### add
+
+```solidity
+euint32 sum = FHE.add(a, b);
+```
+
+### sub
+
+```solidity
+euint32 diff = FHE.sub(a, b);
+```
+
+### mul
+
+```solidity
+euint32 product = FHE.mul(a, b);
+```
+
+### div
+
+<Warning>
+Division by zero will cause the operation to revert.
+</Warning>
+
+```solidity
+euint32 quotient = FHE.div(a, b);
+```
+
+### rem
+
+```solidity
+euint32 remainder = FHE.rem(a, b);
+```
+
+### square
+
+```solidity
+euint32 squared = FHE.square(a);
+```

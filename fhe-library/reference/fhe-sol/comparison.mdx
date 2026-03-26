@@ -1,0 +1,74 @@
+---
+title: "Comparison Operations"
+description: "eq, ne, lt, lte, gt, gte, min, max — encrypted comparison and selection"
+---
+
+All comparison operations return `ebool`. Equality checks (`eq`, `ne`) work on all encrypted types including `eaddress`. Ordering checks (`lt`, `lte`, `gt`, `gte`) and `min`/`max` work on `euint8 | euint16 | euint32 | euint64 | euint128`.
+
+## Equality
+
+### eq
+
+```solidity
+ebool isEqual = FHE.eq(a, b);
+ebool isEqual = FHE.eq(address1, address2); // eaddress supported
+```
+
+### ne
+
+```solidity
+ebool isNotEqual = FHE.ne(a, b);
+```
+
+## Ordering
+
+### lt
+
+```solidity
+ebool isLess = FHE.lt(a, b);
+```
+
+### lte
+
+```solidity
+ebool isLessOrEqual = FHE.lte(a, b);
+```
+
+### gt
+
+```solidity
+ebool isGreater = FHE.gt(a, b);
+```
+
+### gte
+
+```solidity
+ebool isGreaterOrEqual = FHE.gte(a, b);
+```
+
+## Min / Max
+
+### min
+
+```solidity
+euint32 minimum = FHE.min(a, b);
+```
+
+### max
+
+```solidity
+euint32 maximum = FHE.max(a, b);
+```
+
+## Select
+
+Conditionally selects between two encrypted values based on an encrypted boolean. Works on all encrypted types including `eaddress`.
+
+<Tip>
+Use `select` instead of `if/else` statements when working with encrypted values. Conditional branching doesn't work with encrypted data.
+</Tip>
+
+```solidity
+euint8 result = FHE.select(condition, a, b);
+eaddress result = FHE.select(condition, addr1, addr2);
+```

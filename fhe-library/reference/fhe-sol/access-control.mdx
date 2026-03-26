@@ -1,0 +1,75 @@
+---
+title: "Access Control"
+description: "allow, allowPublic, allowThis, allowSender, allowTransient, isAllowed, isPubliclyAllowed"
+---
+
+All access control functions work on `ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress`.
+
+---
+
+### allow
+
+Grants permission to a specific address.
+
+```solidity
+FHE.allow(encryptedValue, userAddress);
+```
+
+### allowThis
+
+Grants permission to the current contract (`address(this)`).
+
+<Tip>
+Call `allowThis` after modifying encrypted state variables so the contract can use them in future transactions.
+</Tip>
+
+```solidity
+euint32 counter = FHE.add(counter, FHE.asEuint32(1));
+FHE.allowThis(counter);
+```
+
+### allowPublic
+
+Grants public permission — anyone can request decryption off-chain via `decryptForTx` without a permit.
+
+<Warning>
+Once called, the value can be decrypted by anyone. Only use this when you intend to reveal the value publicly (e.g., after an auction closes or when unwrapping tokens).
+</Warning>
+
+```solidity
+FHE.allowPublic(highestBid);
+```
+
+### allowSender
+
+Grants permission to `msg.sender`.
+
+```solidity
+FHE.allowSender(encryptedValue);
+```
+
+### allowTransient
+
+Grants temporary permission to a specific address for the current transaction only.
+
+```solidity
+FHE.allowTransient(encryptedValue, otherContract);
+```
+
+---
+
+### isAllowed
+
+Checks if an address has permission.
+
+```solidity
+bool hasAccess = FHE.isAllowed(encryptedValue, userAddress);
+```
+
+### isPubliclyAllowed
+
+Checks if the value has been granted public access via `allowPublic`.
+
+```solidity
+bool isPublic = FHE.isPubliclyAllowed(encryptedValue);
+```

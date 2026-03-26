@@ -1,0 +1,117 @@
+---
+title: "Type Conversion"
+description: "Convert between plaintext, encrypted input structs, and encrypted types"
+---
+
+## From Plaintext (Trivial Encryption)
+
+Convert plaintext values to encrypted types. An optional `securityZone` parameter isolates encrypted computations.
+
+### asEbool
+
+```solidity
+ebool encrypted = FHE.asEbool(true);
+ebool encryptedWithZone = FHE.asEbool(true, 1);
+```
+
+### asEuint8 / asEuint16 / asEuint32 / asEuint64 / asEuint128
+
+```solidity
+euint8 encrypted = FHE.asEuint8(42);
+euint16 encrypted = FHE.asEuint16(1000);
+euint32 encrypted = FHE.asEuint32(50000);
+euint64 encrypted = FHE.asEuint64(1000000000);
+euint128 encrypted = FHE.asEuint128(1000000000000000000);
+
+// With security zone
+euint32 encrypted = FHE.asEuint32(50000, 1);
+```
+
+### asEaddress
+
+```solidity
+eaddress encrypted = FHE.asEaddress(0x1234567890123456789012345678901234567890);
+```
+
+---
+
+## From Encrypted Input Structs
+
+Convert client-side encrypted inputs (received as function parameters) into encrypted types.
+
+```solidity
+function deposit(InEuint64 calldata encryptedAmount) external {
+    euint64 amount = FHE.asEuint64(encryptedAmount);
+}
+```
+
+All input types follow the same pattern:
+
+```solidity
+ebool val   = FHE.asEbool(inEbool);
+euint8 val  = FHE.asEuint8(inEuint8);
+euint16 val = FHE.asEuint16(inEuint16);
+euint32 val = FHE.asEuint32(inEuint32);
+euint64 val = FHE.asEuint64(inEuint64);
+euint128 val = FHE.asEuint128(inEuint128);
+eaddress val = FHE.asEaddress(inEaddress);
+```
+
+---
+
+## Between Encrypted Types
+
+Cast any encrypted type to another. The full cross-cast matrix is supported:
+
+```solidity
+// ebool from integers
+ebool result = FHE.asEbool(euint8Value);
+ebool result = FHE.asEbool(euint16Value);
+ebool result = FHE.asEbool(euint32Value);
+ebool result = FHE.asEbool(euint64Value);
+ebool result = FHE.asEbool(euint128Value);
+ebool result = FHE.asEbool(eaddressValue);
+
+// euint8 from other types
+euint8 result = FHE.asEuint8(eboolValue);
+euint8 result = FHE.asEuint8(euint16Value);
+euint8 result = FHE.asEuint8(euint32Value);
+euint8 result = FHE.asEuint8(euint64Value);
+euint8 result = FHE.asEuint8(euint128Value);
+euint8 result = FHE.asEuint8(eaddressValue);
+
+// euint16 from other types
+euint16 result = FHE.asEuint16(eboolValue);
+euint16 result = FHE.asEuint16(euint8Value);
+euint16 result = FHE.asEuint16(euint32Value);
+euint16 result = FHE.asEuint16(euint64Value);
+euint16 result = FHE.asEuint16(euint128Value);
+euint16 result = FHE.asEuint16(eaddressValue);
+
+// euint32 from other types
+euint32 result = FHE.asEuint32(eboolValue);
+euint32 result = FHE.asEuint32(euint8Value);
+euint32 result = FHE.asEuint32(euint16Value);
+euint32 result = FHE.asEuint32(euint64Value);
+euint32 result = FHE.asEuint32(euint128Value);
+euint32 result = FHE.asEuint32(eaddressValue);
+
+// euint64 from other types
+euint64 result = FHE.asEuint64(eboolValue);
+euint64 result = FHE.asEuint64(euint8Value);
+euint64 result = FHE.asEuint64(euint16Value);
+euint64 result = FHE.asEuint64(euint32Value);
+euint64 result = FHE.asEuint64(euint128Value);
+euint64 result = FHE.asEuint64(eaddressValue);
+
+// euint128 from other types
+euint128 result = FHE.asEuint128(eboolValue);
+euint128 result = FHE.asEuint128(euint8Value);
+euint128 result = FHE.asEuint128(euint16Value);
+euint128 result = FHE.asEuint128(euint32Value);
+euint128 result = FHE.asEuint128(euint64Value);
+euint128 result = FHE.asEuint128(eaddressValue);
+
+// eaddress from euint128
+eaddress result = FHE.asEaddress(euint128Value);
+```

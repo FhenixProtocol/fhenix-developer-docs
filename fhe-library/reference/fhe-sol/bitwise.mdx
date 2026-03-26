@@ -1,0 +1,70 @@
+---
+title: "Bitwise Operations"
+description: "and, or, xor, not, shl, shr, rol, ror — encrypted bitwise operations"
+---
+
+Bitwise logic operations work on `ebool | euint8 | euint16 | euint32 | euint64 | euint128`. Shift and rotate operations work on `euint8 | euint16 | euint32 | euint64 | euint128` only.
+
+## Logic
+
+### and
+
+```solidity
+euint8 result = FHE.and(a, b);
+ebool result = FHE.and(x, y);
+```
+
+### or
+
+```solidity
+euint8 result = FHE.or(a, b);
+ebool result = FHE.or(x, y);
+```
+
+### xor
+
+```solidity
+euint8 result = FHE.xor(a, b);
+ebool result = FHE.xor(x, y);
+```
+
+### not
+
+```solidity
+euint8 result = FHE.not(a);
+ebool result = FHE.not(x);
+```
+
+## Shift & Rotate
+
+### shl
+
+Shift left.
+
+```solidity
+euint32 result = FHE.shl(value, shiftAmount);
+```
+
+### shr
+
+Shift right.
+
+```solidity
+euint32 result = FHE.shr(value, shiftAmount);
+```
+
+### rol
+
+Rotate left.
+
+```solidity
+euint32 result = FHE.rol(value, rotateAmount);
+```
+
+### ror
+
+Rotate right.
+
+```solidity
+euint32 result = FHE.ror(value, rotateAmount);
+```
