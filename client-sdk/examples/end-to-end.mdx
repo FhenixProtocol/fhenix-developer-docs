@@ -133,6 +133,14 @@ const balance = await client
   .execute();
 
 console.log('Balance:', balance); // 100n
+
+// 5. Decrypt for on-chain verification
+const { decryptedValue, signature } = await client
+  .decryptForTx(ctHash)
+  .withPermit()
+  .execute();
+
+await contract.publishBalance(ctHash, decryptedValue, signature);
 ```
 
 ```typescript Hardhat test
@@ -165,6 +173,27 @@ describe('ConfidentialVault', () => {
       .execute();
 
     expect(balance).to.equal(100n);
+  });
+
+  it('publishes a decrypt result on-chain', async () => {
+    const Factory = await hre.ethers.getContractFactory('ConfidentialVault');
+    const vault = await Factory.deploy();
+
+    // Encrypt and deposit
+    const [encrypted] = await cofheClient
+      .encryptInputs([Encryptable.uint64(42n)])
+      .execute();
+    await (await vault.deposit(encrypted)).wait();
+
+    // Decrypt for on-chain verification
+    const ctHash = await vault.getBalance();
+    const { decryptedValue, signature } = await cofheClient
+      .decryptForTx(ctHash)
+      .withPermit()
+      .execute();
+
+    // Publish on-chain with Threshold Network proof
+    await (await vault.publishBalance(ctHash, decryptedValue, signature)).wait();
   });
 });
 ```

@@ -93,17 +93,6 @@ FHE.allowTransient(secretValue, otherContract); // Temporary access for this tx
 ```
 </Accordion>
 
-<Accordion title="FHE.allowGlobal()" icon="globe" defaultOpen>
-**`FHE.allowGlobal(CIPHERTEXT_HANDLE)`**
-
-Allows any address access to the handle. Use with caution - this makes the ciphertext handle publicly accessible.
-
-```solidity
-euint32 publicValue = FHE.asEuint32(input);
-FHE.allowGlobal(publicValue); // Anyone can access this
-```
-</Accordion>
-
 <Accordion title="FHE.allowPublic()" icon="lock-open" defaultOpen>
 **`FHE.allowPublic(CIPHERTEXT_HANDLE)`**
 
@@ -159,7 +148,7 @@ This two-level mapping allows efficient lookup of whether a specific address has
 
 <CardGroup cols={2}>
 <Card title="Principle of Least Privilege" icon="shield-halved">
-Only grant access to addresses that genuinely need it. Avoid using `allowGlobal()` unless the data is truly meant to be public.
+Only grant access to addresses that genuinely need it. Avoid using `allowPublic()` unless the data is truly meant to be public.
 </Card>
 
 <Card title="Use Transient for Cross-Contract Calls" icon="arrow-right-arrow-left">

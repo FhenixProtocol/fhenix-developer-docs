@@ -328,14 +328,14 @@ This event will be emitted with the encrypted `euint8 optionIndex`. This is impo
 
 ### Step 8: Granting access with `FHE.allow`
 
-By default, access and computation on an encrypted variable is blocked, and trying to use a variable before access has been granted will cause AccessControlList.sol (ACL) to revert with an `ACLNotAllowed` error. Access is granted using `FHE.allow` (and its variants `FHE.allowSender`, `FHE.allowThis`, and `FHE.allowGlobal`). After access is granted, the encrypted variable may be used in a computation, or decrypted by any of the authorized users or contracts.
+By default, access and computation on an encrypted variable is blocked, and trying to use a variable before access has been granted will cause AccessControlList.sol (ACL) to revert with an `ACLNotAllowed` error. Access is granted using `FHE.allow` (and its variants `FHE.allowSender`, `FHE.allowThis`, and `FHE.allowPublic`). After access is granted, the encrypted variable may be used in a computation, or decrypted by any of the authorized users or contracts.
 
 **`FHE.allow` variants:**
 
 - `FHE.allow(ctHash, address)` - grants access to `address`. `ctHash` is any encrypted variable like `euint64` or `ebool`
 - `FHE.allowSender(ctHash)` - grants access to `msg.sender`
 - `FHE.allowThis(ctHash)` - grants access to the executing contract (`address(this)`)
-- `FHE.allowGlobal(ctHash)` - grants access to everyone, useful for things like an encrypted totalSupply variable, which everyone should have access to
+- `FHE.allowPublic(ctHash)` - grants access to everyone, useful for things like an encrypted totalSupply variable, which everyone should have access to
 
 ```solidity
 function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
