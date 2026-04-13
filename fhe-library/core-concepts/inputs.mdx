@@ -22,7 +22,7 @@ Notice in the example above the distinction between **`InEuint32`** and **`euint
 
 ## Input Types Conversion
 
-The **input types** `InEuintxx` (and `InEbool`, `InEaddress`) are special encrypted types that represent **user input**. Input types contain additional information required to authenticate and validate ciphertexts. For more on that, read about the [ZK-Verifier](/fhe-library/architecture/internal-utilities/verifier).
+The **input types** `InEuintxx` (and `InEbool`, `InEaddress`) are special encrypted types that represent **user input**. Input types contain additional information required to authenticate and validate ciphertexts. For more on that, read about the [ZK-Verifier](/deep-dive/cofhe-components/zk-verifier).
 
 Before you can use an encrypted input, you need to convert it to a regular **encrypted type**:
 
@@ -41,7 +41,7 @@ toBalance = FHE.sub(toBalance, amount);
 ```
 
 <Tip>
-Read more about the available FHE types and operations in the [FHE Encrypted Operations](/fhe-library/core-concepts/fhe-encrypted-operations) guide.
+Read more about the available FHE types and operations in the [FHE Encrypted Operations](/fhe-library/core-concepts/encrypted-operations) guide.
 </Tip>
 
 ## Full Example
@@ -64,7 +64,7 @@ function transfer(
 ```
 
 <Note>
-For the example above to work correctly, you will also need to manage access to the newly created ciphertexts in the `_updateBalance()` function. Learn more about access control in the [ACL Mechanism](/fhe-library/core-concepts/acl-mechanism) guide.
+For the example above to work correctly, you will also need to manage access to the newly created ciphertexts in the `_updateBalance()` function. Learn more about access control in the [ACL Mechanism](/fhe-library/core-concepts/access-control) guide.
 </Note>
 
 ## Additional Examples
