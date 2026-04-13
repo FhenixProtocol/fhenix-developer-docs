@@ -1,11 +1,11 @@
 ---
 title: "FHERC20 Overview"
-description: "Introduction to the FHERC20 confidential token standard"
+description: "Introduction to the FHERC20 confidential token standard (ERC-7984)"
 ---
 
 ## What is FHERC20?
 
-FHERC20 is a Fully Homomorphic Encryption (FHE) enabled token standard that provides **complete confidentiality** for token balances while maintaining compatibility with existing ERC20 infrastructure. Built on the Fhenix CoFHE protocol, FHERC20 allows users to transfer and manage tokens without revealing their balances or transaction amounts to anyone—not even other participants in the same smart contract.
+FHERC20 is a Fully Homomorphic Encryption (FHE) enabled token standard that provides **complete confidentiality** for token balances while maintaining compatibility with existing ERC20 infrastructure. Built on the Fhenix CoFHE protocol and implementing the [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) standard, FHERC20 allows users to transfer and manage tokens without revealing their balances or transaction amounts to anyone—not even other participants in the same smart contract.
 
 <CardGroup cols={2}>
 <Card title="Private by Default" icon="lock">
@@ -17,11 +17,11 @@ Maintains compatibility with existing wallets and block explorers through an ind
 </Card>
 
 <Card title="Secure Operations" icon="shield">
-Perform computations on encrypted data without decryption, using homomorphic properties to maintain security throughout all operations.
+Perform computations on encrypted data without decryption, using homomorphic properties and FHESafeMath to maintain security throughout all operations.
 </Card>
 
 <Card title="Flexible Permissions" icon="key">
-Modern operator system with time-based expiration and signature-based approvals for granular access control.
+Modern operator system with time-based expiration for granular access control.
 </Card>
 </CardGroup>
 
@@ -42,7 +42,7 @@ These encrypted balances:
 - Cannot be read by anyone (including the contract)
 - Can be operated on using FHE operations
 - Maintain their encrypted state throughout all computations
-- Are only revealed when explicitly published on-chain with a valid proof
+- Are only revealed when explicitly disclosed with a valid proof
 
 ### 2. Confidential Transfers
 
@@ -50,11 +50,11 @@ All token movements use encrypted amounts:
 
 ```solidity
 // Transfer with encrypted input
-function confidentialTransfer(address to, InEuint64 memory inValue)
+function confidentialTransfer(address to, InEuint64 memory encryptedAmount)
     external returns (euint64 transferred);
 
 // Transfer with already-encrypted value
-function confidentialTransfer(address to, euint64 value)
+function confidentialTransfer(address to, euint64 amount)
     external returns (euint64 transferred);
 ```
 
@@ -84,12 +84,23 @@ FHERC20 supports safe transfers with callbacks:
 ```solidity
 function confidentialTransferAndCall(
     address to,
-    InEuint64 memory inValue,
+    InEuint64 memory encryptedAmount,
     bytes calldata data
 ) external returns (euint64 transferred);
 ```
 
-Recipients must implement the `IFHERC20Receiver` interface to accept these transfers, enabling atomic token transfers with contract interactions.
+Recipients must implement the `IERC7984Receiver` interface to accept these transfers, enabling atomic token transfers with contract interactions.
+
+### 5. Amount Disclosure
+
+FHERC20 supports optional disclosure of encrypted amounts for transparency when needed:
+
+```solidity
+function requestDiscloseEncryptedAmount(euint64 amount) external;
+function discloseEncryptedAmount(euint64 amount, uint64 cleartext, bytes memory proof) external;
+```
+
+This emits an `AmountDisclosed` event, allowing accounts with access to an encrypted amount to voluntarily reveal it on-chain.
 
 ---
 
@@ -124,20 +135,22 @@ Indicators are small, non-confidential numbers that represent account activity w
 
 - Range from `0.0000` to `0.9999` (stored as `0-9999`)
 - Start at `0` for accounts that have never interacted
-- Initialize at `0.5001` upon first interaction
+- Initialize at `0.7984` upon first interaction (referencing the ERC-7984 standard)
 - Increment by `0.0001` for each received transaction
 - Decrement by `0.0001` for each sent transaction
 
 **Example:**
 ```solidity
-// Alice's indicator: 0.5234
-// Bob's indicator: 0.4987
+// Alice's indicator: 0.7990
+// Bob's indicator: 0.7980
 // These numbers provide visual feedback in wallets but reveal no actual balance info
 ```
 </Accordion>
 
 <Accordion title="Why Indicators?" icon="question" defaultOpen>
 Standard ERC20 functions like `balanceOf()` must return a `uint256`. For confidential tokens, we can't return the real balance, so we return the indicator instead.
+
+The `balanceOfIsIndicator()` function returns `true`, signalling to wallets and block explorers that `balanceOf` returns an indicator, not a real balance.
 
 This allows:
 - ✅ Wallets to display "activity" for the token
@@ -154,8 +167,8 @@ The `indicatorTick` is the base unit for indicator increments:
 ```solidity
 uint256 indicatorTick = 10^(decimals - 4);
 
-// For a token with 18 decimals:
-// indicatorTick = 10^14 = 100000000000000
+// For a token with 6 decimals (recommended):
+// indicatorTick = 10^2 = 100
 ```
 
 This value is returned in `Transfer` events to maintain ERC20 compatibility while hiding real amounts.
@@ -174,6 +187,7 @@ This value is returned in `Transfer` events to maintain ERC20 compatibility whil
 | **Balance Query** | Returns actual balance | Returns indicator |
 | **Compatibility** | Native ERC20 | Indicator system for wallets |
 | **Privacy** | None | Complete |
+| **Standard** | ERC-20 | ERC-7984 + ERC-20 compatibility |
 
 ---
 
@@ -188,22 +202,22 @@ The FHERC20 ecosystem includes several specialized contracts:
 Core confidential token with encrypted balances, confidential transfers, and operator system.
 </Card>
 
-<Card title="FHERC20Permit" icon="signature" href="/fhe-library/confidential-contracts/fherc20/fherc20-permit">
-**Signature-Based Approval**
-
-Extends FHERC20 with EIP-712 signature-based operator approval, enabling gasless approvals.
-</Card>
-
-<Card title="FHERC20Wrapper" icon="gift" href="/fhe-library/confidential-contracts/fherc20/fherc20-wrapper">
+<Card title="FHERC20ERC20Wrapper" icon="gift" href="/fhe-library/confidential-contracts/fherc20/fherc20-wrapper">
 **ERC20 Wrapper**
 
-Wraps standard ERC20 tokens into confidential FHERC20 tokens and handles unwrapping with claim system.
+Shields standard ERC20 tokens into confidential FHERC20 tokens with rate-based decimal conversion and handles unshielding with a claim system.
 </Card>
 
-<Card title="FHERC20UnwrapClaim" icon="hand-holding-dollar" href="/fhe-library/confidential-contracts/fherc20/fherc20-wrapper">
+<Card title="FHERC20NativeWrapper" icon="ethereum" href="/fhe-library/confidential-contracts/fherc20/fherc20-wrapper">
+**Native Token Wrapper**
+
+Shields native tokens (e.g., ETH) or WETH into confidential FHERC20 tokens.
+</Card>
+
+<Card title="FHERC20WrapperClaimHelper" icon="hand-holding-dollar">
 **Claim Management**
 
-Abstract contract providing claim functionality for managing unwrap operations and decryption results.
+Abstract contract providing claim lifecycle management for unshield operations and decryption verification.
 </Card>
 </CardGroup>
 
@@ -215,12 +229,12 @@ Here's a minimal example showing FHERC20 in action:
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
-import { FHERC20 } from "fhenix-confidential-contracts/contracts/FHERC20.sol";
+import { FHERC20 } from "@fhenixprotocol/confidential-contracts/contracts/FHERC20/FHERC20.sol";
 
 contract MyConfidentialToken is FHERC20 {
-    constructor() FHERC20("My Confidential Token", "MCT", 18) {}
+    constructor() FHERC20("My Confidential Token", "MCT", 6) {}
 
     // Mint confidential tokens
     function mint(address to, uint64 amount) external {
@@ -228,6 +242,10 @@ contract MyConfidentialToken is FHERC20 {
     }
 }
 ```
+
+<Note>
+The recommended number of decimals for FHERC20 tokens is **6**. This ensures compatibility with the wrapper contracts and avoids overflow issues with the `euint64` type.
+</Note>
 
 Using the token:
 
@@ -257,7 +275,7 @@ Understand the operator permission system and how it replaces traditional allowa
 </Card>
 
 <Card title="Transfer Callbacks" icon="phone-arrow-down-left" href="/fhe-library/confidential-contracts/fherc20/transfer-callbacks">
-Implement safe transfers with callbacks using the IFHERC20Receiver interface.
+Implement safe transfers with callbacks using the IERC7984Receiver interface.
 </Card>
 
 <Card title="Best Practices" icon="shield-check" href="/fhe-library/confidential-contracts/fherc20/best-practices">

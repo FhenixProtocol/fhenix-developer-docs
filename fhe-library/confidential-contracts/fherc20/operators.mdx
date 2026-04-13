@@ -242,7 +242,7 @@ function confidentialTransferFrom(
 ) external returns (euint64 transferred) {
     // Verify operator permission
     if (!isOperator(from, msg.sender)) {
-        revert FHERC20InsufficientPermission(from, msg.sender);
+        revert FHERC20UnauthorizedSpender(from, msg.sender);
     }
 
     // Perform the transfer
@@ -370,6 +370,5 @@ token.setOperator(operatorC, uint48(block.timestamp + 30 days));
 
 ## Related Topics
 
-- Learn about [FHERC20 Permit](/fhe-library/confidential-contracts/fherc20/fherc20-permit) for signature-based operator approval
 - Explore [Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for safe operator transfers
 - Review [Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) for secure operator management

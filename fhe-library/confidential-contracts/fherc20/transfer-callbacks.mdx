@@ -1,6 +1,6 @@
 ---
 title: "Transfer Callbacks"
-description: "Safe transfers with callbacks using IFHERC20Receiver interface"
+description: "Safe transfers with callbacks using IERC7984Receiver interface"
 ---
 
 ## Overview
@@ -13,7 +13,7 @@ Transfer tokens and execute contract logic in a single transaction, ensuring bot
 </Card>
 
 <Card title="Recipient Validation" icon="shield-check">
-Recipients must explicitly accept transfers by implementing IFHERC20Receiver, preventing tokens from being locked in incompatible contracts.
+Recipients must explicitly accept transfers by implementing IERC7984Receiver, preventing tokens from being locked in incompatible contracts.
 </Card>
 
 <Card title="Custom Logic" icon="code">
@@ -78,7 +78,7 @@ function confidentialTransferFromAndCall(
 </CodeGroup>
 
 **Parameters:**
-- `to`: Recipient address (must implement IFHERC20Receiver if it's a contract)
+- `to`: Recipient address (must implement IERC7984Receiver if it's a contract)
 - `from`: Source address (only for `...From...` variants)
 - `inValue`/`value`: Encrypted amount to transfer
 - `data`: Arbitrary data to pass to recipient
@@ -88,12 +88,12 @@ function confidentialTransferFromAndCall(
 
 ---
 
-## The IFHERC20Receiver Interface
+## The IERC7984Receiver Interface
 
-Any contract that wants to receive tokens via `...AndCall` functions **must** implement the `IFHERC20Receiver` interface:
+Any contract that wants to receive tokens via `...AndCall` functions **must** implement the `IERC7984Receiver` interface:
 
 ```solidity
-interface IFHERC20Receiver {
+interface IERC7984Receiver {
     function onConfidentialTransferReceived(
         address operator,
         address from,
@@ -134,7 +134,7 @@ FHERC20 performs the normal confidential transfer, updating balances and access 
 </Step>
 
 <Step title="Check Recipient">
-If the recipient is a contract (code size > 0), FHERC20 checks if it implements IFHERC20Receiver.
+If the recipient is a contract (code size > 0), FHERC20 checks if it implements IERC7984Receiver.
 </Step>
 
 <Step title="Call Callback">
@@ -152,7 +152,7 @@ If accepted, the transfer is complete. If rejected, tokens are returned to sende
 
 ---
 
-## Implementing IFHERC20Receiver
+## Implementing IERC7984Receiver
 
 ### Basic Implementation
 
@@ -160,12 +160,12 @@ Here's a minimal receiver that accepts all transfers:
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
-import "@fhenixprotocol/contracts/interfaces/IFHERC20Receiver.sol";
-import "@fhenixprotocol/contracts/FHE.sol";
+import "@fhenixprotocol/confidential-contracts/contracts/interfaces/IERC7984Receiver.sol";
+import "@fhenixprotocol/cofhe-contracts/FHE.sol";
 
-contract BasicReceiver is IFHERC20Receiver {
+contract BasicReceiver is IERC7984Receiver {
     event TokensReceived(
         address indexed operator,
         address indexed from,
@@ -193,7 +193,7 @@ contract BasicReceiver is IFHERC20Receiver {
 Accept transfers only under certain conditions:
 
 ```solidity
-contract ConditionalReceiver is IFHERC20Receiver {
+contract ConditionalReceiver is IERC7984Receiver {
     address public immutable trustedToken;
     mapping(address => bool) public approvedSenders;
 
@@ -232,7 +232,7 @@ contract ConditionalReceiver is IFHERC20Receiver {
 Execute logic upon receiving tokens:
 
 ```solidity
-contract StakingPool is IFHERC20Receiver {
+contract StakingPool is IERC7984Receiver {
     IFHERC20 public immutable stakingToken;
     mapping(address => euint64) public stakedBalances;
 
@@ -350,7 +350,7 @@ function onConfidentialTransferReceived(
 The transfer will revert if:
 
 ```solidity
-// 1. Recipient is a contract but doesn't implement IFHERC20Receiver
+// 1. Recipient is a contract but doesn't implement IERC7984Receiver
 contract NoReceiver {
     // Missing onConfidentialTransferReceived
 }
@@ -374,7 +374,7 @@ The transfer succeeds if:
 // 1. Recipient is an EOA (not a contract)
 await token.confidentialTransferAndCall(eoaAddress, amount, data);
 
-// 2. Recipient is a contract implementing IFHERC20Receiver that returns true
+// 2. Recipient is a contract implementing IERC7984Receiver that returns true
 function onConfidentialTransferReceived(...) external override returns (ebool) {
     return FHE.asEbool(true);
 }
@@ -393,7 +393,7 @@ The callback happens **after** the balance transfer but **before** the transacti
 ```solidity
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract SafeReceiver is IFHERC20Receiver, ReentrancyGuard {
+contract SafeReceiver is IERC7984Receiver, ReentrancyGuard {
     function onConfidentialTransferReceived(
         address operator,
         address from,

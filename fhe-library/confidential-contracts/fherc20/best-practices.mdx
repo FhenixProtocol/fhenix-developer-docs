@@ -129,7 +129,7 @@ function badTransfer(address to, euint64 value) external {
 // ✅ Use reentrancy guards
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract SafeReceiver is IFHERC20Receiver, ReentrancyGuard {
+contract SafeReceiver is IERC7984Receiver, ReentrancyGuard {
     function onConfidentialTransferReceived(
         address operator,
         address from,
@@ -143,7 +143,7 @@ contract SafeReceiver is IFHERC20Receiver, ReentrancyGuard {
 }
 
 // ✅ Follow checks-effects-interactions pattern
-contract SecureStaking is IFHERC20Receiver {
+contract SecureStaking is IERC7984Receiver {
     mapping(address => euint64) public stakedBalances;
 
     function onConfidentialTransferReceived(
@@ -247,9 +247,7 @@ function dangerousReceiver(
 
 ---
 
-## Operators vs FHERC20Permit
-
-Choose the right permission mechanism for your use case:
+## Operators Best Practices
 
 ### When to Use Operators
 
@@ -258,7 +256,6 @@ Choose the right permission mechanism for your use case:
 **Use operators when:**
 - User directly approves via wallet transaction
 - Simple on-chain permission grants
-- No meta-transaction support needed
 
 ```solidity
 // User directly approves DEX
@@ -280,7 +277,6 @@ await dex.swap(tokenIn, tokenOut, amountIn);
 <Accordion title="Long-Lived Permissions" defaultOpen>
 **Use operators when:**
 - Granting recurring permissions
-- No need for gasless approvals
 
 ```solidity
 // Grant 30-day subscription access
@@ -292,72 +288,16 @@ await token.setOperator(
 </Accordion>
 </AccordionGroup>
 
-### When to Use FHERC20Permit
-
-<AccordionGroup>
-<Accordion title="Gasless Approvals" defaultOpen>
-**Use permit when:**
-- Users shouldn't pay gas for approvals
-- Implementing meta-transactions
-- Better UX for new users
-
-```javascript
-// User signs off-chain (no gas)
-const signature = await user._signTypedData(domain, types, value);
-
-// Relayer submits permit + action (user pays nothing)
-await relayer.executeWithPermit(
-    token.address,
-    permitData,
-    signature,
-    swapCalldata
-);
-```
-
-**Advantages:**
-- User pays no gas for approval
-- One transaction instead of two
-- Better onboarding experience
-</Accordion>
-
-<Accordion title="Atomic Operations" defaultOpen>
-**Use permit when:**
-- Combining approval + action in single transaction
-- Reducing transaction count
-
-```solidity
-// Single transaction: approve + swap
-function swapWithPermit(
-    address token,
-    uint48 until,
-    bytes calldata signature,
-    SwapParams calldata params
-) external {
-    // Approve via permit
-    IFHERC20Permit(token).permit(
-        params.from,
-        address(this),
-        until,
-        signature
-    );
-
-    // Execute swap immediately
-    _executeSwap(params);
-}
-```
-</Accordion>
-</AccordionGroup>
-
 ### Comparison Table
 
-| Factor | Operator (setOperator) | FHERC20Permit (permit) |
-|--------|------------------------|------------------------|
-| **Gas Cost** | User pays gas | Relayer can pay gas |
-| **Transaction Count** | 2 (approve + action) | 1 (combined) |
-| **Complexity** | Simple | Requires signatures |
-| **User Experience** | Standard wallet flow | Gasless, seamless |
-| **Use Case** | General permissions | Meta-transactions |
-| **Implementation** | Direct on-chain | EIP-712 signatures |
+| Factor | Operator (setOperator) |
+|--------|------------------------|
+| **Gas Cost** | User pays gas |
+| **Transaction Count** | 2 (approve + action) |
+| **Complexity** | Simple |
+| **User Experience** | Standard wallet flow |
+| **Use Case** | General permissions |
+| **Implementation** | Direct on-chain |
 
 ---
 
@@ -421,33 +361,33 @@ function goodSwap(address tokenIn, uint64 amountIn) external {
 <Accordion title="Pitfall: Incorrect Claim Management" icon="inbox">
 **Problem:**
 ```solidity
-function badUnwrap(uint64 amount) external {
-    wrapper.unwrap(msg.sender, amount);
+function badUnshield(uint64 amount) external {
+    wrapper.unshield(msg.sender, msg.sender, amount);
 
     // ❌ Trying to claim without decryption proof!
-    wrapper.claimUnwrapped(someClaim, amount, "");
+    wrapper.claimUnshielded(someClaim, amount, "");
 }
 ```
 
 **Solution:**
 ```typescript
 // ✅ Correct flow
-// 1. Request unwrap
-const tx = await wrapper.unwrap(userAddress, amount);
+// 1. Request unshield
+const tx = await wrapper.unshield(userAddress, userAddress, amount);
 await tx.wait();
 
 // 2. Get the claim's ctHash
 const claims = await wrapper.getUserClaims(userAddress);
 const latestClaim = claims[claims.length - 1];
 
-// 3. Decrypt off-chain to get plaintext + signature
+// 3. Decrypt off-chain to get plaintext + proof
 const decryptResult = await client
   .decryptForTx(latestClaim.ctHash)
   .withoutPermit()
   .execute();
 
 // 4. Claim with proof
-await wrapper.claimUnwrapped(
+await wrapper.claimUnshielded(
   decryptResult.ctHash,
   decryptResult.decryptedValue,
   decryptResult.signature
@@ -532,4 +472,3 @@ function goodReceiver(
 - Review [Core Features](/fhe-library/confidential-contracts/fherc20/core-features) for fundamental concepts
 - Learn about [Operators](/fhe-library/confidential-contracts/fherc20/operators) for permission management
 - Explore [Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for safe transfers
-- Check the [Migration Guide](/tutorials/migrating-from-fhe-decrypt) for detailed migration steps

@@ -57,7 +57,7 @@ function _mint(address account, uint64 value) internal returns (euint64 transfer
 ```
 
 <Note>
-The `euint64` type can store values up to 2^64 - 1, which is 18,446,744,073,709,551,615. For tokens with 18 decimals, this is equivalent to about 18.4 million tokens with full precision.
+The `euint64` type can store values up to 2^64 - 1, which is 18,446,744,073,709,551,615. For tokens with 6 decimals (recommended), this is equivalent to about 18.4 trillion tokens with full precision.
 </Note>
 
 ---
@@ -106,10 +106,10 @@ The fundamental transfer operation moves encrypted tokens from the caller to a r
 ```solidity With Encrypted Input
 function confidentialTransfer(
     address to,
-    InEuint64 memory inValue
+    InEuint64 memory encryptedAmount
 ) external returns (euint64 transferred) {
     // Convert encrypted input to euint64
-    euint64 value = FHE.asEuint64(inValue);
+    euint64 value = FHE.asEuint64(encryptedAmount);
 
     // Perform encrypted transfer
     return _transfer(msg.sender, to, value);
@@ -119,16 +119,19 @@ function confidentialTransfer(
 ```solidity With Already-Encrypted Value
 function confidentialTransfer(
     address to,
-    euint64 value
+    euint64 amount
 ) external returns (euint64 transferred) {
-    // Value is already encrypted
-    return _transfer(msg.sender, to, value);
+    // Value is already encrypted - verify caller has access
+    if (!FHE.isAllowed(amount, msg.sender)) {
+        revert FHERC20UnauthorizedUseOfEncryptedAmount(amount, msg.sender);
+    }
+    return _transfer(msg.sender, to, amount);
 }
 ```
 </CodeGroup>
 
 <Tip>
-Use the `InEuint64` overload when accepting user input from off-chain. Use the `euint64` overload for contract-to-contract transfers where the value is already encrypted.
+Use the `InEuint64` overload when accepting user input from off-chain. Use the `euint64` overload for contract-to-contract transfers where the value is already encrypted. Note: the `euint64` overload requires the caller to be authorized via the FHE ACL for the given amount.
 </Tip>
 
 ### Transfer Implementation
@@ -150,7 +153,7 @@ function _transfer(
 
 ### The Update Function
 
-The `_update` function is the core of all balance changes:
+The `_update` function is the core of all balance changes. It uses `FHESafeMath` for overflow/underflow protection on encrypted values:
 
 ```solidity
 function _update(
@@ -168,7 +171,7 @@ function _update(
             FHE.asEuint64(0)
         );
 
-        // Subtract from sender
+        // Subtract from sender using safe math
         _confidentialBalances[from] = FHE.sub(_confidentialBalances[from], transferred);
         _indicatedBalances[from] = _decrementIndicator(_indicatedBalances[from]);
     } else {
@@ -179,13 +182,13 @@ function _update(
     if (from == address(0)) {
         // Minting - update total supply
         _indicatedTotalSupply = _incrementIndicator(_indicatedTotalSupply);
-        _encTotalSupply = FHE.add(_encTotalSupply, transferred);
+        _confidentialTotalSupply = FHE.add(_confidentialTotalSupply, transferred);
     }
 
     if (to == address(0)) {
         // Burning - update total supply
         _indicatedTotalSupply = _decrementIndicator(_indicatedTotalSupply);
-        _encTotalSupply = FHE.sub(_encTotalSupply, transferred);
+        _confidentialTotalSupply = FHE.sub(_confidentialTotalSupply, transferred);
     } else {
         // Normal transfer - add to recipient
         _confidentialBalances[to] = FHE.add(_confidentialBalances[to], transferred);
@@ -208,7 +211,7 @@ function _update(
     FHE.allow(transferred, msg.sender);
 
     // Hide totalSupply
-    FHE.allowThis(_encTotalSupply);
+    FHE.allowThis(_confidentialTotalSupply);
 
     // Emit events
     emit Transfer(from, to, _indicatorTick);
@@ -272,6 +275,18 @@ function balanceOf(address account)
 
 This returns a value between 0 and 9999, representing the activity indicator, **not the real balance**.
 
+### Balance Of Is Indicator
+
+Returns `true`, signalling that `balanceOf` returns an indicator, not a real balance:
+
+```solidity
+function balanceOfIsIndicator() external view returns (bool) {
+    return true;
+}
+```
+
+This is part of the ERC-7984 standard and helps wallets and block explorers understand the nature of the returned value.
+
 ---
 
 ## Access Control for Balances
@@ -295,7 +310,7 @@ if (euint64.unwrap(_confidentialBalances[to]) != 0) {
 FHE.allow(transferred, msg.sender);
 
 // Hide totalSupply (only contract has access)
-FHE.allowThis(_encTotalSupply);
+FHE.allowThis(_confidentialTotalSupply);
 ```
 
 This ensures:
@@ -319,7 +334,7 @@ function _mint(address account, uint64 value)
     internal returns (euint64 transferred)
 {
     if (account == address(0)) {
-        revert ERC20InvalidReceiver(address(0));
+        revert FHERC20InvalidReceiver(address(0));
     }
 
     // Convert plaintext value to encrypted and mint
@@ -335,7 +350,7 @@ function _confidentialMint(address account, euint64 value)
     internal returns (euint64 transferred)
 {
     if (account == address(0)) {
-        revert ERC20InvalidReceiver(address(0));
+        revert FHERC20InvalidReceiver(address(0));
     }
 
     // Value is already encrypted
@@ -350,7 +365,7 @@ function _burn(address account, uint64 value)
     internal returns (euint64 transferred)
 {
     if (account == address(0)) {
-        revert ERC20InvalidSender(address(0));
+        revert FHERC20InvalidSender(address(0));
     }
 
     // The _update function handles total supply updates when to == address(0)
@@ -365,7 +380,7 @@ function _confidentialBurn(address account, euint64 value)
     internal returns (euint64 transferred)
 {
     if (account == address(0)) {
-        revert ERC20InvalidSender(address(0));
+        revert FHERC20InvalidSender(address(0));
     }
 
     transferred = _update(account, address(0), value);
@@ -378,6 +393,32 @@ Like transfers, burning uses the zero-replacement pattern. If you attempt to bur
 
 ---
 
+## Amount Disclosure
+
+FHERC20 includes optional disclosure functions for transparency when needed. Accounts with access to an encrypted amount can voluntarily reveal it on-chain.
+
+### Requesting Disclosure
+
+```solidity
+function requestDiscloseEncryptedAmount(euint64 amount) external;
+```
+
+Initiates a disclosure request for an encrypted amount. The caller must have FHE access to the amount.
+
+### Completing Disclosure
+
+```solidity
+function discloseEncryptedAmount(euint64 amount, uint64 cleartext, bytes memory proof) external;
+```
+
+Completes the disclosure by providing the cleartext value and a decryption proof. Emits:
+
+```solidity
+event AmountDisclosed(euint64 indexed encryptedAmount, uint64 amount);
+```
+
+---
+
 ## The Indicator System in Detail
 
 ### Indicator Values
@@ -385,7 +426,7 @@ Like transfers, burning uses the zero-replacement pattern. If you attempt to bur
 Indicators range from `0` to `9999`, representing values from `0.0000` to `0.9999`:
 
 ```solidity
-uint16 indicator = 5234;  // Represents 0.5234
+uint16 indicator = 7984;  // Represents 0.7984
 ```
 
 ### Indicator Lifecycle
@@ -396,7 +437,7 @@ New accounts start with an indicator of `0`.
 </Step>
 
 <Step title="First Interaction">
-Upon first transfer (sent or received), the indicator initializes to `5001` (0.5001).
+Upon first transfer (sent or received), the indicator initializes to `7984` (0.7984), referencing the ERC-7984 standard.
 </Step>
 
 <Step title="Receive Transaction">
@@ -417,13 +458,13 @@ When the indicator reaches `9999`, it wraps back to `0`.
 ```solidity
 // Increment indicator (add 0.0001)
 function _incrementIndicator(uint16 current) internal pure returns (uint16) {
-    if (current == 0 || current == 9999) return 5001;
+    if (current == 0 || current == 9999) return 7984;
     return current + 1;
 }
 
 // Decrement indicator (subtract 0.0001)
 function _decrementIndicator(uint16 value) internal pure returns (uint16) {
-    if (value == 0 || value == 1) return 4999;
+    if (value == 0 || value == 1) return 7984;
     return value - 1;
 }
 ```
@@ -451,8 +492,8 @@ function indicatorTick() public view returns (uint256) {
 }
 ```
 
-For a token with 18 decimals:
-- `_indicatorTick = 10^14 = 100,000,000,000,000`
+For a token with 6 decimals (recommended):
+- `_indicatorTick = 10^2 = 100`
 - This represents 0.0001 tokens
 
 ### Resetting Indicators
@@ -467,16 +508,52 @@ function resetIndicatedBalance() external {
 
 ---
 
-## Events
+## Errors
 
-FHERC20 emits standard ERC20 events with indicator values:
+FHERC20 defines the following custom errors:
 
 ```solidity
-// Standard ERC20 Transfer event
-event Transfer(address indexed from, address indexed to, uint256 value);
+/// @dev The given receiver is invalid for transfers.
+error FHERC20InvalidReceiver(address receiver);
 
-// The value is always indicatorTick, regardless of actual transfer amount
+/// @dev The given sender is invalid for transfers.
+error FHERC20InvalidSender(address sender);
+
+/// @dev The holder is not authorized to spend on behalf of spender.
+error FHERC20UnauthorizedSpender(address holder, address spender);
+
+/// @dev The holder is trying to send tokens but has a balance of 0.
+error FHERC20ZeroBalance(address holder);
+
+/// @dev The caller does not have access to the encrypted amount.
+error FHERC20UnauthorizedUseOfEncryptedAmount(euint64 amount, address user);
+
+/// @dev The caller is not authorized for the current operation.
+error FHERC20UnauthorizedCaller(address caller);
+
+/// @dev Reverts when a cleartext ERC-20 function is called on a confidential token.
+error FHERC20IncompatibleFunction();
+```
+
+---
+
+## Events
+
+FHERC20 emits standard ERC20 events with indicator values, plus confidential-specific events:
+
+```solidity
+// Standard ERC20 Transfer event (value is always indicatorTick)
+event Transfer(address indexed from, address indexed to, uint256 value);
 emit Transfer(from, to, indicatorTick());
+
+// Confidential transfer event with encrypted amount handle
+event ConfidentialTransfer(address indexed from, address indexed to, euint64 indexed amount);
+
+// Amount disclosure event
+event AmountDisclosed(euint64 indexed encryptedAmount, uint64 amount);
+
+// Operator permission event
+event OperatorSet(address indexed holder, address indexed operator, uint48 until);
 ```
 
 <Note>
@@ -521,12 +598,12 @@ Here's a full example showing core FHERC20 features:
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
-import "@fhenixprotocol/contracts/FHERC20.sol";
+import { FHERC20 } from "@fhenixprotocol/confidential-contracts/contracts/FHERC20/FHERC20.sol";
 
 contract PrivacyToken is FHERC20 {
-    constructor() FHERC20("Privacy Token", "PRIV", 18) {}
+    constructor() FHERC20("Privacy Token", "PRIV", 6) {}
 
     // Mint tokens (owner only in practice)
     function mint(address to, uint64 amount) external {
@@ -553,7 +630,7 @@ await token.mint(userAddress, 1000);
 
 // Check indicator (not real balance)
 const indicator = await token.balanceOf(userAddress);
-console.log(`Indicator: ${indicator}`); // e.g., 5001
+console.log(`Indicator: ${indicator}`); // e.g., 7984
 
 // Encrypt amount off-chain
 const [encryptedAmount] = await cofheClient
@@ -565,7 +642,7 @@ await token.confidentialTransfer(recipientAddress, encryptedAmount);
 
 // Check new indicator
 const newIndicator = await token.balanceOf(userAddress);
-console.log(`New indicator: ${newIndicator}`); // e.g., 5000 (decremented)
+console.log(`New indicator: ${newIndicator}`); // e.g., 7983 (decremented)
 ```
 
 ---
