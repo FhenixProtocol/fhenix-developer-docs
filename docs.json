@@ -155,7 +155,6 @@
                   "fhe-library/confidential-contracts/fherc20/core-features",
                   "fhe-library/confidential-contracts/fherc20/operators",
                   "fhe-library/confidential-contracts/fherc20/transfer-callbacks",
-                  "fhe-library/confidential-contracts/fherc20/fherc20-permit",
                   "fhe-library/confidential-contracts/fherc20/fherc20-wrapper",
                   "fhe-library/confidential-contracts/fherc20/best-practices"
                 ]
