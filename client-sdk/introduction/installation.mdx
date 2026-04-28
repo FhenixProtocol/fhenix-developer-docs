@@ -64,6 +64,41 @@ yarn add @cofhe/hardhat-plugin@^0.5.1 @cofhe/sdk@^0.5.1 @fhenixprotocol/cofhe-co
 
 See the [Hardhat Plugin Getting Started](/client-sdk/hardhat-plugin/getting-started) guide for configuration details.
 
+## For Foundry projects
+
+If you are using Foundry for development and testing, install the Foundry plugin and its peer packages as dev dependencies:
+
+<CodeGroup>
+
+```bash npm
+npm install -D @cofhe/foundry-plugin@^0.5.1 @cofhe/mock-contracts@^0.5.1 @fhenixprotocol/cofhe-contracts@^0.1.3 @openzeppelin/contracts
+forge install foundry-rs/forge-std
+```
+
+```bash pnpm
+pnpm add -D @cofhe/foundry-plugin@^0.5.1 @cofhe/mock-contracts@^0.5.1 @fhenixprotocol/cofhe-contracts@^0.1.3 @openzeppelin/contracts
+forge install foundry-rs/forge-std
+```
+
+```bash yarn
+yarn add -D @cofhe/foundry-plugin@^0.5.1 @cofhe/mock-contracts@^0.5.1 @fhenixprotocol/cofhe-contracts@^0.1.3 @openzeppelin/contracts
+forge install foundry-rs/forge-std
+```
+
+</CodeGroup>
+
+| Package | Version | Purpose |
+| --- | --- | --- |
+| `@cofhe/foundry-plugin` | `^0.5.1` | `CofheTest` and `CofheClient` — Solidity test base and per-user SDK shim |
+| `@cofhe/mock-contracts` | `^0.5.1` | Mock CoFHE contracts used by the Foundry plugin |
+| `@fhenixprotocol/cofhe-contracts` | `^0.1.3` | `FHE.sol` — the Solidity library imported by your contracts |
+
+<Note>
+The Foundry plugin uses Solidity-only abstractions — no `@cofhe/sdk` (JS) needed for tests.
+</Note>
+
+See the [Foundry Plugin Getting Started](/client-sdk/foundry-plugin/getting-started) guide for `foundry.toml` and `remappings.txt` setup.
+
 ## Runtime entrypoints
 
 Import from the entrypoint that matches your runtime:

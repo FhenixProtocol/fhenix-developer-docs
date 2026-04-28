@@ -76,6 +76,7 @@
             "pages": [
               "client-sdk/quick-start/javascript",
               "client-sdk/quick-start/hardhat",
+              "client-sdk/quick-start/foundry",
               "client-sdk/quick-start/react"
             ]
           },
@@ -103,6 +104,15 @@
             ]
           },
           {
+            "group": "Foundry Plugin",
+            "pages": [
+              "client-sdk/foundry-plugin/getting-started",
+              "client-sdk/foundry-plugin/cofhe-test",
+              "client-sdk/foundry-plugin/cofhe-client",
+              "client-sdk/foundry-plugin/testing"
+            ]
+          },
+          {
             "group": "Examples",
             "pages": [
               "client-sdk/examples/end-to-end",
@@ -113,7 +123,8 @@
             "group": "Reference",
             "pages": [
               "client-sdk/reference/sdk-reference",
-              "client-sdk/reference/hardhat-reference"
+              "client-sdk/reference/hardhat-reference",
+              "client-sdk/reference/foundry-reference"
             ]
           }
         ]

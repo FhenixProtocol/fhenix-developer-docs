@@ -20,10 +20,35 @@ npm install
 npx hardhat test
 ```
 
-## What's included
+### What's included
 
 - `@cofhe/hardhat-plugin` and `@cofhe/sdk` pre-installed
 - `hardhat.config.ts` with `evmVersion: 'cancun'` and the plugin imported
 - A sample FHE contract
 - A test demonstrating the encrypt → store → decrypt flow
 - Pre-configured network settings for local development and testnets
+
+## Foundry Starter
+
+A minimal Foundry project with `@cofhe/foundry-plugin` pre-configured, including a sample `Counter` contract and a comprehensive test suite covering plaintext assertions, public-decrypt flows, ACL deny paths, and fuzzing.
+
+<Card title="cofhe-foundry-starter" icon="github" href="https://github.com/FhenixProtocol/cofhe-foundry-starter">
+  Clone this template to start building FHE contracts with Foundry immediately.
+</Card>
+
+```bash
+git clone https://github.com/FhenixProtocol/cofhe-foundry-starter.git
+cd cofhe-foundry-starter
+npm install
+forge build
+forge test -vvv
+```
+
+### What's included
+
+- `@cofhe/foundry-plugin`, `@cofhe/mock-contracts`, and `@fhenixprotocol/cofhe-contracts` pre-installed
+- `foundry.toml` with `evm_version = "cancun"`, `solc_version = "0.8.25"`, and `code_size_limit = 100000`
+- `remappings.txt` configured for the plugin and mocks
+- A sample `Counter` contract using FHE
+- Tests demonstrating `expectPlaintext`, `decryptForTx_withoutPermit`, permit-based unseal, ACL deny assertions, and fuzz tests
+- Deploy scripts for `eth-sepolia`, `arb-sepolia`, and `base-sepolia`
