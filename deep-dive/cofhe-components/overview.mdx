@@ -35,7 +35,9 @@ CoFHE (Co-processor for Fully Homomorphic Encryption) is designed as a modular, 
 
 - **Threshold Network**: A distributed system that securely handles decryption requests through multi-party computation, ensuring no single entity can access the decryption key.
 
-- **Ciphertext Registry**: Maintains references to encrypted values and handles access control.
+- **Ciphertext Registry**: Per-host-chain registry that maintains references to encrypted values during a chain's lifecycle.
+
+- **Commitment Registry**: Single-chain (Arbitrum One) registry where the coprocessor records `(version, handle) → commitHash` entries for every FHE computation result. The Threshold Network reads it to verify ciphertext integrity before issuing a decryption — distinct from the host-chain Ciphertext Registry above.
 
 ### Data Flows
 
