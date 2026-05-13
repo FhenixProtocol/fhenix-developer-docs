@@ -100,6 +100,45 @@ Overrides the account used to resolve the active/stored permit.
 
 Overrides the chain used to resolve the Threshold Network URL and permits.
 
+### `.onPoll(callback)` — optional
+
+Register a callback that fires once per poll attempt while `decryptForTx` waits for the Threshold Network to return the plaintext. Useful for surfacing progress in a UI.
+
+```typescript
+const decryptResult = await client
+  .decryptForTx(ctHash)
+  .withoutPermit()
+  .onPoll(({ operation, requestId, attemptIndex, elapsedMs, intervalMs, timeoutMs }) => {
+    console.log(`[${operation}] attempt ${attemptIndex} after ${elapsedMs}ms (next in ${intervalMs}ms, budget ${timeoutMs}ms)`);
+  })
+  .execute();
+```
+
+The callback receives:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `operation` | `'decrypt' \| 'sealoutput'` | Which Threshold Network flow is polling. For `decryptForTx` this is always `'decrypt'`. |
+| `requestId` | `string` | The Threshold Network request id. **May be the empty string** during submit-time retries — see `.set404RetryTimeout(...)` below. |
+| `attemptIndex` | `number` | Zero-based poll attempt counter. |
+| `elapsedMs` | `number` | Time since the first submit attempt. |
+| `intervalMs` | `number` | Delay until the next poll. |
+| `timeoutMs` | `number` | Overall budget shared by submit-retries and status-polling. |
+
+### `.set404RetryTimeout(timeoutMs)` — optional
+
+Configures how long `decryptForTx` keeps retrying when the Threshold Network's submit endpoint responds with `404 Not Found` before a `requestId` is available. This typically happens on slower backends where the ciphertext isn't visible yet at submit time. Defaults to `10_000` ms.
+
+```typescript
+const decryptResult = await client
+  .decryptForTx(ctHash)
+  .withoutPermit()
+  .set404RetryTimeout(20_000) // give a slower backend more time
+  .execute();
+```
+
+Pass `0` to disable submit-time retries (`404` becomes a hard failure). Submit retries share the same overall timeout budget as status polling, so a larger value here trades poll time for submit-recovery time.
+
 ## Common pitfalls
 
 - **Permit mode must be selected**: you must call exactly one of `.withPermit(...)` or `.withoutPermit()` before `.execute()`.
