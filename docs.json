@@ -113,6 +113,14 @@
             ]
           },
           {
+            "group": "React",
+            "pages": [
+              "client-sdk/react/getting-started",
+              "client-sdk/react/hooks",
+              "client-sdk/react/components-and-portal"
+            ]
+          },
+          {
             "group": "Examples",
             "pages": [
               "client-sdk/examples/end-to-end",

@@ -1,0 +1,120 @@
+---
+title: Components & Portal
+description: "Drop-in encrypted-input field, the CoFHE floating button portal, and the custom-token import flow"
+---
+
+The components on this page live behind the `@cofhe/react/ui` entrypoint. Importing from this entry automatically loads the package styles — the headless root `@cofhe/react` import does not. See [Getting Started → Hooks-only vs styled UI](/client-sdk/react/getting-started#hooks-only-vs-styled-ui) for the full picture.
+
+## `CofheEncryptInput`
+
+Drop-in input field with type selector, real-time validation against the chosen FHE type, encryption progress reporting, and one-click copy of the encrypted result.
+
+```tsx
+import { CofheEncryptInput } from '@cofhe/react/ui';
+import { FheTypesList } from '@cofhe/react';
+
+export function EncryptDemo() {
+  return (
+    <CofheEncryptInput
+      placeholder="Enter value to encrypt…"
+      options={FheTypesList}
+      showProgressBar
+      onEncryptComplete={(data) => console.log('Encrypted:', data)}
+      onEncryptError={(err) => console.error('Encryption failed:', err)}
+    />
+  );
+}
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string` | `''` | Input placeholder text. |
+| `initialValue` | `string` | `''` | Initial input string. |
+| `options` | `FheTypeOption[]` | none | Type-selector dropdown options. Pass `FheTypesList` from `@cofhe/react` for the full set, or a subset to restrict choices. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Component size. |
+| `hasError` | `boolean` | `false` | Force the error state (e.g. driven by external validation). |
+| `errorMessage` | `string` | `''` | Error string rendered below the input. |
+| `disabled` | `boolean` | `false` | Disable input + encrypt actions. |
+| `showProgressBar` | `boolean` | `false` | Render the encryption progress bar inline. |
+| `debounceMs` | `number` | `300` | Debounce on `onTextChange`. |
+| `onTextChange` | `(value: string) => void` | — | Fires on every input change (post-debounce). |
+| `onTypeChange` | `(value: string) => void` | — | Fires when the type selector changes. |
+| `onEncryptStart` | `(data) => void` | — | Fires when encryption begins. |
+| `onEncryptProgress` | `(data) => void` | — | Per-step progress callback (`fetchKeys` → `pack` → `prove` → `verify` → `done`). |
+| `onEncryptComplete` | `(data) => void` | — | Fires once the encrypted result is available. |
+| `onEncryptError` | `(error: string) => void` | — | Fires on encryption failure. |
+| `className` | `string` | — | Extra class on the root element. |
+| `testId` | `string` | — | `data-testid` for the root element. |
+
+Internally `CofheEncryptInput` is driven by [`useEncryptInput`](/client-sdk/react/hooks#useencryptinput-ui-helper) — if you want the same logic without the bundled visuals, drop down to that hook.
+
+## `CofheFloatingButton` portal
+
+The portal is the user-facing UI for managing permits, browsing CoFHE tokens, importing custom tokens, shielding / unshielding, and watching pending decryptions. It mounts as a floating button anywhere in your app:
+
+```tsx
+import { CofheProvider } from '@cofhe/react';
+import { CofheFloatingButtonWithProvider } from '@cofhe/react/ui';
+
+export function App() {
+  return (
+    <CofheProvider config={config}>
+      <YourApp />
+      <CofheFloatingButtonWithProvider />
+    </CofheProvider>
+  );
+}
+```
+
+### Wallet-disconnected state
+
+Since `@cofhe/react@0.5.0`, when no wallet is connected the portal hides the wallet header and primary navigation and shows a "please connect" message instead. To make that message say *your* app name, set `react.projectName` on the config:
+
+```ts
+createCofheConfig({
+  environment: 'react',
+  supportedChains: [chains.sepolia],
+  react: { projectName: 'My dApp' },
+});
+```
+
+See [Getting Started → `react.*` config options](/client-sdk/react/getting-started#react-config-options) for the full table.
+
+### Position and theme
+
+Set the initial position and theme through the config:
+
+```ts
+createCofheConfig({
+  environment: 'react',
+  supportedChains: [chains.sepolia],
+  react: {
+    position: 'bottom-right',
+    initialTheme: 'dark',
+  },
+});
+```
+
+Both can also be flipped at runtime via context-bound setters that `CofheProvider` exposes on its inner store (used by the portal's own settings UI).
+
+## Custom-token import
+
+Added in `@cofhe/react@0.5.0`. Lets users import a CoFHE-aware token by its contract address straight from the portal's token list or portfolio flow:
+
+- The portal resolves the token's metadata, on-chain CoFHE compatibility, and (when relevant) its wrapped-token pair before the user confirms the import.
+- Imported tokens are persisted per chain in `localStorage` and merged into `useCofheTokens()` results, so other hooks (`useCofheTokenDecryptedBalance`, `useCofheTokenShield`, etc.) treat them as first-class tokens immediately.
+- Hooks like `useCofheReadContract`, `useCofheTokenDecryptedBalance`, and `useCofheReadContractAndDecrypt` automatically gate their reads on the imported token's permit / ACL state — `disabledDueToMissingValidPermit` reflects custom-token state the same way it does for known tokens.
+
+No extra setup is needed beyond mounting `CofheFloatingButton` — the import UI is already wired in.
+
+## Bundling notes
+
+- `@cofhe/react/ui` ships its own CSS via the bundle; you don't need to import a separate stylesheet.
+- Internal icons are bundled — `@mui/icons-material` and `@mui/material` are **no longer** required peers as of `0.5.0`. If you previously installed them just for `@cofhe/react`, you can remove them.
+
+## Related
+
+- [Getting Started](/client-sdk/react/getting-started) — install, provider, SSR notes.
+- [Hooks](/client-sdk/react/hooks) — read / write / decrypt / token hooks that back these components.
