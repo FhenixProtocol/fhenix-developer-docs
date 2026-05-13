@@ -1,0 +1,101 @@
+---
+title: Client
+description: "Create and connect a CofheClient inside a Hardhat 3 test"
+---
+
+The plugin extends every Hardhat 3 connection with a `cofhe` namespace. There are three ways to create and connect a `CofheClient` from a test, in increasing order of control.
+
+## Batteries included (recommended)
+
+`cofhe.createClientWithBatteries(walletClient?)` is the one-call setup. It:
+
+1. Creates a CoFHE config with `environment: 'hardhat'`.
+2. Creates a `CofheClient`.
+3. Connects it using the wallet client you pass (or the first wallet client on the connection if you don't).
+4. Generates and signs a self permit so the client can immediately decrypt encrypted values.
+
+```typescript
+import { describe, it } from 'node:test';
+import { network } from 'hardhat';
+
+describe('My FHE contract', async () => {
+  const { viem, cofhe } = await network.connect();
+  const [walletClient] = await viem.getWalletClients();
+
+  it('decrypts a value', async () => {
+    const client = await cofhe.createClientWithBatteries(walletClient);
+    client.connected; // true
+  });
+});
+```
+
+Or call it with no arguments to use the first wallet client on the connection:
+
+```typescript
+const client = await cofhe.createClientWithBatteries();
+```
+
+<Info>
+Because the self permit is created up-front, encrypt / decrypt / decryptForView / decryptForTx all work immediately without any additional setup.
+</Info>
+
+## Manual setup
+
+For more control — custom config options, multiple signers, adjusting `encryptDelay` — set up the client step by step.
+
+<Steps>
+
+<Step title="Create config">
+
+```typescript
+const config = await cofhe.createConfig();
+// With overrides:
+const config = await cofhe.createConfig({ mocks: { encryptDelay: 0 } });
+```
+
+`cofhe.createConfig` wraps `createCofheConfig` from `@cofhe/sdk/node` with two Hardhat-3-specific additions:
+
+- Sets `environment: 'hardhat'` automatically.
+- Defaults `mocks.encryptDelay` to `0` so tests run without artificial wait times.
+
+</Step>
+
+<Step title="Create the client">
+
+```typescript
+const client = cofhe.createClient(config);
+```
+
+The client is **not connected yet** — call `client.connect(...)` before using it.
+
+</Step>
+
+<Step title="Connect with the connection's wallet client">
+
+```typescript
+const publicClient = await viem.getPublicClient();
+const [walletClient] = await viem.getWalletClients();
+
+await client.connect(publicClient, walletClient);
+```
+
+</Step>
+
+</Steps>
+
+## API summary
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `cofhe.createConfig(overrides?)` | `Promise<CofheConfig>` | CoFHE config pre-wired for the Hardhat mock environment (`environment: 'hardhat'`, `mocks.encryptDelay: 0`). |
+| `cofhe.createClient(config)` | `CofheClient` | Unconnected client. Call `client.connect(publicClient, walletClient)` before use. |
+| `cofhe.createClientWithBatteries(walletClient?)` | `Promise<CofheClient>` | Fully configured + connected + self-permit signed. Defaults to the first wallet client on the connection. |
+
+## Using the client
+
+Once connected, the client works identically to the standard SDK client. See:
+
+- [Encrypting Inputs](/client-sdk/guides/encrypting-inputs)
+- [Decrypt to View](/client-sdk/guides/decrypt-to-view)
+- [Decrypt to Transact](/client-sdk/guides/decrypt-to-tx)
+- [Permits](/client-sdk/guides/permits)
