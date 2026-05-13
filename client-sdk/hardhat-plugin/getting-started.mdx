@@ -62,11 +62,22 @@ import '@cofhe/hardhat-plugin';
 export default {
   solidity: '0.8.28',
   cofhe: {
-    logMocks: true,    // log FHE ops to the console (default: true)
-    gasWarning: true,  // warn when mock gas usage is high (default: true)
+    logMocks: true,                 // log FHE ops to the console (default: true)
+    gasWarning: true,               // warn when mock gas usage is high (default: true)
+    mocksDeployVerbosity: 'v',      // mock deployment log verbosity (default: 'v')
   },
 };
 ```
+
+`mocksDeployVerbosity` controls how much output the plugin prints while deploying the mock contracts at the start of each `npx hardhat test` / `npx hardhat node` run:
+
+| Value | Output |
+| --- | --- |
+| `''` | Silent — no deploy lines. |
+| `'v'` | Single summary line per mock (default since `0.5.0`). |
+| `'vv'` | Full per-contract deployment log, including each contract's deployed address. |
+
+This is independent of `logMocks`, which controls **runtime** FHE-op logging (printed when your tests actually call `FHE.*`).
 
 ## Pre-configured networks
 
