@@ -43,3 +43,24 @@ The signed message is a fixed **76-byte** buffer:
 | `ct_hash` | 32 bytes | uint256, big-endian |
 
 The message is hashed with `keccak256` and verified using OpenZeppelin's `ECDSA.tryRecover`. The `enc_type` and `chain_id` are derived on-chain, binding each signature to a specific ciphertext type and chain.
+
+## Enable / Disable Switch
+
+The TaskManager carries a global `isEnabled` flag that owner-only `enable()` / `disable()` calls flip. While disabled, every entry point gated by `onlyIfEnabled` reverts with `CofheIsUnavailable` — including `publishDecryptResult` and `publishDecryptResultBatch`. Read access (`getDecryptResultSafe`, `verifyDecryptResultSafe`, etc.) is **not** gated and continues to work.
+
+| Element | Description |
+|---------|-------------|
+| `isEnabled` | Public `bool` state variable. Source of truth for whether the coprocessor accepts new operations on this chain. |
+| `onlyIfEnabled` modifier | Wraps every state-changing FHE-op entry point and `publishDecryptResult*`. Reverts with `CofheIsUnavailable` when `isEnabled == false`. |
+| `enable()` | Owner-only. Sets `isEnabled = true`. |
+| `disable()` | Owner-only. Sets `isEnabled = false` — useful for emergency pause or coordinated upgrades. |
+
+### Reading the flag from a client
+
+Apps can pre-flight the switch before submitting transactions:
+
+```solidity
+bool live = ITaskManager(TASK_MANAGER_ADDRESS).isEnabled();
+```
+
+For React apps using `@cofhe/react`, the [`useCofheEnabled`](/client-sdk/quick-start/react) hook wraps this read and reflects the result reactively — handy for showing a "CoFHE temporarily unavailable" banner without forcing users to fire a doomed transaction first.
