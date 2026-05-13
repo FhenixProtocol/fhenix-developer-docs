@@ -1,0 +1,229 @@
+---
+title: Hooks
+description: "React hooks for connection state, permits, encryption, decryption, and contract reads/writes"
+---
+
+Every hook below is exported from the root `@cofhe/react` entrypoint and works inside any tree wrapped in [`CofheProvider`](/client-sdk/react/getting-started). The hooks compose on top of the SDK client — when you need direct client access, use [`useCofheClient`](#usecofheclient).
+
+## Client and connection
+
+### `useCofheClient`
+
+Returns the SDK `CofheClient` owned by the provider. Use it when you need a one-off, imperative SDK call from inside a component (most apps don't — see the higher-level hooks below).
+
+```tsx
+import { useCofheClient } from '@cofhe/react';
+
+const client = useCofheClient();
+```
+
+### `useCofheConnection`
+
+Reactive snapshot of the connection state. Re-renders when the user connects/disconnects a wallet or switches chains.
+
+```tsx
+import { useCofheConnection } from '@cofhe/react';
+
+const { connected, account, chainId, publicClient, walletClient } = useCofheConnection();
+```
+
+Companion helpers shadow the most common fields so you can destructure narrowly:
+
+- `useCofheAccount()` → `address | undefined`
+- `useCofheChainId()` → `number | undefined`
+- `useCofhePublicClient()` → `PublicClient | undefined`
+- `useCofheWalletClient()` → `WalletClient | undefined`
+
+### `useCofheConnect` / `useCofheAutoConnect`
+
+Imperative hooks for driving the connection lifecycle from app UI (e.g. a custom "Connect" button or a wallet-restore-on-mount effect).
+
+```tsx
+import { useCofheConnect, useCofheAutoConnect } from '@cofhe/react';
+
+const { connect, disconnect } = useCofheConnect();
+useCofheAutoConnect(); // restore last connection on mount
+```
+
+## Coprocessor status
+
+### `useCofheEnabled`
+
+Added in `@cofhe/react@0.5.0`. Reads `TaskManager.isEnabled()` from the connected chain and re-evaluates as block state changes. Useful for showing a "CoFHE temporarily unavailable" banner without firing a doomed transaction.
+
+```tsx
+import { useCofheEnabled } from '@cofhe/react';
+
+const { enabled, isLoading, error } = useCofheEnabled();
+
+if (!isLoading && enabled === false) {
+  return <Banner>CoFHE is paused — try again shortly.</Banner>;
+}
+```
+
+The hook is gated by the TaskManager's `onlyIfEnabled` modifier — see [TaskManager → Enable / Disable Switch](/deep-dive/cofhe-components/task-manager#enable--disable-switch).
+
+## Permits
+
+### `useCofheActivePermit`
+
+Returns the active permit for the current `chainId + account`, plus a typed validity flag (`isValid`) that already accounts for schema, signature, and expiry.
+
+```tsx
+import { useCofheActivePermit } from '@cofhe/react';
+
+const { permit, isValid, error } = useCofheActivePermit();
+```
+
+`error` is the same typed union as [`ValidationResult.error`](/client-sdk/guides/permits#validating-permits): `'invalid-schema' | 'expired' | 'not-signed' | null`.
+
+### `useCofheAllPermits` / `useCofheSelectPermit` / `useCofheRemovePermit`
+
+Bulk management of the permit store.
+
+```tsx
+const allPermits = useCofheAllPermits();
+const select = useCofheSelectPermit();
+const remove = useCofheRemovePermit();
+```
+
+### Mutations: create / navigate
+
+For permit creation flows (e.g. a "Sign permit" button on a settings page), there are higher-level mutations under `@cofhe/react/permits` — `useCofheCreatePermitMutation`, `useCofheNavigateToCreatePermit`, `usePermitForm`, `usePermitsList`. These wrap the underlying SDK calls so you can drop them straight into a UI without manually managing loading/error state.
+
+## Encryption
+
+### `useCofheEncrypt`
+
+Encrypt one or more values from inside a component. Returns the mutation surface so you can drive a button or a form without juggling promises manually.
+
+```tsx
+import { useCofheEncrypt } from '@cofhe/react';
+import { Encryptable } from '@cofhe/sdk';
+
+const encrypt = useCofheEncrypt();
+
+const onSubmit = async () => {
+  const [encryptedAmount] = await encrypt.mutateAsync([Encryptable.uint64(amount)]);
+  // pass encryptedAmount to your contract call
+};
+```
+
+### `useEncryptInput` (UI helper)
+
+Powers the styled `CofheEncryptInput` component (see [Components & Portal](/client-sdk/react/components-and-portal)). Use it directly to build a custom encrypted-input UI with progress reporting:
+
+```tsx
+import { useEncryptInput } from '@cofhe/react';
+
+const {
+  onEncryptInput,            // (type, value) => Promise<encrypted>
+  isEncryptingInput,         // boolean
+  encryptionStep,            // 'fetchKeys' | 'pack' | 'prove' | 'verify' | 'done'
+  encryptionProgress,        // 0..100
+  encryptionProgressLabel,   // human-readable label
+  inputEncryptionDisabled,
+} = useEncryptInput();
+```
+
+## Reading encrypted state
+
+### `useCofheReadContract`
+
+Mirrors wagmi's `useReadContract` for an FHE-aware read. Returns the encrypted ciphertext handle from the contract along with a `disabledDueToMissingValidPermit` flag so your UI can render a "sign a permit" prompt rather than firing a request that would fail anyway.
+
+```tsx
+import { useCofheReadContract } from '@cofhe/react';
+
+const {
+  data,
+  disabledDueToMissingValidPermit,
+  isLoading,
+} = useCofheReadContract({
+  address: token.address,
+  abi: token.abi,
+  functionName: 'encryptedBalanceOf',
+  args: [account],
+});
+```
+
+<Note>
+**Renamed in `@cofhe/react@0.5.0`.** This flag used to be `disabledDueToMissingPermit`. The new name (`...ValidPermit`) reflects that it goes to `true` when the active permit is missing **or** invalid (expired / unsigned / malformed schema). Update any consumer code that destructured the old name.
+</Note>
+
+### `useCofheReadContracts`
+
+Multi-call variant — same shape, takes an array of contracts.
+
+### `useCofheReadContractAndDecrypt`
+
+Reads an encrypted handle from a contract **and** decrypts it via the SDK in one hook. Useful for "display a confidential balance" UIs:
+
+```tsx
+import { useCofheReadContractAndDecrypt } from '@cofhe/react';
+import { FheTypes } from '@cofhe/sdk';
+
+const { data, disabledDueToMissingValidPermit, isLoading } = useCofheReadContractAndDecrypt({
+  address: token.address,
+  abi: token.abi,
+  functionName: 'encryptedBalanceOf',
+  args: [account],
+  fheType: FheTypes.Uint64,
+});
+```
+
+### `useCofheTokenDecryptedBalance`
+
+Convenience wrapper around the read-and-decrypt flow specifically for CoFHE tokens. Re-renders when the active permit becomes valid.
+
+```tsx
+const { balance, disabledDueToMissingValidPermit } = useCofheTokenDecryptedBalance(tokenAddress);
+```
+
+## Writing encrypted state
+
+### `useCofheWriteContract` / `useCofheSimulateWriteContract`
+
+FHE-aware analogues of wagmi's `useWriteContract` / `useSimulateContract`. They encrypt any `Encryptable.*` values in the `args` array before submitting:
+
+```tsx
+const { writeContractAsync } = useCofheWriteContract();
+
+await writeContractAsync({
+  address: token.address,
+  abi: token.abi,
+  functionName: 'transfer',
+  args: [recipient, Encryptable.uint64(amount)],
+});
+```
+
+The simulate variant returns the same data shape wagmi does, plus encryption awaits.
+
+## CoFHE token helpers
+
+A set of higher-level hooks for the official CoFHE token flow (shield / unshield / transfer / claim):
+
+| Hook | Purpose |
+| --- | --- |
+| `useCofheTokens` | List of CoFHE-aware tokens for the current chain. Includes **custom tokens** the user imported (added in `@cofhe/react@0.5.0`). |
+| `useCofheTokenLists` | Underlying token-list resolver. |
+| `useCofheTokenPublicBalance` | Public ERC-20 balance for a token. |
+| `useCofheTokenTransfer` | `transfer` mutation. |
+| `useCofheTokenApprove` | `approve` mutation. |
+| `useCofheTokenShield` | Shield a public balance into the encrypted side. |
+| `useCofheTokenUnshield` | Request unshield (returns an `UnshieldClaim` handle). |
+| `useCofheTokenClaimUnshielded` | Finalize an unshield claim once the decryption result lands on-chain. |
+| `useCofheTokenClaimable` / `useCofheTokensClaimable` | Discover claimable unshield positions for one or many tokens. |
+| `useCofheTokenDecryptedBalance` | See [Reading encrypted state](#reading-encrypted-state) above. |
+| `useCofheTokensWithExistingEncryptedBalances` | Filter the token list down to those the connected account already holds. |
+| `useCofhePinnedToken` / `useCofhePinnedTokenAddress` | Persisted "primary token" selection. |
+
+Each shield/unshield/claim hook also exposes a `getCofhe…CallArgs(...)` helper for cases where you want to compose the transaction call manually instead of using the mutation.
+
+## Wagmi parity
+
+Hooks that mirror a wagmi API keep the same prop shape on purpose — `address`, `abi`, `functionName`, `args` flow through identically. The CoFHE-specific surface (the `disabledDueToMissingValidPermit` flag, the `fheType` arg on `useCofheReadContractAndDecrypt`, the auto-encryption of `Encryptable.*` values) is additive.
+
+## Next steps
+
+- [Components & Portal](/client-sdk/react/components-and-portal) — `CofheEncryptInput`, `CofheFloatingButton`, the custom-token import flow.
