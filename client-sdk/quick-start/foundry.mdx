@@ -47,15 +47,17 @@ test = "test"
 script = "script"
 libs = ["node_modules"]
 solc_version = "0.8.25"
-evm_version = "cancun"
 auto_detect_remappings = false
 code_size_limit = 100000
 ```
 
 <Warning>
-- `evm_version = "cancun"` is required — `MockACL` uses transient storage opcodes.
-- `code_size_limit = 100000` is required — the mock contracts exceed the EIP-170 24 KB limit.
+`code_size_limit = 100000` is required — the mock contracts exceed the EIP-170 24 KB limit.
 </Warning>
+
+<Note>
+`evm_version = "cancun"` is no longer required as of `@cofhe/mock-contracts@0.5.0` — `MockACL` was migrated off transient storage to block-number-based storage. Set it only if your own contracts need cancun-specific opcodes.
+</Note>
 
 ## 3. Configure `remappings.txt`
 
