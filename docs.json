@@ -104,6 +104,16 @@
             ]
           },
           {
+            "group": "Hardhat 3 Plugin",
+            "pages": [
+              "client-sdk/hardhat-3-plugin/getting-started",
+              "client-sdk/hardhat-3-plugin/client",
+              "client-sdk/hardhat-3-plugin/mock-contracts",
+              "client-sdk/hardhat-3-plugin/logging",
+              "client-sdk/hardhat-3-plugin/testing"
+            ]
+          },
+          {
             "group": "Foundry Plugin",
             "pages": [
               "client-sdk/foundry-plugin/getting-started",
