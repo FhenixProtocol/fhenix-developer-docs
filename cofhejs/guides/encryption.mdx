@@ -3,6 +3,10 @@ title: Encryption
 description: "Encrypt input data before sending it to FHE-enabled smart contracts"
 ---
 
+<Warning>
+**`cofhejs` is the legacy client library.** New projects should use [`@cofhe/sdk`](/client-sdk/guides/encrypting-inputs) instead. See [Migrating from cofhejs](/client-sdk/introduction/migrating-from-cofhejs) for a side-by-side guide. These pages remain for reference for projects that haven't migrated yet.
+</Warning>
+
 ## Encrypting Input Data
 
 This step secures your data before sending it to the smart contract. Remember - all data sent to a smart contract on a blockchain is inherently public, which means that anyone can see it. However, Fhenix operates differently. To maintain user confidentiality and protect sensitive input data, Fhenix utilizes **Cofhejs** to provide built-in encryption methods that you must apply before sending any data to an FHE-enabled contract.

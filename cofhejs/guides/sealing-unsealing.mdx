@@ -3,6 +3,10 @@ title: Sealing & Unsealing
 description: "Unseal encrypted data returned from FHE-enabled smart contracts"
 ---
 
+<Warning>
+**`cofhejs` is the legacy client library.** New projects should use [`@cofhe/sdk`](/client-sdk/guides/decrypt-to-view) instead — sealing/unsealing is handled internally by `decryptForView` / `decryptForTx`. See [Migrating from cofhejs](/client-sdk/introduction/migrating-from-cofhejs) for a side-by-side guide. These pages remain for reference for projects that haven't migrated yet.
+</Warning>
+
 ## Overview
 
 In Fhenix's FHE system, data returned from smart contracts is "sealed" (internally re-encrypted since it already exists in an encrypted state) to maintain confidentiality during transmission. The unsealing process converts this encrypted data back into readable values using your permit's sealing key pair.
