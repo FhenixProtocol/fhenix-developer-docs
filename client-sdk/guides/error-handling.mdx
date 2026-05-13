@@ -78,3 +78,43 @@ try {
   }
 }
 ```
+
+### Distinguishing why a permit is invalid
+
+Since `@cofhe/sdk@0.5.0`, the decrypt flows call `PermitUtils.validate(permit)` internally before talking to the Threshold Network. That helper enforces **schema + signed + not-expired** all at once, so when it fails the recovery path depends on **which** check tripped.
+
+Use the non-throwing `ValidationUtils.isValid` helper from `@cofhe/sdk/permits` to pre-flight the active permit and route based on the typed reason — this avoids the thrown error path entirely:
+
+```typescript
+import { FheTypes } from '@cofhe/sdk';
+import { ValidationUtils } from '@cofhe/sdk/permits';
+
+const active = client.permits.getActivePermit();
+const result = active
+  ? ValidationUtils.isValid(active)
+  : { valid: false, error: 'not-signed' as const };
+
+if (!result.valid) {
+  switch (result.error) {
+    case 'expired':
+      await client.permits.getOrCreateSelfPermit(); // create a fresh one
+      break;
+    case 'not-signed':
+      await client.permits.getOrCreateSelfPermit(); // prompt the wallet to sign
+      break;
+    case 'invalid-schema':
+      client.permits.removeActivePermit(); // stored payload is malformed
+      break;
+  }
+}
+
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .execute();
+```
+
+`ValidationResult.error` is the typed union `'invalid-schema' | 'expired' | 'not-signed' | null` — see [Permits → Validating permits](/client-sdk/guides/permits#validating-permits) for the full helper surface.
+
+<Note>
+If you prefer the throwing path: `PermitUtils.validate(permit)` raises plain `Error`s with messages `Permit is expired` / `Permit is not signed` (or a Zod schema error). These are not wrapped in `CofheError`, so use `err.message` rather than an error code to branch.
+</Note>
