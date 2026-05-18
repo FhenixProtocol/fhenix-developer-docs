@@ -249,6 +249,63 @@ client.permits.removePermit(permitHash);
 client.permits.removeActivePermit();
 ```
 
+## Validating permits
+
+Since `@cofhe/sdk@0.5.0`, `PermitUtils.validate` enforces the **full** check: schema + signed + not-expired. The decrypt flows (`decryptForView`, `decryptForTx` with `.withPermit(...)`) call this for you and surface failures as typed errors — you only need to validate manually when you want to inspect or filter permits before using them.
+
+### Throwing helpers — `PermitUtils.*`
+
+| Function | What it checks | Behavior on failure |
+| --- | --- | --- |
+| `PermitUtils.validate(permit)` | Schema **and** signed **and** not-expired. | Throws (`Permit is expired` / `Permit is not signed` / schema error). |
+| `PermitUtils.validateSchema(permit)` | Schema only (shape + invariants). | Throws on schema failure; does **not** check expiry or signatures. |
+
+Use `validateSchema` when you've just received a permit from the wire (e.g. an imported sharing permit) and want to reject malformed payloads without yet caring about expiry.
+
+```typescript
+import { PermitUtils } from '@cofhe/sdk/permits';
+
+try {
+  PermitUtils.validate(permit);
+  // permit is schema-valid, signed, and not expired
+} catch (err) {
+  // err.message is "Permit is expired" / "Permit is not signed" / a Zod schema error
+}
+```
+
+### Non-throwing helpers — `ValidationUtils.*`
+
+For inspection without exception handling, use the `ValidationUtils` helpers. They return a typed `ValidationResult`:
+
+```typescript
+import { ValidationUtils } from '@cofhe/sdk/permits';
+
+const result = ValidationUtils.isValid(permit);
+
+result.valid;  // boolean
+result.error;  // 'invalid-schema' | 'expired' | 'not-signed' | null
+```
+
+| Function | Returns | Use case |
+| --- | --- | --- |
+| `ValidationUtils.isValid(permit)` | `ValidationResult` | Full check (schema + signed + not-expired) without throwing. |
+| `ValidationUtils.isSignedAndNotExpired(permit)` | `ValidationResult` | Skip the schema parse if you already validated the shape. |
+| `ValidationUtils.isSigned(permit)` | `boolean` | "Does it carry a signature on the issuer / recipient side as appropriate?" |
+| `ValidationUtils.isExpired(permit)` | `boolean` | Compare `permit.expiration` to current time. |
+
+<Tip>
+Pattern-match on `result.error` to render a precise UI message:
+
+```typescript
+switch (ValidationUtils.isValid(permit).error) {
+  case 'expired':         return 'This permit has expired — please re-sign.';
+  case 'not-signed':      return 'Permit is awaiting signature.';
+  case 'invalid-schema':  return 'Imported permit is malformed.';
+  case null:              return null;
+}
+```
+</Tip>
+
 ## Persistence and security
 
 - The SDK persists permits in a store keyed by `chainId + account`.
