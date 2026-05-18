@@ -39,6 +39,10 @@ eaddress val = FHE.wrapEaddress(handle);
 Use `wrap` when you have a raw handle from storage or an event and need to convert it back to a typed encrypted value.
 </Tip>
 
+<Note>
+**Renamed in `cofhe-contracts@v0.1.3`.** These functions used to be exposed as `FHE.asEbool(bytes32)`, `FHE.asEuint*(bytes32)`, and `FHE.asEaddress(bytes32)`. They were renamed to `wrap*` to remove a Solidity overload ambiguity with `asEuint*(0)` (where the integer literal `0` could resolve to either the plaintext-trivial-encryption overload or the raw-handle overload). If you're upgrading from `<=0.1.2`, search for `FHE.asE*(<bytes32-value>)` call sites and rewrite them as `FHE.wrap*`.
+</Note>
+
 ## Random Number Generation
 
 Generate random encrypted values. An optional `securityZone` parameter is supported.

@@ -39,7 +39,17 @@ FHE.publishDecryptResult(encryptedBid, bidPlaintext, bidSignature);
 
 ### publishDecryptResultBatch
 
-Publishes multiple results in a single call. Typed overloads exist for all encrypted types.
+Publishes multiple results in a single call. Typed overloads exist for every encrypted type:
+
+| Handle array type | Result array type |
+| --- | --- |
+| `ebool[]` | `bool[]` |
+| `euint8[]` | `uint8[]` |
+| `euint16[]` | `uint16[]` |
+| `euint32[]` | `uint32[]` |
+| `euint64[]` | `uint64[]` |
+| `euint128[]` | `uint128[]` |
+| `eaddress[]` | `address[]` |
 
 ```solidity
 euint64[] memory handles = new euint64[](2);
@@ -56,6 +66,10 @@ sigs[1] = sig2;
 
 FHE.publishDecryptResultBatch(handles, values, sigs);
 ```
+
+<Note>
+The compiler resolves the overload from the handle array's element type. There is also a "raw" overload that takes `uint256[]` ctHashes if you only have raw handles to hand.
+</Note>
 
 ---
 
@@ -89,7 +103,7 @@ if (valid) {
 
 ### verifyDecryptResultBatch
 
-Verifies multiple signatures in a single call. Reverts if any is invalid.
+Verifies multiple signatures in a single call. Returns `true` only if every entry is valid; reverts if any signature fails to recover (consistent with the single-entry `verifyDecryptResult`). Typed overloads exist for every encrypted type — same handle/result type table as [`publishDecryptResultBatch`](#publishdecryptresultbatch).
 
 ```solidity
 bool allValid = FHE.verifyDecryptResultBatch(handles, values, sigs);
@@ -97,11 +111,15 @@ bool allValid = FHE.verifyDecryptResultBatch(handles, values, sigs);
 
 ### verifyDecryptResultBatchSafe
 
-Returns a `bool[]` indicating which entries are valid instead of reverting.
+Returns a `bool[]` indicating which entries are valid instead of reverting. Typed overloads cover every encrypted type — same handle/result type table as [`publishDecryptResultBatch`](#publishdecryptresultbatch).
 
 ```solidity
 bool[] memory results = FHE.verifyDecryptResultBatchSafe(handles, values, sigs);
 ```
+
+<Note>
+The batch verify functions (`verifyDecryptResultBatch`, `verifyDecryptResultBatchSafe`) were added in `cofhe-contracts@v0.1.2`. Earlier versions only exposed the single-entry `verifyDecryptResult` / `verifyDecryptResultSafe`.
+</Note>
 
 ---
 
