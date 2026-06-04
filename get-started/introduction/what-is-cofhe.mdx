@@ -9,7 +9,7 @@ description: "A high-level introduction to CoFHE — Fhenix's Fully Homomorphic 
 
 **CoFHE is an FHE coprocessor that lets any blockchain run computations on encrypted data.**
 
-This makes confidentiality just another Solidity feature. There's no migration to a specialized FHE chain, no new toolchain, and no cryptography to implement yourself. CoFHE handles the heavy FHE math off-chain; your contract only ever touches lightweight *handles* to encrypted values, so code stays familiar. Values are encrypted — everything else feels like ordinary development.
+This makes confidentiality just another Solidity feature. There's no migration to a specialized FHE chain, no new toolchain, and no cryptography to implement yourself. CoFHE handles the heavy FHE math offchain; your contract only ever touches lightweight *handles* to encrypted values, so code stays familiar. Values are encrypted — everything else feels like ordinary development.
 
 ## Why a coprocessor?
 
@@ -17,7 +17,7 @@ The coprocessor model adds confidentiality without changing how applications are
 
 - **No migration** — CoFHE attaches to existing blockchains. Confidential contracts deploy to the networks already in use, not a dedicated FHE L1.
 - **Familiar code** — contracts pass around lightweight *handles* (references to ciphertexts) rather than the ciphertexts themselves, so they read like normal Solidity. FHE operations add some gas overhead, but the onchain footprint stays small and predictable.
-- **No cryptography to implement** — the heavy FHE math runs off-chain on the CoFHE server, which is built to do it efficiently. A contract calls `FHE.add`; CoFHE does the rest.
+- **No cryptography to implement** — the heavy FHE math runs offchain on the CoFHE server, which is built to do it efficiently. A contract calls `FHE.add`; CoFHE does the rest.
 - **Trust-minimized by default** — decryption is never in one party's hands. A Threshold Network performs it through multi-party computation.
 
 ## What CoFHE lets you build
@@ -39,8 +39,8 @@ Every CoFHE application follows the same three-phase lifecycle: **encrypt → co
 The user's plaintext is encrypted in the client using the [`@cofhe/sdk`](/client-sdk/introduction/overview), bundled with a zero-knowledge proof that the input is well-formed, and submitted to CoFHE. The blockchain only ever receives an encrypted handle — never the raw value.
 </Step>
 
-<Step title="Compute (onchain handle, off-chain math)">
-The smart contract uses [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted handles — adding, comparing, selecting — as if they were ordinary numbers. Each operation deterministically derives a new result handle and is recorded onchain; the CoFHE server independently computes the matching ciphertext off-chain. Nothing returns to the contract, and plaintext is never exposed at any point.
+<Step title="Compute (onchain handle, offchain math)">
+The smart contract uses [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted handles — adding, comparing, selecting — as if they were ordinary numbers. Each operation deterministically derives a new result handle and is recorded onchain; the CoFHE server independently computes the matching ciphertext offchain. Nothing returns to the contract, and plaintext is never exposed at any point.
 </Step>
 
 <Step title="Decrypt (optional, gated by permits)">
@@ -91,7 +91,7 @@ Developers only interact directly with **two** parts of CoFHE; the rest runs beh
 | Component | Role |
 | --- | --- |
 | **Task Manager** | Onchain gateway that validates FHE requests and enforces access control |
-| **Slim Listener** | Watches onchain events and forwards operations to the off-chain layer |
+| **Slim Listener** | Watches onchain events and forwards operations to the offchain layer |
 | **FHEOS Server** | Executes the actual FHE computations and holds encrypted state |
 | **Result Processor** | Publishes verified results back onchain |
 | **Threshold Network** | Decrypts via multi-party computation — no single party holds the key |
