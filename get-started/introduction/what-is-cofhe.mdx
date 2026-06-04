@@ -40,7 +40,7 @@ The user's plaintext is encrypted in the client using the [`@cofhe/sdk`](/client
 </Step>
 
 <Step title="Compute (onchain handle, off-chain math)">
-The smart contract uses [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted handles — adding, comparing, selecting — as if they were ordinary numbers. Each operation is recorded onchain and executed off-chain by the CoFHE server, which produces a new encrypted result. Plaintext is never exposed at any point.
+The smart contract uses [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted handles — adding, comparing, selecting — as if they were ordinary numbers. Each operation deterministically derives a new result handle and is recorded onchain; the CoFHE server independently computes the matching ciphertext off-chain. Nothing returns to the contract, and plaintext is never exposed at any point.
 </Step>
 
 <Step title="Decrypt (optional, gated by permits)">
@@ -64,8 +64,9 @@ sequenceDiagram
 
     Note over Contract,CoFHE: Compute
     Contract->>Contract: FHE.add / FHE.lt / FHE.select ...
-    Contract->>CoFHE: operation request (handles)
-    CoFHE-->>Contract: verified encrypted result
+    Contract->>Contract: derive result handle (deterministic)
+    Note over Contract,CoFHE: operation emitted onchain — nothing returns to the contract
+    CoFHE->>CoFHE: pick up operation, compute ciphertext for the same handle
 
     Note over User,CoFHE: Decrypt
     User->>SDK: read result (+ permit)
