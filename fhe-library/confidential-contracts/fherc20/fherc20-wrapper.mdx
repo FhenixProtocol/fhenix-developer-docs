@@ -353,7 +353,7 @@ event ShieldedNative(address indexed from, address indexed to, uint256 value);
 pragma solidity ^0.8.25;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { FHERC20ERC20Wrapper } from "@fhenixprotocol/confidential-contracts/contracts/FHERC20/extensions/FHERC20ERC20Wrapper.sol";
+import { FHERC20ERC20Wrapper } from "fhenix-confidential-contracts/contracts/FHERC20/extensions/FHERC20ERC20Wrapper.sol";
 
 // Deploy a wrapper for an existing ERC20 token
 contract MyTokenWrapper is FHERC20ERC20Wrapper {
@@ -369,7 +369,7 @@ contract MyTokenWrapper is FHERC20ERC20Wrapper {
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import { FHERC20NativeWrapper } from "@fhenixprotocol/confidential-contracts/contracts/FHERC20/extensions/FHERC20NativeWrapper.sol";
+import { FHERC20NativeWrapper } from "fhenix-confidential-contracts/contracts/FHERC20/extensions/FHERC20NativeWrapper.sol";
 
 // Deploy a wrapper for native ETH
 contract ShieldedETH is FHERC20NativeWrapper {
