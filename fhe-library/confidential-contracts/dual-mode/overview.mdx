@@ -1,0 +1,231 @@
+---
+title: "ERC20Confidential Overview"
+description: "The dual-mode confidential token — a real public ERC-20 and an encrypted balance in one contract"
+---
+
+## What is ERC20Confidential?
+
+`ERC20Confidential` is a **dual-mode** confidential token. Unlike [FHERC20](/fhe-library/confidential-contracts/fherc20/overview)—where every balance is encrypted and the public ERC-20 surface is only a decorative shim—`ERC20Confidential` gives each holder **two real balances in the same contract**:
+
+1. A **public ERC-20 balance**, inherited from the standard OpenZeppelin `ERC20`. `balanceOf`, `transfer`, `approve`, `transferFrom`, and `totalSupply` all work exactly as they do on any normal token.
+2. A **confidential, FHE-encrypted balance**, stored as an `euint64` handle. Nobody—not even the contract—can read it without an ACL grant and a decryption permit.
+
+Tokens move between the two layers with **shield** (public → confidential) and **unshield → claim** (confidential → public). Think of it as a normal ERC-20 with a built-in privacy pool baked directly into the token.
+
+<CardGroup cols={2}>
+<Card title="Two Balances, One Contract" icon="layer-group">
+A working public ERC-20 balance **and** a parallel encrypted balance for the same holder — no separate wrapper contract required.
+</Card>
+
+<Card title="Built-in Shield / Unshield" icon="shield-halved">
+Convert value between the public and confidential layers directly on the token via `shield()` and `unshield()`.
+</Card>
+
+<Card title="Fully ERC-20 Compatible" icon="plug">
+The public side is a genuine ERC-20, so existing wallets, DEXs, and explorers interact with it normally.
+</Card>
+
+<Card title="ERC-7984 Confidential Surface" icon="lock">
+The confidential side implements the same [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) API as FHERC20: `confidentialTransfer`, operators, and receiver callbacks.
+</Card>
+</CardGroup>
+
+<Note>
+`ERC20Confidential` is an **abstract** contract. You deploy it by inheriting from it and adding your own mint/access-control logic (see the [Quick Start](#quick-start-example) below).
+</Note>
+
+---
+
+## ERC20Confidential vs FHERC20
+
+Both live in the `fhenix-confidential-contracts` package and share the entire confidential-transfer API. The difference is what the **public ERC-20 surface** means.
+
+| Aspect | FHERC20 | ERC20Confidential (Dual-Mode) |
+|--------|---------|-------------------------------|
+| **Public `balanceOf`** | Returns an *indicator* (fake activity number) | Returns the **real** public balance |
+| **`transfer` / `approve` / `transferFrom`** | Revert (`FHERC20IncompatibleFunction`) | Fully functional public ERC-20 |
+| **`balanceOfIsIndicator()`** | `true` | `false` |
+| **`indicatorTick()`** | `> 0` | `0` |
+| **Confidential balance** | The *only* balance | A *second* balance alongside the public one |
+| **Public ↔ confidential bridge** | Separate wrapper contracts | Built into the token (`shield` / `unshield`) |
+| **Wallet activity indicator** | The token's own `balanceOf` | A **separate sidecar token** (`ERC20ConfidentialIndicator`) |
+| **Standard** | ERC-7984 (with an ERC-20 shim) | ERC-20 **and** ERC-7984 together |
+
+In short: **FHERC20 is confidential-only with a fake public face. ERC20Confidential is a real ERC-20 with a confidential layer bolted on.**
+
+<Tip>
+If you want a token that trades openly on public DeFi *and* supports optional private holdings, use `ERC20Confidential`. If you want everything to be private with no public balances at all, use [FHERC20](/fhe-library/confidential-contracts/fherc20/overview).
+</Tip>
+
+---
+
+## The Dual-Balance Model at a Glance
+
+```solidity
+abstract contract ERC20Confidential is ERC20, ERC165, IERC20Confidential, FHERC20WrapperClaimHelper {
+    // Sentinel address that custodies the public tokens backing all confidential balances
+    address public constant CONFIDENTIAL_POOL = address(0x1011000000000000000000000000000000000000);
+
+    // The encrypted (confidential) balance layer
+    mapping(address => euint64) private _confidentialBalances;
+
+    // Time-based operator permissions for confidential transfers
+    mapping(address => mapping(address => uint48)) private _operators;
+
+    // Sidecar display token for wallets/explorers
+    ERC20ConfidentialIndicator public immutable indicatorToken;
+}
+```
+
+Every confidential unit is **fully backed** by real public tokens sitting in `CONFIDENTIAL_POOL`. When you shield, your public tokens are physically transferred into that pool; when you unshield and claim, they come back out. The encrypted ledger simply tracks who owns what inside the pool.
+
+<Steps>
+<Step title="Public layer (inherited ERC-20)">
+Real, transparent balances. Anyone can see them. Standard `transfer` / `approve` / `transferFrom` apply.
+</Step>
+
+<Step title="Shield">
+Move public tokens into the confidential pool and mint yourself an equal encrypted balance.
+</Step>
+
+<Step title="Confidential layer (ERC-7984)">
+Transfer privately with `confidentialTransfer`, delegate with operators, and receive with callbacks — all on encrypted amounts.
+</Step>
+
+<Step title="Unshield → Claim">
+Burn confidential tokens (async), decrypt the burned amount off-chain, then claim the equivalent public tokens back out of the pool.
+</Step>
+</Steps>
+
+See [The Dual-Balance Model](/fhe-library/confidential-contracts/dual-mode/dual-balance-model) for a full breakdown of the pool, the conversion rate, and the indicator sidecar token.
+
+---
+
+## Decimals and the Conversion Rate
+
+The public token can use **any** number of decimals (e.g. 18, to match mainstream ERC-20s). The confidential layer is capped at **6 decimals** because encrypted balances are `euint64` and must avoid overflow.
+
+```solidity
+constructor(string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
+    indicatorToken = new ERC20ConfidentialIndicator(address(this), name_, symbol_);
+    _decimals = decimals_;
+    _confidentialDecimals = decimals_ <= 6 ? decimals_ : 6;
+    _conversionRate = decimals_ > 6 ? 10 ** (decimals_ - 6) : 1;
+}
+```
+
+For an 18-decimal token, `_conversionRate = 10^(18 - 6) = 10^12`. One confidential unit equals `10^12` public base units. Shielded amounts are always rounded down to a whole multiple of this rate.
+
+<Note>
+Query the two decimal values with `decimals()` (public) and `confidentialDecimals()` (confidential). For tokens with 6 or fewer decimals the rate is `1` and the two layers map 1:1.
+</Note>
+
+---
+
+## Contract Variants
+
+<CardGroup cols={2}>
+<Card title="ERC20Confidential" icon="coins" href="/fhe-library/confidential-contracts/dual-mode/dual-balance-model">
+**Base (constructor) implementation**
+
+Abstract dual-balance token. Inherit it and add your mint / ownership logic.
+</Card>
+
+<Card title="ERC20ConfidentialUpgradeable" icon="arrows-rotate">
+**Upgradeable variant**
+
+Identical API, built on OpenZeppelin's upgradeable contracts with ERC-7201 namespaced storage and an `__ERC20Confidential_init(...)` initializer instead of a constructor.
+</Card>
+
+<Card title="ERC20ConfidentialIndicator" icon="gauge" href="/fhe-library/confidential-contracts/dual-mode/dual-balance-model#the-indicator-sidecar-token">
+**Sidecar display token**
+
+Auto-deployed by the constructor. Shows non-revealing "activity" balances in wallets and explorers. All of its mutative functions revert.
+</Card>
+
+<Card title="IERC20Confidential" icon="file-code">
+**Interface**
+
+`IERC20Confidential is IFHERC20` — adds the shield/unshield bridge to the shared confidential-token surface.
+</Card>
+</CardGroup>
+
+---
+
+## Quick Start Example
+
+Because `ERC20Confidential` is abstract, you inherit it and expose whatever minting policy you need. Minting creates **public** tokens; holders then shield them to go confidential.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+import { ERC20Confidential } from "fhenix-confidential-contracts/contracts/ERC20Confidential/ERC20Confidential.sol";
+
+contract MyDualToken is ERC20Confidential {
+    // 18 public decimals; the confidential layer is auto-capped to 6
+    constructor() ERC20Confidential("My Dual Token", "MDT", 18) {}
+
+    // Mints public ERC-20 tokens (OpenZeppelin _mint)
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+```
+
+Using the token end-to-end:
+
+```typescript
+import { Encryptable } from '@cofhe/sdk';
+
+// 1. Mint public tokens — a normal, transparent ERC-20 balance
+await token.mint(user.address, ethers.parseUnits("1000", 18));
+const publicBal = await token.balanceOf(user.address); // real balance, visible to all
+
+// 2. Shield 500 tokens into the confidential layer
+await token.shield(ethers.parseUnits("500", 18));
+
+// 3. Transfer confidentially — amount is encrypted
+const [encAmount] = await cofheClient
+  .encryptInputs([Encryptable.uint64(100_000_000n)]) // 100 tokens at 6 confidential decimals
+  .execute();
+await token.confidentialTransfer(recipient.address, encAmount);
+
+// 4. Read your encrypted balance (returns a handle you decrypt off-chain)
+const handle = await token.confidentialBalanceOf(user.address);
+```
+
+<Warning>
+The example `mint` is unguarded for illustration only. In production, gate minting behind access control (e.g. `Ownable` / `AccessControl`).
+</Warning>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Dual-Balance Model" icon="layer-group" href="/fhe-library/confidential-contracts/dual-mode/dual-balance-model">
+The public/confidential split, the backing pool, the conversion rate, and the indicator sidecar token.
+</Card>
+
+<Card title="Shield & Unshield" icon="shield-halved" href="/fhe-library/confidential-contracts/dual-mode/shield-unshield">
+The bridge between layers: synchronous shielding and the asynchronous unshield/claim flow.
+</Card>
+
+<Card title="Confidential Operations" icon="lock" href="/fhe-library/confidential-contracts/dual-mode/confidential-operations">
+Confidential transfers, the operator system, and transfer callbacks.
+</Card>
+
+<Card title="Best Practices" icon="shield-check" href="/fhe-library/confidential-contracts/dual-mode/best-practices">
+Backing, privacy boundaries, zero-replacement, and access-control pitfalls.
+</Card>
+</CardGroup>
+
+---
+
+## Related Topics
+
+- Compare with the confidential-only [FHERC20 standard](/fhe-library/confidential-contracts/fherc20/overview)
+- Learn about FHE operations in [Encrypted Operations](/fhe-library/core-concepts/encrypted-operations)
+- Understand permissions in [Access Control](/fhe-library/core-concepts/access-control)
+- Encrypt inputs and decrypt handles with the [Client SDK](/client-sdk/introduction/overview)

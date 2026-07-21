@@ -170,6 +170,16 @@
                   "fhe-library/confidential-contracts/fherc20/fherc20-wrapper",
                   "fhe-library/confidential-contracts/fherc20/best-practices"
                 ]
+              },
+              {
+                "group": "ERC20Confidential (Dual-Mode)",
+                "pages": [
+                  "fhe-library/confidential-contracts/dual-mode/overview",
+                  "fhe-library/confidential-contracts/dual-mode/dual-balance-model",
+                  "fhe-library/confidential-contracts/dual-mode/shield-unshield",
+                  "fhe-library/confidential-contracts/dual-mode/confidential-operations",
+                  "fhe-library/confidential-contracts/dual-mode/best-practices"
+                ]
               }
             ]
           },
