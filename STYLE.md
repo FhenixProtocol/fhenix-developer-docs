@@ -88,7 +88,8 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 
 ## Diagrams
 
-- While a page is in rewrite, diagrams are Mermaid blocks that encode the correct current flow. They are the source material for the designed SVG that replaces them.
+- Mermaid is the source of truth for every diagram. It lives in the page as a ```mermaid block, renders natively on the site, and diffs like text in review.
+- A designed SVG is an optional finalization step, not the source. When one replaces a rendered Mermaid block, the Mermaid source stays in the repo next to it, and any later change to the flow updates the Mermaid first.
 - Actor names in diagrams use the canonical terminology above and must match the page text exactly.
 - A diagram shows one flow. If it needs a legend to be understood, split it.
 
