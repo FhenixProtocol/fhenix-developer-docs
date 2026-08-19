@@ -19,13 +19,14 @@ If there were no access control mechanisms, someone could observe the handle val
 
 ```solidity
 // Contract B
-function attackBid(euint32 seenHandle, uint32 plaintext, bytes calldata signature) public {
-    FHE.publishDecryptResult(seenHandle, plaintext, signature); // try to expose the value
+function attackBid(euint32 seenHandle) public {
+    euint32 doubled = FHE.add(seenHandle, seenHandle); // try to compute on someone else's ciphertext
+    FHE.allowSender(doubled);                          // and hand the result to the attacker
 }
 ```
 
 <Warning>
-To prevent misuse, all FHE operations verify that the caller has explicit permission to use the ciphertext handle.
+To prevent misuse, all FHE operations verify that the caller has explicit permission on every input ciphertext handle.
 </Warning>
 
 ---
@@ -41,6 +42,23 @@ FHE.add(notAllowedCt, allowedCt); // -> will revert with ACLNotAllowed
 ```
 
 By default, newly created ciphertext handles are accessible to the contract that created them, but **only for the duration of the transaction**. Any additional access must be explicitly granted.
+
+### What the ACL Does *Not* Gate
+
+The ACL governs **operation creation** — computing on a handle, and requesting its decryption. It does not gate the on-chain publication of a decrypt result:
+
+```solidity
+// Anyone can call this — it is signature-gated, not ACL-gated
+FHE.publishDecryptResult(seenHandle, plaintext, signature);
+```
+
+`publishDecryptResult` (and `verifyDecryptResult`) only check that `signature` is a valid ECDSA signature from the Threshold Network over that exact `(ctHash, result, chainId, encType)` tuple. Publication is deliberately permissionless so clients and relayers can settle results on-chain.
+
+What protects the value is that an attacker cannot *obtain* that signature. The signature is only issued by the Threshold Network in response to a decryption request, and that request is ACL-gated: the requester must either hold permission on the handle (with a valid permit) or the handle must have been marked with `FHE.allowPublic()`. Without permission, the request is denied and no signature is ever produced — so there is nothing valid to publish.
+
+<Warning>
+Treat `FHE.allowPublic()` as the real decision point. Once a handle is marked public, anyone can request its decryption and publish the plaintext on-chain, permanently.
+</Warning>
 
 ---
 
