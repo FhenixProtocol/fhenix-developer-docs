@@ -1,13 +1,20 @@
 ---
-title: FheOs - Server
-description: "Off-chain computational layer that executes FHE operations and manages encrypted computations"
+title: FheOS Server
+description: "Offchain ingestion service that validates task events and orchestrates work for the FHE Engine"
 ---
 
 | Aspect | Description |
 |---------|-------------|
-| **Type** | Off-chain computational layer. |
-| **Function** | Executes FHE operations and manages encrypted computations |
-| **Responsibilities** | • Receives the request from the Slim Listener<br/>• Executes the FHE operations<br/>• Calls Result Processor when result is created<br/>• Returns plaintext results when requested (i.e decrypt/seal output), preserving privacy throughout the pipeline |
+| **Type** | Offchain ingestion and orchestration service. |
+| **Function** | Validates task events and routes work to the [FHE Engine](/deep-dive/cofhe-components/fhe-engine). |
+| **Responsibilities** | • Consumes task events from the `blockchain-events` queue<br/>• Validates each operation and its encrypted inputs<br/>• Creates a placeholder record for every result handle<br/>• Routes validated FHE operations to the `engine-requests` queue |
 
-The FHE Operating System server manages the execution environment for FHE operations.
+The FheOS Server sits between the chain and the execution layer. [Slim Listeners](/deep-dive/cofhe-components/slim-listener) publish TaskManager events into the `blockchain-events` queue. The FheOS Server consumes them, checks that each operation is well formed and its inputs exist, and enqueues the validated work for the FHE Engine. It does not execute FHE operations itself, and it exposes no API beyond a health endpoint.
 
+## Ordering and failure handling
+
+Operations can arrive before the inputs they depend on have finished computing. The FheOS Server defers such operations and releases them once the missing results land, so out-of-order delivery never produces a wrong answer. Messages that are malformed or reference inputs that never materialize are routed to a dead-letter queue instead of being silently dropped.
+
+## What it is not
+
+The FheOS Server is frequently mistaken for the execution engine. Execution happens in the [FHE Engine](/deep-dive/cofhe-components/fhe-engine), and decryption happens in [Teecryptor](/deep-dive/cofhe-components/teecryptor). The FheOS Server verifies and orchestrates.
