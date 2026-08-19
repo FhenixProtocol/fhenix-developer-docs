@@ -7,15 +7,27 @@ The goal: docs that read like they were written by an engineer who understands t
 ## Voice
 
 - Write in second person. "You call `decryptForView`", not "the developer calls" or "one calls".
-- Use active voice. "The FHE Engine computes the result", not "the result is computed".
+- Use active voice. "The FHE Engine computes the result", not "the result is computed". Passive voice is acceptable when the actor is genuinely unknown or irrelevant ("The request is validated before it is queued"). It is not acceptable when it hides who has to do something.
 - Use present tense for how the system works. "The SDK sends the request", not "the SDK will send".
 - State facts plainly. If something is true, say it without softening. If something is uncertain or planned, say that explicitly. Never present a planned behavior as a current one.
 - Be direct about limits and trade-offs. "FHE operations add gas overhead" builds more trust than hiding it.
 - Explain the why in one short sentence when a rule would otherwise look arbitrary. Then stop.
 
+Calibrate the register to the tab you are writing in. The floor is the same everywhere: second person, active voice, no filler. Above that floor:
+
+| Tab | Register |
+|---|---|
+| Get Started | Warmest. Assume the reader has never used CoFHE. Spell out prerequisites and say what success looks like. |
+| Client SDK, FHE library | Default engineer-to-engineer. Task first, then the detail that makes the task work. |
+| Tutorials | Warm but strict about order. Every step states its outcome so a reader can tell when a step failed. |
+| Deep Dive | Densest. Assume the reader knows the system and wants the mechanism, not the motivation. |
+| Reference and API pages | Precision over warmth. No narration, no encouragement, complete parameter and error coverage. |
+
+Do not serve two audiences on one page. Beginner context slows an expert down on a reference page, and assumed knowledge loses a beginner in a tutorial. If a page needs both, split it.
+
 ## Sentences and paragraphs
 
-- One idea per sentence. If a sentence needs three commas, split it.
+- One idea per sentence. If a sentence needs three commas, split it. Aim for under 25 words; the linter flags anything over 30.
 - Lead with the point. The first sentence of a page, section, or paragraph carries its conclusion. Details follow.
 - Keep paragraphs to 2-4 sentences. Prefer a list when you are enumerating.
 - Cut every word that does not add meaning. "In order to" is "to". "It is important to note that" is nothing.
@@ -30,6 +42,8 @@ Write like an engineer explaining a system to another engineer: not an academic 
 - Keep marketing adjectives out of technical pages. "Seamless", "blazing", and "cutting-edge" describe nothing; describe the actual behavior instead.
 - Cut filler phrases that carry no information: "it is important to note that", "in order to".
 - Avoid calling things "simple" or "easy". If the reader is stuck on it, that word is an insult; if they are not, it is noise.
+- Match the reader's vocabulary. Use the word developers already search for, even when an internal name is more precise. Where the two differ, lead with their word and introduce ours once: "the encrypted value handle (`ctHash` in code)".
+- No idioms or colloquialisms. "Out of the box", "under the hood", and "a stone's throw" cost a non-native reader a lookup and buy nothing. Say what happens instead.
 
 ## Punctuation and symbols
 
@@ -37,7 +51,7 @@ Write like an engineer explaining a system to another engineer: not an academic 
 - No decorative Unicode: no arrows (→) in prose, no checkmarks or crosses (✅ ❌), no sparkle characters. In tables, use words: "Shipped", "In progress", "Planned".
 - Use straight quotes and apostrophes.
 - Use the Oxford comma.
-- Exclamation marks: at most one per tab, and preferably zero.
+- Exclamation marks: at most one per tab, and preferably zero. "Tab" here means a top-level tab in `docs.json` navigation: Get Started, Client SDK, FHE library, Tutorials, Deep Dive.
 
 ## Terminology
 
@@ -74,10 +88,35 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 
 - Frontmatter: a short `title` and a one-sentence `description` that says what the page covers.
 - Open with 1-3 sentences that tell the reader what this page explains and when they need it. No throat-clearing, no history lessons.
-- Headings are short noun phrases in sentence case: "How decryption works", not "How Does The Decryption Process Work?".
+- Headings are short, in sentence case, and phrased as the question the reader is asking: "How decryption works", not "Decryption process overview" and not "How Does The Decryption Process Work?".
+- Never write a manual `#` heading in the body. Mintlify renders the page H1 from the frontmatter `title`. Body headings start at `##`.
+- Do not skip heading levels. `##` to `###`, never `##` to `####`.
 - Order sections by what the reader needs first: what it is, how it works, how to use it, edge cases, reference.
 - Use Mintlify components with intent: `<Note>` for things easy to miss, `<Warning>` for things that break, `<Tip>` for optional improvements, `<Steps>` for real sequences. A page full of callouts has none.
 - Link the first mention of another concept to its page. Do not re-link the same target repeatedly in one page.
+
+## Links, images, and components
+
+- Internal links use root-relative paths: `/fhe-library/core-concepts/access-control`, not `../core-concepts/access-control` and not the full `https://cofhe-docs.fhenix.zone/...` URL. Relative paths break when a page moves; absolute URLs break preview deployments.
+- Link text describes the destination. "See [access control](/fhe-library/core-concepts/access-control)", never "click [here](/...)" or a bare URL.
+- Every image is wrapped in `<Frame>` and carries alt text that says what the image shows, not what it is called. "Sealed output flowing from the FHE Engine to the client", not "diagram".
+- Pick the component that matches the content, and use each one for one job:
+
+| Component | Use for |
+|---|---|
+| `<Note>` | Something easy to miss |
+| `<Warning>` | Something that breaks, including breaking changes |
+| `<Tip>` | An optional improvement |
+| `<Info>` | Neutral context |
+| `<Check>` | Confirming a step worked |
+| `<Steps>` | A real sequence, where order matters |
+| `<Tabs>` | The same task on different toolchains, such as Hardhat and Foundry |
+| `<CodeGroup>` | The same operation in more than one language |
+| `<Accordion>` | Detail most readers can skip |
+| `<Card>`, `<CardGroup>` | Entry points to other pages |
+| `<ParamField>`, `<ResponseField>`, `<Expandable>` | API reference parameters, responses, and nested fields |
+
+A page full of callouts has none.
 
 ## Code samples
 
@@ -85,6 +124,8 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 - Show imports and setup once per page, then keep later snippets focused.
 - Comments in samples explain why, not what. No numbered "step 1, step 2" comments; the surrounding text does that.
 - Use realistic names (`counter`, `balance`, `vote`), not `foo` and `bar`.
+- Every code block carries a language tag, and a filename when the reader needs to know where the code goes: ```solidity Counter.sol.
+- Use realistic values, not placeholders, and never a real key, address, or endpoint that belongs to someone. Document the error path where a reader will hit one.
 
 ## Diagrams
 
@@ -93,13 +134,35 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 - Actor names in diagrams use the canonical terminology above and must match the page text exactly.
 - A diagram shows one flow. If it needs a legend to be understood, split it.
 
+## Enforcement
+
+Most of this guide is mechanical, so two linters enforce it instead of a reviewer.
+
+- Prose: [Vale](https://vale.sh), with our rules in `styles/Fhenix/` and configuration in `.vale.ini`. It catches em dashes, decorative Unicode, filler phrases, marketing adjectives, "simple" and "easy", idioms, vague link text, non-canonical terminology, Title Case headings, and overlong sentences.
+- Structure: `scripts/lint-docs.py`, which reads what Vale cannot see. It catches missing frontmatter, manual H1 headings, skipped heading levels, code blocks with no language tag, relative or absolute internal links, and images with no alt text.
+
+Run both on what you changed, before you open a pull request:
+
+```bash
+brew install vale
+FILES=$(git diff --name-only --diff-filter=d origin/master...HEAD -- '*.mdx')
+python3 scripts/lint-docs.py $FILES
+vale $FILES
+```
+
+The `Docs style` GitHub Action runs both on the `.mdx` files a pull request touches. Errors block the merge, warnings do not. Pages written before the linters existed still contain violations, so the action ignores files your branch did not touch. Fix a legacy page when you are already editing it, not in a sweep. To see the whole backlog, run the action manually with `scope: all`.
+
+Neither linter can judge whether a claim is true, whether a sample runs, or whether a sentence earns its place. That is what review is for.
+
+`AGENTS.md` points AI assistants at this guide. Update it when a rule here changes, or agent-written pages will drift from the guide within a release.
+
 ## Review checklist
 
-Before a page ships, scan it for:
+Before a page ships, scan it for what the linter cannot see:
 
 1. Any claim you could not defend with a line of code or a config entry.
-2. Em dashes, decorative Unicode, and words from the avoid list.
-3. Future behavior described in present tense.
-4. A code sample that was not actually run or compiled.
-5. Internal names (hosts, projects, environments, flags).
+2. Future behavior described in present tense.
+3. A code sample that was not actually run or compiled.
+4. Internal names (hosts, projects, environments, flags).
+5. A heading that labels a topic instead of answering the reader's question.
 6. Sentences that make you read them twice. Rewrite those first.
