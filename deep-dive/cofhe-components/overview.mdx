@@ -1,55 +1,79 @@
 ---
 title: "CoFHE Architecture Overview"
-description: "Comprehensive overview of the CoFHE architecture, components, and data flows for privacy-preserving blockchain computations"
+description: "How CoFHE's onchain contracts and offchain services fit together to run FHE computations for any EVM chain"
 ---
 
-# CoFHE Architecture
+CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts compute on encrypted data. Contracts request operations through onchain calls; a set of offchain services executes them and commits to the results. Data stays encrypted through the entire lifecycle, and every result can be verified against an onchain commitment.
 
-<Frame>
-<img src="/images/Architecture.svg" alt="CoFHE Architecture Diagram" />
-</Frame>
+```mermaid
+flowchart LR
+    subgraph App["Application"]
+        SDK["Client SDK"]
+    end
 
-*Click on the image to view in full size*
+    subgraph Host["Host chain"]
+        FHEC["Your contract + FHE.sol"]
+        TM["TaskManager + ACL"]
+        PS["PlaintextsStorage"]
+    end
 
-## System Overview
+    subgraph CoFHE["CoFHE services (offchain)"]
+        ZK["ZK Verifier"]
+        SL["Slim Listener"]
+        FheOS["FheOS Server"]
+        Engine["FHE Engine"]
+        CTS["Ciphertext Server"]
+        BP["Blockchain Poster"]
+        TEE["Teecryptor (TEE)"]
+    end
 
-CoFHE (Co-processor for Fully Homomorphic Encryption) is designed as a modular, layered architecture that enables privacy-preserving computations on blockchain networks. The system combines on-chain smart contracts with off-chain processing capabilities to deliver secure, efficient fully homomorphic encryption operations.
+    subgraph Registry["Registry chain"]
+        CR["CommitmentRegistry"]
+    end
 
-### Key Components
+    SDK -- "encrypt input + ZK proof" --> ZK
+    ZK -- "store ciphertext" --> CTS
+    FHEC --> TM
+    TM -- "task events" --> SL
+    SL --> FheOS
+    FheOS --> Engine
+    Engine -- "result commitments" --> BP
+    BP --> CR
+    SDK -- "decrypt / sealoutput" --> TEE
+    TEE -- "ACL check" --> TM
+    TEE -- "fetch ciphertext" --> CTS
+    TEE -- "verify commitment" --> CR
+    SDK -- "publish signed result" --> TM
+    TM --> PS
+```
 
-#### User-Facing Utilities
+## The onchain contracts
 
-- **Client SDK** (`@cofhe/sdk`): A TypeScript library that provides client-side functionality for encrypting inputs, managing permits, and decrypting outputs. Serves as the primary interface between applications and the CoFHE ecosystem.
+- **FHE.sol**: the Solidity library your contract imports. It exposes arithmetic, comparison, and logical operations on encrypted values, plus access control (`allow`, `allowGlobal`) and decrypt-result verification.
+- **[TaskManager](/deep-dive/cofhe-components/task-manager)**: the gateway for all FHE operation requests. It validates requests, emits task events for the offchain services, and manages permissions through the [ACL](/deep-dive/cofhe-components/acl).
+- **[PlaintextsStorage](/deep-dive/cofhe-components/plaintext-storage)**: stores decrypted results after they are published onchain with a verified Teecryptor signature.
+- **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)**: lives on a dedicated registry chain and records a hash commitment for every ciphertext the coprocessor produces or verifies. Teecryptor checks it before decrypting anything.
 
-- **FHE.sol**: The Solidity library that enables smart contracts to perform operations on encrypted data. It exposes a comprehensive API for arithmetic, comparison, and logical operations on encrypted values.
+## The offchain services
 
-#### Internal Utilities
+- **[Client SDK](/client-sdk/introduction/overview)** (`@cofhe/sdk`): the TypeScript library applications use to encrypt inputs, manage [permits](/client-sdk/guides/permits), and decrypt outputs.
+- **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)**: verifies the zero-knowledge proof attached to every encrypted input, signs it, and stores the ciphertext bytes.
+- **[Slim Listener](/deep-dive/cofhe-components/slim-listener)**: watches TaskManager events on each host chain and forwards them into the coprocessor's queues.
+- **[FheOS Server](/deep-dive/cofhe-components/fheos-server)**: ingests task events, verifies inputs, creates result placeholders, and routes work to the FHE Engine. It does not execute FHE operations itself.
+- **[FHE Engine](/deep-dive/cofhe-components/fheos-server)**: executes every FHE operation on encrypted data, persists the resulting ciphertexts, and emits a commitment for each result.
+- **Ciphertext Server**: stores and serves ciphertext bytes to the other services.
+- **Blockchain Poster**: batches result commitments and posts them to the CommitmentRegistry.
+- **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption service. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
 
-- **Task Manager**: Acts as the gateway for all FHE operation requests, validating requests and managing permissions through the Access Control Layer (ACL).
+Services communicate through message queues rather than direct calls, so each stage can retry and scale independently.
 
-- **Slim Listener**: Monitors blockchain events and forwards FHE operation requests to the off-chain execution environment.
+## Data flows
 
-- **Result Processor**: Handles FHE operation results from the computation layer and publishes them back to the blockchain.
+1. **[Encryption request](/deep-dive/data-flows/encryption-request-flow)**: an input is encrypted client-side and proven valid with a zero-knowledge proof before it enters the chain.
+2. **[FHE operation flow](/deep-dive/data-flows/fhe-operation-request-flow)**: a contract requests a computation; the coprocessor executes it and commits to the result.
+3. **[Decryption request](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor for a signed plaintext that can be published onchain.
+4. **[Offchain decryption](/deep-dive/data-flows/off-chain-decryption-flow)**: the SDK receives the plaintext sealed to a permit, for reads that never touch the chain.
 
-- **FHEOS Server**: Executes the actual FHE operations on encrypted data and maintains the encrypted state.
+## What comes next
 
-- **Threshold Network**: A distributed system that securely handles decryption requests through multi-party computation, ensuring no single entity can access the decryption key.
-
-- **Ciphertext Registry**: Per-host-chain registry that maintains references to encrypted values during a chain's lifecycle.
-
-- **Commitment Registry**: Single-chain (Arbitrum One) registry where the coprocessor records `(version, handle) → commitHash` entries for every FHE computation result. The Threshold Network reads it to verify ciphertext integrity before issuing a decryption — distinct from the host-chain Ciphertext Registry above.
-
-### Data Flows
-
-CoFHE implements several critical data flows that maintain privacy throughout the computation lifecycle:
-
-1. **Encryption Request**: Manages the secure encryption of input data via ZK proofs before it enters the blockchain.
-
-2. **FHE Operation Flow**: Handles the process of requesting and executing computations on encrypted data.
-
-3. **Decryption Request**: Processes requests to decrypt data using the Threshold Network.
-
-4. **Decrypt/Seal Output**: Enables users to access encrypted results while maintaining privacy.
-
-This architecture ensures that data remains encrypted throughout its entire lifecycle while still enabling complex computations, providing a foundation for privacy-preserving blockchain applications.
-
+Decryption is currently performed by Teecryptor inside a hardware-attested TEE. A multi-party [Threshold Network](/deep-dive/research/future-plans) is the planned successor.
