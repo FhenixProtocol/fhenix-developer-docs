@@ -1,0 +1,62 @@
+name: Docs style
+
+on:
+  pull_request:
+    paths:
+      - '**/*.mdx'
+      - '.vale.ini'
+      - 'styles/**'
+      - 'scripts/lint-docs.py'
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Files to lint'
+        type: choice
+        default: changed
+        options: [changed, all]
+
+env:
+  VALE_VERSION: 3.9.6
+
+jobs:
+  style:
+    name: STYLE.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Pages written before the linter existed still contain violations, so a
+      # pull request is judged only on the files it touches. Run the workflow
+      # manually with scope=all to see the full backlog.
+      - name: Collect files to lint
+        id: files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ inputs.scope }}" != "all" ]; then
+            git diff --name-only --diff-filter=d \
+              "origin/${{ github.base_ref }}...HEAD" -- '*.mdx' > files.txt
+          else
+            git ls-files '*.mdx' > files.txt
+          fi
+          count=$(wc -l < files.txt | tr -d ' ')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Linting $count file(s):"
+          cat files.txt
+
+      - name: Install Vale
+        if: steps.files.outputs.count != '0'
+        run: |
+          curl -sSL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+            | tar -xz -C /usr/local/bin vale
+          vale --version
+
+      # Frontmatter, heading hierarchy, code fences, link paths, alt text.
+      - name: Structure
+        if: steps.files.outputs.count != '0'
+        run: xargs -a files.txt python3 scripts/lint-docs.py
+
+      # Voice, terminology, punctuation. Errors fail the job, warnings do not.
+      - name: Prose
+        if: always() && steps.files.outputs.count != '0'
+        run: xargs -a files.txt vale

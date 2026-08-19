@@ -1,0 +1,17 @@
+CoFHE
+FheOS
+Teecryptor
+FHE
+FHEnix
+Fhenix
+ciphertext
+ciphertexts
+plaintext
+plaintexts
+onchain
+offchain
+testnet
+mainnet
+Solidity
+Hardhat
+Foundry

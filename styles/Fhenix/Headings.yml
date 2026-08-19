@@ -1,0 +1,36 @@
+extends: capitalization
+message: "Headings use sentence case: '%s'."
+link: https://github.com/FhenixProtocol/fhenix-developer-docs/blob/main/STYLE.md#page-structure
+level: warning
+scope: heading
+match: $sentence
+indicators:
+  - ':'
+exceptions:
+  - CoFHE
+  - FHE
+  - FheOS
+  - Teecryptor
+  - SDK
+  - API
+  - ACL
+  - TEE
+  - ZK
+  - MPC
+  - EVM
+  - ERC
+  - ERC20
+  - FHERC20
+  - Solidity
+  - Hardhat
+  - Foundry
+  - Fhenix
+  - TaskManager
+  - CommitmentRegistry
+  - Threshold Network
+  - JavaScript
+  - TypeScript
+  - React
+  - Node
+  - GitHub
+  - I

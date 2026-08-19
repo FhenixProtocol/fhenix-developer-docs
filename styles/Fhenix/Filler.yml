@@ -1,0 +1,15 @@
+extends: existence
+message: "Filler phrase: '%s'. Cut it or say the thing directly."
+link: https://github.com/FhenixProtocol/fhenix-developer-docs/blob/main/STYLE.md#words
+level: error
+ignorecase: true
+tokens:
+  - 'in order to'
+  - 'it is important to note that'
+  - "it's important to note that"
+  - 'it is worth noting that'
+  - "it's worth noting that"
+  - 'please note that'
+  - 'needless to say'
+  - 'as you can see'
+  - 'basically'

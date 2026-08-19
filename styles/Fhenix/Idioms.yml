@@ -1,0 +1,14 @@
+extends: existence
+message: "Idiom: '%s'. Say what happens instead. Idioms cost non-native readers a lookup."
+link: https://github.com/FhenixProtocol/fhenix-developer-docs/blob/main/STYLE.md#words
+level: warning
+ignorecase: true
+tokens:
+  - 'out of the box'
+  - 'under the hood'
+  - 'a piece of cake'
+  - 'in a nutshell'
+  - 'the sky is the limit'
+  - 'hit the ground running'
+  - 'low-hanging fruit'
+  - 'bread and butter'

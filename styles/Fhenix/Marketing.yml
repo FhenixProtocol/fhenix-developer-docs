@@ -1,0 +1,18 @@
+extends: existence
+message: "Marketing adjective: '%s'. Describe the actual behavior instead."
+link: https://github.com/FhenixProtocol/fhenix-developer-docs/blob/main/STYLE.md#words
+level: error
+ignorecase: true
+tokens:
+  - 'seamless(ly)?'
+  - 'blazing(ly)?'
+  - 'cutting-edge'
+  - 'state-of-the-art'
+  - 'best-in-class'
+  - 'game-chang(ing|er)'
+  - 'revolutionary'
+  - 'effortless(ly)?'
+  - 'lightning[- ]fast'
+  - 'world-class'
+  - 'robust'
+  - 'powerful'
