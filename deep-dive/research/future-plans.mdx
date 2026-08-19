@@ -3,44 +3,43 @@ title: Future Plans
 sidebar_position: 9
 description: "Roadmap for CoFHE decentralization, upcoming features, and planned improvements"
 ---
-Future Plans
 
-## Road to Decentralization
+## Road to decentralization
 
-Integrating FHE into a blockchain-runtime is a hard and complex task. Our engineering philosophy is _Ship Fast_, and we believe that to build the best possible product we need to meet real users early. Similar to the approach described in [Vitalik's "training wheels" post](https://ethereum-magicians.org/t/proposed-milestones-for-rollups-taking-off-training-wheels/11571) (in the context of rollups), we too are relying on "training wheels" releasing CoFHE to achieve this goal.
+Integrating FHE into a blockchain runtime is a hard and complex task. Our engineering philosophy is to ship fast: to build the best possible product we need to meet real users early. Similar to the approach described in [Vitalik's "training wheels" post](https://ethereum-magicians.org/t/proposed-milestones-for-rollups-taking-off-training-wheels/11571) (in the context of rollups), CoFHE ships with training wheels of its own.
 
-Outlined here is a non-exhaustive list of trust-points, centralized components and compromises made to ship CoFHE to users as fast as possible, along with how we plan to address them in the future. This list will be updated as things progress.
+Outlined here is a non-exhaustive list of trust points, centralized components, and compromises made to ship CoFHE to users as fast as possible. Each row notes how we plan to address it, and the list will be updated as things progress.
 
-| Component | Compromise | Plan to solve | Timeline | Status |
-| ---------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------- | ------ |
-| Threshold Network (TN) | All parties are run by Fhenix | N/A | N/A | ❌ |
-| Threshold Network (TN) | Use of a Trusted Dealer for keys and random data generation | N/A | N/A | ❌ |
-| Threshold Network (TN) | Parties trust the Coordinator | N/A | N/A | ❌ |
-| Threshold Network (TN) | TN trusts CoFHE (tx-flow decryptions) | N/A | N/A | ❌ |
-| Threshold Network (TN) | Parties trust a Trusted Dealer | 1. Run TD in a TEE<br/>2. Public ceremony for share creation<br/>3. Eliminate TD | N/A | ❌ |
-| Threshold Network (TN) | Parties are not using unique random data within the protocol | Pull random data from the TD | N/A | ❌ |
-| Threshold Network (TN) | SealOutput reencryption performed in a centralized manner | N/A | N/A | ❌ |
-| ZK-Verifier (ZKV) | CoFHE trusts ZK-Verifier | Run ZKV in a TEE | N/A | ❌ |
-| CoFHE | Trust in CoFHE to perform correct FHE computations | External verification using AVS | N/A | ❌ |
-| CoFHE | User inputs stored in a centralized manner | Use a decentralized DA | N/A | ❌ |
-| All | Codebase is unaudited | Perform a security audit | N/A | ❌ |
-| All | Codebase is not fully open-source | Open-source codebase | N/A | ❌ |
+| Component | Compromise | Plan to solve | Status |
+| --- | --- | --- | --- |
+| Teecryptor | Decryption is served by a single TEE service operated by Fhenix | Replace with the Threshold Network (below) | Planned |
+| Teecryptor | Trust in the TEE hardware vendor and its attestation chain | Threshold decryption removes the hardware trust anchor | Planned |
+| Key custody | The FHE key is reconstructed inside one attested enclave at runtime | Threshold decryption, where no party ever holds the full key | Planned |
+| CoFHE | Trust in CoFHE to perform correct FHE computations | External verification | Planned |
+| CoFHE | User inputs stored in a centralized manner | Use a decentralized DA | Planned |
+| All | Codebase is unaudited | Perform a security audit | Planned |
+| All | Codebase is not fully open source | Open-source the codebase | Planned |
 
-## Upcoming Features
+One earlier training wheel has already been removed: the ZK Verifier now runs inside a hardware-attested TEE, with its signing key released only to the attested code image.
 
-In the spirit of transparency, here we describe the general feature-roadmap planned for CoFHE. This list will be updated as things progress.
+## The path to the Threshold Network
 
-| Feature | Type | Description | Timeline | Status |
-| ------------------------------ | ------------------- | -------------------------------------------------------------------------------- | -------- | ------ |
-| Integration SDK | DevX | SDK to easily integrate CoFHE-specific components into dApps | N/A | ❌ |
-| Additional external devtools | DevX | Remix, Alchemy SDK and more | N/A | ❌ |
-| RNG | DevX | Ability to generate secure randomness in contracts | N/A | ❌ |
-| Alternative runtimes | DevX | Support for additional runtimes other than EVM | N/A | ❌ |
-| FHE ops in view functions | DevX | Ability to execute FHE operations in view functions in contracts | N/A | ❌ |
-| GPU support | UX | Run FHE operations on a GPU backend, improving performance and overall latency | N/A | ❌ |
-| FPGA support | UX | Run FHE operations on an FPGA backend, improving performance and overall latency | N/A | ❌ |
-| T-out-of-N MPC protocol | Robustness | Improve robustness of the TN by not requiring all parties to be online | N/A | ❌ |
-| Support additional host-chains | DevX/UX | N/A | N/A | ❌ |
-| Key shares rotation | Robustness/Security | Ability to rotate the party shares in the TN | N/A | ❌ |
-| Key Rotation | Robustness/Security | Ability to rotate the key for the entire protocol | N/A | ❌ |
+The end state for decryption is a Threshold Network. Independent parties decrypt through multi-party computation, so no single party (and no single machine) ever holds the FHE key. It will replace [Teecryptor](/deep-dive/cofhe-components/teecryptor) and remove the trust points listed above in one move. Robustness goals for it include a t-out-of-n protocol (no requirement that every party stays online), party share rotation, and full protocol key rotation.
 
+See [Research in Fhenix](/deep-dive/research/research-in-fhenix) for the threshold decryption protocol behind this plan.
+
+## Upcoming features
+
+In the spirit of transparency, here is the general feature roadmap planned for CoFHE.
+
+| Feature | Type | Description | Status |
+| --- | --- | --- | --- |
+| RNG | DevX | Secure randomness in contracts (`FHE.random`) | Shipped |
+| Additional host chains | DevX/UX | Multiple EVM host chains (three run on the current testnet) | Shipped, more planned |
+| Hardhat and Foundry plugins | DevX | First-party tooling for the standard EVM dev stacks | Shipped |
+| React SDK | DevX | `@cofhe/react` hooks and components for dApp frontends | Shipped |
+| Additional external devtools | DevX | Remix, Alchemy SDK and more | Planned |
+| GPU support | UX | Run FHE operations on a GPU backend for lower latency | In progress |
+| FPGA support | UX | Run FHE operations on an FPGA backend | Planned |
+| FHE ops in view functions | DevX | Execute FHE operations in contract view functions | Planned |
+| Alternative runtimes | DevX | Support for runtimes other than the EVM | Planned |
