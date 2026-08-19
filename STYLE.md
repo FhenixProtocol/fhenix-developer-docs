@@ -19,6 +19,8 @@ The goal: docs that read like they were written by an engineer who understands t
 - Lead with the point. The first sentence of a page, section, or paragraph carries its conclusion. Details follow.
 - Keep paragraphs to 2-4 sentences. Prefer a list when you are enumerating.
 - Cut every word that does not add meaning. "In order to" is "to". "It is important to note that" is nothing.
+- Vary sentence length. A short sentence after a long one lands the point. A page of same-length sentences reads machine-made.
+- Anticipate the reader's next question and answer it where it arises, not three sections later. If a step commonly confuses people, say so and resolve it on the spot.
 
 ## Words
 
@@ -50,6 +52,8 @@ Marketing language belongs on the landing site, not in technical pages. One desc
 - Exclamation marks: at most one per tab, and preferably zero.
 
 ## Terminology
+
+Define a term at its first use on a page, in a short parenthetical or half sentence, even when a glossary page exists. Readers land on pages from search; no page gets to assume the reader arrived in order.
 
 One name per thing, used consistently. Canonical names:
 
