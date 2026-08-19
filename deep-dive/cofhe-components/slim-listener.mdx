@@ -1,12 +1,19 @@
 ---
 title: Slim Listener
-description: "Off-chain service that monitors blockchain events and forwards FHE operation requests to the computation layer"
+description: "Offchain service that watches TaskManager events on each host chain and relays them into the coprocessor's queues"
 ---
 
 | Aspect | Description |
 |--------|-------------|
-| **Type** | Off-chain event monitoring service |
-| **Function** | Listens to blockchain events and forwards FHE operation requests to the fheOS server |
-| **Responsibilities** | • Monitors events emitted by the Task Manager contract on the destination chain<br/>• Processes incoming requests and forwards them to the fheOS server<br/>• Ensures reliable delivery of operation requests to the computation layer |
+| **Type** | Offchain event relay service. |
+| **Function** | Watches TaskManager events on a host chain and publishes them to the coprocessor's queues. |
+| **Responsibilities** | • Monitors events emitted by the TaskManager contract on its host chain<br/>• Relays FHE operation events for execution<br/>• Relays verified-input events for commitment posting |
 
-The Slim Listener acts as the bridge between on-chain events and the off-chain computation layer, ensuring that all FHE operation requests are captured and forwarded for processing.
+The Slim Listener is the bridge between onchain events and the offchain services. One instance runs per host chain per flow, and each instance does one narrow job:
+
+| Flow | Watches | Publishes to | Purpose |
+|------|---------|--------------|---------|
+| FHE operations | `TaskCreated` | `blockchain-events` queue | Feeds the [FheOS Server](/deep-dive/cofhe-components/fheos-server) with work to validate and route. |
+| Verified inputs | `InputVerified` | `commitment-requests` queue | Anchors a commitment for every verified input, so [Teecryptor](/deep-dive/cofhe-components/teecryptor) can later decrypt it. |
+
+Delivery is reliable by construction. The listener publishes with confirms and tracks the last processed block, so a crash or a missed range is re-scanned rather than skipped.
