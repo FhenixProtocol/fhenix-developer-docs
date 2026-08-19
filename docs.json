@@ -244,6 +244,7 @@
               "deep-dive/cofhe-components/commitment-registry",
               "deep-dive/cofhe-components/zk-verifier",
               "deep-dive/cofhe-components/fheos-server",
+              "deep-dive/cofhe-components/fhe-engine",
               "deep-dive/cofhe-components/threshold-network"
             ]
           },

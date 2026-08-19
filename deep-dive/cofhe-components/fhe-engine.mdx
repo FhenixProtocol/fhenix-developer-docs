@@ -1,0 +1,24 @@
+---
+title: FHE Engine
+description: "Offchain execution service that runs every FHE operation and commits to its results"
+---
+
+| Aspect | Description |
+|---------|-------------|
+| **Type** | Offchain execution service. |
+| **Function** | Executes every FHE operation and persists the encrypted results. |
+| **Responsibilities** | • Consumes validated work from `engine-requests`<br/>• Executes the operation with the TFHE library<br/>• Stores each result ciphertext by handle<br/>• Publishes a hash commitment for every result |
+
+The FHE Engine is where computation actually happens. It consumes the work the [FheOS Server](/deep-dive/cofhe-components/fheos-server) validated and runs the requested operation (arithmetic, comparison, select, cast, random) on the encrypted operands. The result ciphertext is stored under the handle the TaskManager issued, and operations that were waiting on that handle are released as soon as it lands.
+
+FHE operations are computationally heavy, so the engine bounds how many run concurrently and scales horizontally behind the queue. Backpressure lives in the queue, not in dropped work.
+
+## Result commitments
+
+For every stored result, the engine publishes a commitment (the keccak256 hash of the stored ciphertext bytes) to the `commitment-requests` queue. The Blockchain Poster batches these and posts them to the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry). This is the anchor [Teecryptor](/deep-dive/cofhe-components/teecryptor) verifies before decrypting anything: only bytes that hash to a registered commitment ever reach the decryption key.
+
+## Key material
+
+The engine computes with the FHE public key material only. Production builds load no decryption key, so a compromised engine can corrupt results (which commitment verification would catch) but cannot read them. Decryption capability exists solely inside [Teecryptor](/deep-dive/cofhe-components/teecryptor)'s attested enclave.
+
+The engine also serves the public encryption parameters that clients need: the network public key and the CRS (common reference string) used to build encryption proofs.
