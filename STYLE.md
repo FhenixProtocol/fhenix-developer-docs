@@ -145,7 +145,7 @@ Run both on what you changed, before you open a pull request:
 
 ```bash
 brew install vale
-FILES=$(git diff --name-only --diff-filter=d origin/master...HEAD -- '*.mdx')
+FILES=$(git diff --name-only --diff-filter=d origin/main...HEAD -- '*.mdx')
 python3 scripts/lint-docs.py $FILES
 vale $FILES
 ```

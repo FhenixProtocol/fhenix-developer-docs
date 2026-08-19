@@ -27,7 +27,7 @@ STYLE.md is binding for all content. Read it before writing or editing any page.
 Two linters enforce the mechanical half of STYLE.md. Run both on what you changed before opening a pull request:
 
 ```bash
-FILES=$(git diff --name-only --diff-filter=d origin/master...HEAD -- '*.mdx')
+FILES=$(git diff --name-only --diff-filter=d origin/main...HEAD -- '*.mdx')
 python3 scripts/lint-docs.py $FILES
 vale $FILES
 ```
