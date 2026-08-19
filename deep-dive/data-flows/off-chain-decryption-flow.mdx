@@ -1,33 +1,33 @@
 ---
-title: Off-Chain Decryption Flow
+title: Offchain Decryption Flow
 sidebar_position: 4
-description: "Complete flow of off-chain decryption using decryptForTx and decryptForView"
+description: "How to decrypt CoFHE values with decryptForTx and decryptForView, from ACL grant to plaintext"
 ---
 
-# Off-Chain Decryption Flow
+Decryption in CoFHE is SDK-driven. Contracts cannot request it onchain; instead, your application asks [Teecryptor](/deep-dive/cofhe-components/teecryptor) to decrypt a handle it is allowed to read. There are two methods:
 
-## Overview
+- **`decryptForTx`**: returns the plaintext and a Teecryptor signature. Use it when the decrypted value needs to go onchain, via `FHE.publishDecryptResult` or the `verifyDecryptResult` family.
+- **`decryptForView`**: returns the plaintext sealed to your permit. Use it for UI display or offchain reads where no onchain proof is needed.
 
-This document lays out the complete flow of off-chain decryption requests. There are two methods for decrypting encrypted data off-chain:
+<Note>
+A freshly computed handle may not be decryptable immediately: its ciphertext and commitment land shortly after the transaction. Until then Teecryptor answers with a retryable status and the SDK re-submits automatically.
+</Note>
 
-- **`decryptForTx`** — Returns the plaintext value and a Threshold Network signature. Used when the decrypted value needs to be submitted on-chain (e.g., via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`).
-- **`decryptForView`** — Returns only the plaintext value. Used for UI display or off-chain reads where no on-chain proof is needed.
-
-## Key Components
+## Key components
 
 | Component | Description |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| **CtHash** | A `bytes32` handle representing an encrypted value. Fetched on-chain. |
-| **SDK Client** | Client library handling `permits` and the `decryptForTx` / `decryptForView` operations. |
-| **Threshold Network** | Decentralized decryption network that handles the requests and produces signatures. |
-| **ACL** | On-chain **A**ccess **C**ontrol **L**ist responsible for tracking **CtHash** access. |
+| --- | --- |
+| **CtHash** | A `bytes32` handle representing an encrypted value, read from the chain. |
+| **SDK client** | Client library handling [permits](/client-sdk/guides/permits) and the `decryptForTx` / `decryptForView` operations. |
+| **Teecryptor** | Offchain decryption service running in an attested TEE. Verifies access onchain and returns signed or sealed results. |
+| **ACL** | Onchain access control list that tracks who may decrypt each handle. |
 
-## decryptForTx Flow
+## The `decryptForTx` flow
 
-Use `decryptForTx` when you need to submit the decrypted value on-chain with a proof.
+Use `decryptForTx` when you need to submit the decrypted value onchain with a proof.
 
 <Steps>
-<Step title="Fetching the CtHash">
+<Step title="Fetch the CtHash">
 Solidity contract:
 
 ```solidity
@@ -53,7 +53,7 @@ All encrypted types (`euint8`, `euint16`, `euint32`, `euint64`, `euint128`, `ebo
 </Note>
 </Step>
 
-<Step title="Request Decryption">
+<Step title="Request decryption">
 Call `decryptForTx` on the SDK client. Since `FHE.allowPublic` was used, no permit is needed:
 
 ```typescript
@@ -73,17 +73,17 @@ const result = await client
 ```
 </Step>
 
-<Step title="Threshold Network Verification">
+<Step title="Teecryptor verifies and decrypts">
 Behind the scenes:
 
-1. The SDK sends the decryption request to the Threshold Network
-2. The Threshold Network verifies on-chain that the requester has access to the `CtHash` via the ACL
-3. The Threshold Network performs secure decryption
-4. The Threshold Network signs the plaintext result and returns both the plaintext and the signature
+1. The SDK sends the request to Teecryptor with the handle, the host chain id, and the permit if one was attached.
+2. Teecryptor checks the onchain ACL. With a permit it calls `isAllowedWithPermission` for the permit's issuer; without one, the handle must pass `isPubliclyAllowed`.
+3. Teecryptor verifies the stored ciphertext against its onchain commitment and decrypts it inside the enclave.
+4. Teecryptor signs the plaintext with its onchain-registered key and returns both the plaintext and the signature.
 </Step>
 
-<Step title="Submit On-Chain with Proof">
-The SDK returns an object containing the decrypted value and signature. Submit these on-chain:
+<Step title="Submit onchain with proof">
+The SDK returns an object containing the decrypted value and signature. Submit these onchain:
 
 ```typescript
 // result contains: { ctHash, decryptedValue, signature }
@@ -94,7 +94,7 @@ await example.revealCount(
 );
 ```
 
-The on-chain function verifies the signature using `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`:
+The onchain function verifies the signature using `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`:
 
 ```solidity
 function revealCount(uint32 _decrypted, bytes memory _signature) external {
@@ -104,14 +104,12 @@ function revealCount(uint32 _decrypted, bytes memory _signature) external {
 </Step>
 </Steps>
 
----
+## The `decryptForView` flow
 
-## decryptForView Flow
-
-Use `decryptForView` when you only need to display the value in the UI — no on-chain transaction is needed.
+Use `decryptForView` when you only need to read the value offchain, for example to display it in a UI. No onchain transaction is involved.
 
 <Steps>
-<Step title="Fetching the CtHash">
+<Step title="Fetch the CtHash">
 The contract must have granted access to the user via `FHE.allow` or `FHE.allowSender`:
 
 ```solidity
@@ -135,37 +133,61 @@ const ctHash = await example.getBalance();
 ```
 </Step>
 
-<Step title="Request Decryption">
-Call `decryptForView` with a permit (required since this is user-specific data):
+<Step title="Request decryption">
+Call `decryptForView` with a permit and the value's FHE type. The type tells the SDK how to decode the result:
 
 ```typescript
-const result = await client
-  .decryptForView(ctHash)
+const balance = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
   .withPermit()
   .execute();
 
-console.log(`Balance: ${result.decryptedValue}`);
+console.log(`Balance: ${balance}`);
 ```
+
+`execute()` returns the decoded plaintext directly.
 </Step>
 
-<Step title="Threshold Network Verification">
+<Step title="Teecryptor verifies, decrypts, and seals">
 Behind the scenes:
 
-1. The SDK sends the decryption request with the user's permit to the Threshold Network
-2. The Threshold Network verifies the permit's signature and checks on-chain that `permit.issuer` has access to the `CtHash` via the ACL
-3. The Threshold Network performs secure decryption
-4. The plaintext value is returned to the SDK (no signature needed since this is view-only)
+1. The SDK sends the request with the user's permit.
+2. Teecryptor verifies the permit's EIP-712 signature onchain and checks that the permit's issuer has access to the handle.
+3. Teecryptor verifies the ciphertext commitment and decrypts inside the enclave, exactly as in the `decryptForTx` path.
+4. Instead of a bare plaintext, Teecryptor returns the result encrypted to the permit's sealing key. The SDK unseals it locally, so the plaintext is never exposed in transit.
 </Step>
 </Steps>
 
----
+## Flow diagram
+
+```mermaid
+sequenceDiagram
+    participant App as Your app
+    participant SDK as Client SDK
+    participant Teecryptor
+    participant Chain as Host chain
+
+    App->>SDK: decryptForTx / decryptForView (ctHash)
+    SDK->>Teecryptor: decrypt or sealoutput request (handle, chain id, permit?)
+    Teecryptor->>Chain: ACL check (isAllowedWithPermission / isPubliclyAllowed)
+    Teecryptor->>Teecryptor: verify commitment, decrypt in enclave
+    alt decryptForTx
+        Teecryptor-->>SDK: plaintext + signature
+        SDK-->>App: { ctHash, decryptedValue, signature }
+        App->>Chain: FHE.publishDecryptResult(ctHash, result, signature)
+    else decryptForView
+        Teecryptor-->>SDK: result sealed to the permit's sealing key
+        SDK->>SDK: unseal locally
+        SDK-->>App: plaintext
+    end
+```
 
 ## Comparison
 
 | | `decryptForTx` | `decryptForView` |
 |---|---|---|
-| **Returns** | Plaintext + Threshold Network signature | Plaintext only |
-| **Use case** | Submit decrypted value on-chain | Display in UI |
-| **Requires permit** | Only if not `allowPublic` | Yes |
-| **On-chain verification** | `publishDecryptResult` or `verifyDecryptResult` | Not applicable |
-| **Gas cost** | Yes (on-chain tx needed) | None |
+| **Returns** | Plaintext + Teecryptor signature | Plaintext (sealed in transit, unsealed by the SDK) |
+| **Use case** | Submit the decrypted value onchain | Display in a UI, offchain reads |
+| **Requires permit** | Only if the handle is not publicly decryptable | Yes |
+| **Onchain verification** | `publishDecryptResult` or `verifyDecryptResult` | Not applicable |
+| **Gas cost** | None for the decryption itself; gas only for the publish transaction | None |
