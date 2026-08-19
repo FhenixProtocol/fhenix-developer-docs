@@ -1,0 +1,21 @@
+extends: substitution
+message: "Use '%s', not '%s'."
+link: https://github.com/FhenixProtocol/fhenix-developer-docs/blob/main/STYLE.md#terminology
+level: error
+ignorecase: false
+swap:
+  '\bCOFHE\b': CoFHE
+  '\bCofhe\b': CoFHE
+  '\bCoFhe\b': CoFHE
+  '\bFHEOS\b': FheOS
+  '\bFheos\b': FheOS
+  '\bTeeCryptor\b': Teecryptor
+  '\bTEECryptor\b': Teecryptor
+  '(?i)\bon-chain\b': onchain
+  '(?i)\boff-chain\b': offchain
+  '(?i)\bcipher text\b': ciphertext
+  '(?i)\bplain text\b': plaintext
+  '(?i)\btest ?net\b(?<!testnet)': testnet
+  '\bTestnet\b': testnet
+  '\bMainnet\b': mainnet
+  '\bsmart-contract\b': smart contract
