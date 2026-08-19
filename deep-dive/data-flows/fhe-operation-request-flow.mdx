@@ -15,7 +15,7 @@ This page follows a single FHE operation from the contract call that requests it
 | **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Validates requests, checks the [ACL](/deep-dive/cofhe-components/acl), and emits task events |
 | **[Slim Listener](/deep-dive/cofhe-components/slim-listener)** | Watches TaskManager events on each host chain and enqueues them |
 | **[FheOS Server](/deep-dive/cofhe-components/fheos-server)** | Ingests task events, validates them, and routes work to the FHE Engine |
-| **[FHE Engine](/deep-dive/cofhe-components/fheos-server)** | Executes the FHE operation and stores the result ciphertext |
+| **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)** | Executes the FHE operation and stores the result ciphertext |
 | **Blockchain Poster** | Batches result commitments and posts them onchain |
 | **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Records a hash commitment for every result ciphertext |
 
