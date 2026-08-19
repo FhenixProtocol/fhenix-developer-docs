@@ -1,20 +1,18 @@
 ---
 title: CommitmentRegistry
-description: "Registry-chain contract that records FHE computation commitments. The Threshold Network reads it to verify ciphertext integrity before decrypting."
+description: "Registry-chain contract that records FHE computation commitments. Teecryptor verifies ciphertext integrity against it before decrypting."
 ---
 
 | Aspect | Description |
 |--------|-------------|
-| **Type** | UUPS-upgradeable Solidity contract deployed on a **registry chain** (Arbitrum One in production). Distinct from the per-host-chain [CTRegistry](/deep-dive/cofhe-components/ct-registry). |
+| **Type** | UUPS-upgradeable Solidity contract deployed on a dedicated **registry chain**. |
 | **Function** | Records `(version, handle) → commitHash` entries for every FHE operation result that the coprocessor produces. |
-| **Responsibilities** | • Provide an authoritative source of ciphertext integrity that the Threshold Network checks **before** issuing a decryption.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so off-chain tooling can audit what has been posted. |
-| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. Initialized with `(initialOwner, initialPoster)`. Owner is `Ownable2Step` — transfers require explicit accept. |
+| **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
+| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. Initialized with `(initialOwner, initialPoster)`. Owner is `Ownable2Step`; transfers require an explicit accept. |
 
 ## Why a separate registry chain?
 
-The Threshold Network needs to confirm that the ciphertext it's about to decrypt is **exactly** the one the FHE Engine produced (not a tampered or stale handle). The natural place to anchor that proof is on-chain, but doing it on every host chain would force the network to maintain N RPC paths and pay gas on N chains for every FHE operation. Instead, the coprocessor posts commitments to a **single registry chain** (currently Arbitrum One), and the Threshold Network only watches that one.
-
-This is why the host-chain [CTRegistry](/deep-dive/cofhe-components/ct-registry) (which maps temporary → final ciphertext hashes inside one chain's lifecycle) and `CommitmentRegistry` (which records the canonical commitment for every produced ciphertext, cross-chain) are deliberately distinct components.
+[Teecryptor](/deep-dive/cofhe-components/teecryptor) needs to confirm that the ciphertext it is about to decrypt is **exactly** the one the FHE Engine produced, not a tampered or stale handle. The natural place to anchor that proof is onchain, but anchoring on every host chain would mean paying gas on N chains for every FHE operation. Instead, the coprocessor posts commitments to a **single registry chain**, and the decryption path watches only that one.
 
 ## Storage shape
 
@@ -29,21 +27,22 @@ mapping(address => bool)                                                  poster
 
 ## Version lifecycle
 
-`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change (see [the FHE Engine `COMMITMENT_VERSION` notes](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05)). Every version moves through a small state machine:
+`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change, currently the ASCII tag `"2"` (see [the FHE Engine `COMMITMENT_VERSION` notes](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05)). Every version moves through a small state machine:
 
-```
-Unset ─┐
-       ▼
-     Active ─┬──────► Deprecated ──► Revoked
-             └─────────────────────► Revoked
+```mermaid
+stateDiagram-v2
+    Unset --> Active
+    Active --> Deprecated
+    Active --> Revoked
+    Deprecated --> Revoked
 ```
 
 | State | Meaning | Allowed transitions |
 |-------|---------|---------------------|
-| `Unset` | Default. No commitments have been posted under this version. | → `Active` |
-| `Active` | Posters may write commitments under this version. The Threshold Network honors lookups. | → `Deprecated`, → `Revoked` |
-| `Deprecated` | New commitments rejected. Existing lookups still resolve. Used during a parameter rollover. | → `Revoked` |
-| `Revoked` | Hard kill. No further transitions; the version is dead. | — (terminal) |
+| `Unset` | Default. No commitments have been posted under this version. | to `Active` |
+| `Active` | Posters may write commitments under this version. Teecryptor honors lookups. | to `Deprecated` or `Revoked` |
+| `Deprecated` | New commitments rejected. Existing lookups still resolve. Used during a parameter rollover. | to `Revoked` |
+| `Revoked` | Hard kill. No further transitions; the version is dead. | none (terminal) |
 
 Owner-only `setVersionStatus(version, newStatus)` enforces these transitions and reverts with `InvalidVersionTransition` otherwise. The transition emits `VersionStatusChanged(version, oldStatus, newStatus)`.
 
@@ -54,7 +53,7 @@ Owner-only `setVersionStatus(version, newStatus)` enforces these transitions and
 | **Owner** | `initialize(initialOwner, …)`, then `Ownable2Step` transfer. | `addPoster`, `removePoster`, `setVersionStatus`, `_authorizeUpgrade`. |
 | **Poster** | Owner-only `addPoster(address)`. Initial poster supplied to `initialize`. | `postCommitments`, `postCommitmentsSafe`. |
 
-Non-poster posts revert with `OnlyPosterAllowed(caller)`. In production, the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05) service holds the only poster role and signs through OpenZeppelin Relayer.
+Non-poster posts revert with `OnlyPosterAllowed(caller)`. In production, the poster role is held by the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05) service's relayer signer (OpenZeppelin Relayer).
 
 ## Writing commitments
 
@@ -74,20 +73,20 @@ function postCommitmentsSafe(
 
 Both functions batch-write `(version, handle) → commitHash` rows and require:
 
-- `version` is in `Active` state — otherwise reverts with `VersionNotActive(version)`.
-- `handles.length == commitHashes.length` and `> 0` — otherwise `LengthMismatch` / `EmptyBatch`.
-- Each `commitHash != bytes32(0)` — otherwise `ZeroCommitHash(handle)`.
+- `version` is in `Active` state, otherwise the call reverts with `VersionNotActive(version)`.
+- `handles.length == commitHashes.length` and `> 0`, otherwise `LengthMismatch` / `EmptyBatch`.
+- Each `commitHash != bytes32(0)`, otherwise `ZeroCommitHash(handle)`.
 
 The difference is in **how duplicates are handled**:
 
 | Function | Duplicate handle under same version | Use case |
 |----------|-------------------------------------|----------|
-| `postCommitments` | Reverts the whole batch with `CommitmentAlreadyExists(version, handle)`. | Strict integrity — caller knows it's posting unique data. |
+| `postCommitments` | Reverts the whole batch with `CommitmentAlreadyExists(version, handle)`. | Strict integrity: the caller knows it is posting unique data. |
 | `postCommitmentsSafe` | Silently skips the handle; emits `CommitmentsPostedSafe(version, newlyPosted, skipped)`. | Idempotent re-flushes (e.g. when the coprocessor's message broker redelivers a commitment batch). |
 
-`postCommitments` emits `CommitmentsPosted(version, batchSize)`. `postCommitmentsSafe` emits `CommitmentsPostedSafe(version, newlyPosted, skipped)` so the off-chain caller can tell whether the round did real work.
+`postCommitments` emits `CommitmentsPosted(version, batchSize)`. `postCommitmentsSafe` emits `CommitmentsPostedSafe(version, newlyPosted, skipped)` so the offchain caller can tell whether the round did real work.
 
-Both enforce **write-once per (version, handle)** — a commitment can never be overwritten, only superseded by writing the same handle under a new `version`.
+Both enforce **write-once per (version, handle)**: a commitment can never be overwritten, only superseded by writing the same handle under a new `version`.
 
 ## Reading commitments
 
@@ -98,9 +97,9 @@ Both enforce **write-once per (version, handle)** — a commitment can never be 
 | `getSize(version)` | `uint256` | Number of handles ever committed under `version`. |
 | `getHandleByIndex(version, index)` | `bytes32` | Direct array lookup. Reverts on out-of-range. |
 | `getHandles(version, offset, limit)` | `bytes32[]` | Paginated. Returns an empty array if `offset >= total`; clamps `offset + limit` at `total`. |
-| `isPoster(address)` | `bool` | Useful for off-chain ops dashboards. |
+| `isPoster(address)` | `bool` | Useful for offchain ops dashboards. |
 
-The paginated `getHandles` is the recommended way to enumerate a version — `getSize` first to compute pages, then `getHandles(version, offset, pageSize)` in a loop.
+The paginated `getHandles` is the recommended way to enumerate a version: `getSize` first to compute pages, then `getHandles(version, offset, pageSize)` in a loop.
 
 ## Events
 
@@ -113,10 +112,10 @@ The paginated `getHandles` is the recommended way to enumerate a version — `ge
 
 ## Upgrades
 
-The contract is `UUPSUpgradeable`. `_authorizeUpgrade` is gated by `onlyOwner`. The constructor calls `_disableInitializers()` so the implementation contract itself can never be initialized — initialization happens through the proxy via `initialize(initialOwner, initialPoster)`.
+The contract is `UUPSUpgradeable`. `_authorizeUpgrade` is gated by `onlyOwner`. The constructor calls `_disableInitializers()` so the implementation contract itself can never be initialized; initialization happens through the proxy via `initialize(initialOwner, initialPoster)`.
 
 ## Source
 
 - Solidity: [`contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol`](https://github.com/FhenixProtocol/cofhe-contracts/blob/master/contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol).
-- Off-chain poster service: [`src/services/blockchain-poster/`](https://github.com/FhenixProtocol/cofhe/tree/master/src/services/blockchain-poster) — introduced in [cofhe `0.6.0`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05).
+- Offchain poster service: [`src/services/blockchain-poster/`](https://github.com/FhenixProtocol/cofhe/tree/master/src/services/blockchain-poster), introduced in [cofhe `0.6.0`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05).
 - FHE Engine commitment-version bumping: [`fhe-engine/src/rabbitmq/handlers.rs`](https://github.com/FhenixProtocol/cofhe/blob/master/fhe-engine/src/rabbitmq/handlers.rs).
