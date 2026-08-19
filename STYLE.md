@@ -24,24 +24,12 @@ The goal: docs that read like they were written by an engineer who understands t
 
 ## Words
 
-Use the words developers actually use. Plain beats fancy, always.
+Write like an engineer explaining a system to another engineer: not an academic paper, not a press release. The test for any sentence is whether someone on the team would say it in a design review. If nobody would, rewrite it.
 
-Do not use these (and their relatives):
-
-| Avoid | Use instead |
-|---|---|
-| leverage, utilize | use |
-| seamless, effortless | (delete, or describe the actual behavior) |
-| robust, powerful, cutting-edge, blazing | (delete) |
-| delve, dive into | look at, see, read |
-| comprehensive | complete, full |
-| in order to | to |
-| via | through, with (or keep "via" only for transport, for example "via HTTPS") |
-| aforementioned, thereof, hereby | (rewrite) |
-| simply, just, easily | (delete; if it were simple you would not need to say it) |
-| Note that, It should be noted | (delete, or use a Note component) |
-
-Marketing language belongs on the landing site, not in technical pages. One descriptive adjective per page is usually one too many.
+- Prefer the plain word when it carries the same meaning, but this is not a vocabulary police. Words like "utilize" or "comprehensive" are fine where they are natural.
+- Keep marketing adjectives out of technical pages. "Seamless", "blazing", and "cutting-edge" describe nothing; describe the actual behavior instead.
+- Cut filler phrases that carry no information: "it is important to note that", "in order to".
+- Avoid calling things "simple" or "easy". If the reader is stuck on it, that word is an insult; if they are not, it is noise.
 
 ## Punctuation and symbols
 
