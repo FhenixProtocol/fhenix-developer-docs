@@ -3,9 +3,9 @@ title: Writing Encrypted Data to Contract
 description: "Encrypt plaintext values and pass them directly into a contract call"
 ---
 
-This page covers the "encrypt → write tx" flow: encrypt plaintext values into `InE*` structs and pass them directly into a contract call.
+This page covers the "encrypt, then write tx" flow: encrypt plaintext values into `InE*` structs and pass them directly into a contract call.
 
-`encryptInputs` returns `EncryptedItemInput` objects that match the Solidity `InE*` input structs. The on-chain CoFHE library validates the verifier signature before the contract can use the ciphertext.
+`encryptInputs` returns `EncryptedItemInput` objects that match the Solidity `InE*` input structs. The onchain CoFHE library validates the verifier signature before the contract can use the ciphertext.
 
 ## Flow
 
@@ -20,9 +20,9 @@ This page covers the "encrypt → write tx" flow: encrypt plaintext values into 
 
 The encrypted type you choose in TypeScript must match the Solidity parameter type:
 
-- `Encryptable.uint32(...)` → `InEuint32`
-- `Encryptable.bool(...)` → `InEbool`
-- `Encryptable.address(...)` → `InEaddress`
+- `Encryptable.uint32(...)` maps to `InEuint32`
+- `Encryptable.bool(...)` maps to `InEbool`
+- `Encryptable.address(...)` maps to `InEaddress`
 
 ## Example: encrypt and call a contract
 
@@ -46,7 +46,7 @@ contract EncryptedCounter {
 ```
 
 ```typescript TypeScript (viem)
-import { Encryptable, assertCorrectEncryptedItemInput } from '@cofhe/sdk';
+import { Encryptable } from '@cofhe/sdk';
 import { parseAbi } from 'viem';
 import { sepolia } from 'viem/chains';
 
@@ -58,7 +58,6 @@ const encryptedCounterAbi = parseAbi([
 const [inCount] = await cofheClient
   .encryptInputs([Encryptable.uint32(42n)])
   .execute();
-assertCorrectEncryptedItemInput(inCount);
 
 // 2) Pass the encrypted struct as the InE* argument
 const hash = await walletClient.writeContract({
