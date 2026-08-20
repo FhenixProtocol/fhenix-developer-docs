@@ -1,80 +1,192 @@
 ---
 title: Decrypt to View
-description: "Reveal encrypted values locally for UI display using permits"
+description: "Reveal encrypted values offchain for UI display using ACPs"
 ---
 
 Use `decryptForView` to reveal a confidential (encrypted) value locally in your app so you can display it in the UI.
 
-Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not** return an on-chain-verifiable signature, and it is **not** meant to be published on-chain.
+Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not** return an onchain-verifiable signature, and it is **not** meant to be published onchain.
 
-## Flow
+The flow is as follows:
 
-1. Read the encrypted handle (`ctHash`) from your contract.
-2. Ensure you have a permit that authorizes decryption of that value.
-3. Call `decryptForView(ctHash, utype).execute()` to get the plaintext.
+1. Read the handle (`ctHash` in code) from your contract.
+2. Ensure you have an [ACP](/client-sdk/guides/permits) that authorizes decryption of that value.
+3. Call `decryptForView(ctHash, utype)` and then run `.execute()` to get the plaintext.
 
 <Note>
-`decryptForView` always decrypts using a permit (there is no `.withoutPermit()` mode). If your protocol intends for the plaintext to become publicly visible on-chain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
+`decryptForView` always decrypts using an ACP (there is no `.withoutACP()` mode).
+If your protocol intends for the plaintext to become publicly visible onchain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
 </Note>
 
 ## Prerequisites
 
 1. [Create and connect a client](/client-sdk/guides/client-setup).
-2. Know the encrypted handle (`ctHash`) and the encrypted type (`utype`).
-3. Have a [permit](/client-sdk/guides/permits) available for the connected `chainId + account`.
+2. Know the handle (`ctHash` in code) and the encrypted type (`utype`).
+3. Have an [ACP](/client-sdk/guides/permits) available for the connected `chainId + account`.
+
+If you don't have one yet, the quickest way is to create a self ACP once per account + chain.
 
 <Tip>
-**Getting `ctHash`**: In most apps, `ctHash` comes from reading a stored encrypted value, an event arg, or a return value from a `view` call.
+**Getting a handle**
+
+In most apps, the handle comes from reading a stored encrypted value, an event arg, or a return value from a `view` call.
 </Tip>
 
 <Tip>
-**Providing `utype`**: `utype` must match the ciphertext's underlying FHE type. The SDK uses it to convert the decrypted `bigint` into a convenient JS type.
+**Providing `utype` (required; not arbitrary)**
 
-Supported `utype`s:
-- `FheTypes.Bool` → returns a `boolean`
-- `FheTypes.Uint160` (address) → returns a checksummed `0x...` string
-- `FheTypes.Uint8 | Uint16 | Uint32 | Uint64 | Uint128` → returns a `bigint`
+`utype` must match the handle's underlying FHE type. The SDK uses it to convert the decrypted `bigint` into a convenient JS type so you can display it.
+
+In many apps you can **derive `{ ctHash, utype }` from the contract ABI** using `@cofhe/abi` (see the snippets below). Here `ctHash` is the handle. If you only have a raw handle (for example from storage or event logs), you must still know which encrypted type it corresponds to.
+
+Supported `utype`s for `decryptForView`:
+
+- `FheTypes.Bool`: returns a `boolean`
+- `FheTypes.Uint160` (address): returns a checksummed `0x...` string
+- `FheTypes.Uint8 | Uint16 | Uint32 | Uint64 | Uint128`: returns a `bigint`
 </Tip>
 
-## Permit setup
+<Note>
+This is why `decryptForView` requires `utype`, but `decryptForTx` does not: tx decryption is meant for onchain publishing and returns a raw `bigint` plaintext + signature.
+</Note>
 
-If you don't have a permit yet, create one once after connecting:
+## Reading from a contract (getting a handle + `utype`)
+
+Typically, the value you want to decrypt comes from a `view` call.
+
+First, read the raw encrypted return value and convert it into `{ ctHash, utype }` using `@cofhe/abi`. Here `ctHash` is the handle.
+
+Below are two equivalent ways to read an encrypted return value from a predeployed Sepolia contract and derive a handle + `utype`.
+
+<CodeGroup>
+
+```typescript Viem
+import { transformEncryptedReturnTypes } from '@cofhe/abi';
+import { createPublicClient, http } from 'viem';
+import { sepolia } from 'viem/chains';
+
+const rpcUrl =
+  process.env.SEPOLIA_RPC_URL ??
+  process.env.RPC_URL ??
+  'https://rpc.sepolia.org';
+
+const contractAddress =
+  '0x9e599dA5c7BA756641bA59DbecCc394CEdFC19f0' as const;
+
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(rpcUrl),
+});
+
+const abi = [
+  {
+    type: 'function',
+    name: 'getValue',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'euint32' }],
+  },
+] as const;
+
+const raw = await publicClient.readContract({
+  address: contractAddress,
+  abi,
+  functionName: 'getValue',
+  args: [],
+});
+
+const encrypted = transformEncryptedReturnTypes(abi, 'getValue', raw);
+
+encrypted.ctHash;
+encrypted.utype;
+```
+
+```typescript Ethers
+import { transformEncryptedReturnTypes } from '@cofhe/abi';
+import { Contract, JsonRpcProvider } from 'ethers';
+
+const contractAddress =
+  '0x9e599dA5c7BA756641bA59DbecCc394CEdFC19f0' as const;
+const rpcUrl =
+  process.env.SEPOLIA_RPC_URL ??
+  process.env.RPC_URL ??
+  'https://rpc.sepolia.org';
+
+const provider = new JsonRpcProvider(rpcUrl);
+
+const abi = [
+  {
+    type: 'function',
+    name: 'getValue',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'euint32' }],
+  },
+] as const;
+
+const contract = new Contract(contractAddress, abi, provider);
+
+const raw = await contract.getValue();
+
+const encrypted = transformEncryptedReturnTypes(abi, 'getValue', raw);
+
+encrypted.ctHash;
+encrypted.utype;
+```
+
+</CodeGroup>
+
+<Note>
+Depending on your contract ABI, the handle may be surfaced as either:
+
+- `bytes32`: returned as a `0x...` hex string (both viem and ethers)
+- `uint256`: returned as a `bigint` (viem and ethers v6; ethers v5 returns a `BigNumber`)
+
+`decryptForView` accepts both `bigint` and `0x...` strings (it coerces via `BigInt(...)`).
+If you're on ethers v5 and you get a `BigNumber`, convert it first (for example `BigInt(bn.toString())`).
+</Note>
+
+## ACP quickstart
+
+If you want a "just make it work" setup for UI decryption, do this once after connecting:
 
 ```typescript
 await client.connect(publicClient, walletClient);
 
-// Creates a permit if needed, stores it, and selects it as the active permit.
-await client.permits.getOrCreateSelfPermit();
+// Creates an ACP if needed, stores it, and selects it as the active ACP.
+await client.acp.getOrCreateSelfACP();
 ```
+
+After this, `decryptForView(...)` can automatically use the active ACP when you run `.execute()`.
 
 ## Decrypt for UI
 
-Choose the pattern that matches how your app manages permits:
+Choose the pattern that matches how your app manages ACPs:
 
 <CodeGroup>
 
-```typescript Active permit
+```typescript Active ACP
 await client.connect(publicClient, walletClient);
-await client.permits.getOrCreateSelfPermit();
+await client.acp.getOrCreateSelfACP();
 
 const plaintext = await client
   .decryptForView(ctHash, FheTypes.Uint32)
   .execute();
 ```
 
-```typescript Permit object
-const permit = await client.permits.getOrCreateSelfPermit();
+```typescript ACP object
+const acp = await client.acp.getOrCreateSelfACP();
 
 const plaintext = await client
   .decryptForView(ctHash, FheTypes.Uint64)
-  .withPermit(permit)
+  .withACP(acp)
   .execute();
 ```
 
-```typescript Permit hash
+```typescript ACP hash
 const plaintext = await client
   .decryptForView(ctHash, FheTypes.Uint8)
-  .withPermit(permitHash)
+  .withACP(acpHash)
   .execute();
 ```
 
@@ -82,74 +194,20 @@ const plaintext = await client
 
 ## What `decryptForView` returns
 
-Running `.execute()` resolves to a scalar JS value:
+Running `.execute()` on `decryptForView(...)` resolves to a scalar JS value (typed in TypeScript as `UnsealedItem<U>`):
 
-- Integer utypes (`Uint8`, `Uint16`, `Uint32`, `Uint64`, `Uint128`): a `bigint`
-- `FheTypes.Bool`: a `boolean`
-- `FheTypes.Uint160` (address): a checksummed `0x...` address string
+- For integer utypes (`FheTypes.Uint8 | FheTypes.Uint16 | FheTypes.Uint32 | FheTypes.Uint64 | FheTypes.Uint128`): a `bigint`
+- For `FheTypes.Bool`: a `boolean`
+- For `FheTypes.Uint160` (address): a checksummed `0x...` address string
 
-## Builder API
+If you decrypt an integer type, you'll usually want to:
 
-### `.execute()` — required, call last
+- keep it as a `bigint` and format it for display, or
+- convert to a JS `number` only if you're sure it's within safe range.
 
-Runs the decryption and returns a UI-friendly scalar value.
+## After decrypting: common UI patterns
 
-### `.withPermit(...)` — optional
-
-Select which permit to use:
-
-- `.withPermit()` — uses the active permit
-- `.withPermit(permitHash)` — fetches a stored permit by hash
-- `.withPermit(permit)` — uses the provided permit object
-
-If you don't call `.withPermit(...)`, the active permit is used by default.
-
-### `.setAccount(address)` — optional
-
-Overrides the account used to resolve the active/stored permit.
-
-### `.setChainId(chainId)` — optional
-
-Overrides the chain used to resolve the Threshold Network URL and permits.
-
-### `.onPoll(callback)` — optional
-
-Register a callback that fires once per poll attempt while `decryptForView` waits for the Threshold Network to return the sealed plaintext. Useful for surfacing decrypt progress in a UI.
-
-```typescript
-const plaintext = await client
-  .decryptForView(ctHash, FheTypes.Uint64)
-  .onPoll(({ operation, requestId, attemptIndex, elapsedMs, intervalMs, timeoutMs }) => {
-    console.log(`[${operation}] attempt ${attemptIndex} after ${elapsedMs}ms (next in ${intervalMs}ms, budget ${timeoutMs}ms)`);
-  })
-  .execute();
-```
-
-The callback receives:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `operation` | `'decrypt' \| 'sealoutput'` | Which Threshold Network flow is polling. For `decryptForView` this is `'sealoutput'`. |
-| `requestId` | `string` | The Threshold Network request id. **May be the empty string** during submit-time retries — see `.set404RetryTimeout(...)` below. |
-| `attemptIndex` | `number` | Zero-based poll attempt counter. |
-| `elapsedMs` | `number` | Time since the first submit attempt. |
-| `intervalMs` | `number` | Delay until the next poll. |
-| `timeoutMs` | `number` | Overall budget shared by submit-retries and status-polling. |
-
-### `.set404RetryTimeout(timeoutMs)` — optional
-
-Configures how long `decryptForView` keeps retrying when the Threshold Network's submit endpoint responds with `404 Not Found` before a `requestId` is available. This typically happens on slower backends where the ciphertext isn't visible yet at submit time. Defaults to `10_000` ms.
-
-```typescript
-const plaintext = await client
-  .decryptForView(ctHash, FheTypes.Uint32)
-  .set404RetryTimeout(20_000) // give a slower backend more time
-  .execute();
-```
-
-Pass `0` to disable submit-time retries (`404` becomes a hard failure). Submit retries share the same overall timeout budget as status polling.
-
-## Common UI patterns
+Pick the pattern that matches what you're displaying:
 
 <CodeGroup>
 
@@ -160,20 +218,125 @@ const decimals = 6;
 const display = formatUnits(amount, decimals);
 ```
 
-```typescript Bigint → number (range-check)
+```typescript Bigint to number (range-check)
 const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
 const asNumber = amount <= MAX_SAFE ? Number(amount) : undefined;
 ```
 
-```typescript Booleans & addresses
+```typescript Booleans and addresses
 const statusLabel = decryptedIsAllowed ? 'Allowed' : 'Not allowed';
 const shortOwner = `${decryptedOwner.slice(0, 6)}…${decryptedOwner.slice(-4)}`;
 ```
 
 </CodeGroup>
 
+## Builder API
+
+`decryptForView(ctHash, utype)` returns a builder. Unlike `decryptForTx`, this flow always requires an ACP (there is no `.withoutACP()` mode).
+
+### `.execute()` (required, call last)
+
+Runs the decryption and returns a UI-friendly scalar value (see [What `decryptForView` returns](#what-decryptforview-returns)).
+
+```typescript
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .execute();
+```
+
+### `.onPoll(callback)` (optional)
+
+Registers a callback that runs once per poll attempt while waiting for the threshold network to complete the request.
+
+This is useful for showing "decrypting…" UI, measuring latency, or logging.
+
+During submit retries, `requestId` is an empty string because the backend has not created a request yet. This can happen while the SDK is retrying transient `204` or short-lived `404` submit responses.
+
+```typescript
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .onPoll(({ attemptIndex, elapsedMs }) => {
+    console.log('sealoutput polling', { attemptIndex, elapsedMs });
+  })
+  .execute();
+```
+
+### `.set404RetryTimeout(timeoutMs)` (optional)
+
+Controls how long the SDK should keep retrying submit-time `404 Not Found` responses before failing. The default is `10000` ms. This retry only applies while the backend reports the ciphertext isn't indexed yet (`ct_not_found`); a `404` with any other error code fails immediately.
+
+Use this when your backend is eventually consistent and may need a few seconds to index a freshly created ciphertext handle.
+
+```typescript
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .set404RetryTimeout(15_000)
+  .execute();
+```
+
+### `.withACP(...)` (optional)
+
+Select which ACP to use:
+
+- `.withACP()` uses the active ACP for the resolved `chainId + account`.
+- `.withACP(acpHash)` fetches a stored ACP by hash.
+- `.withACP(acp)` uses the provided ACP object.
+
+If you don't call `.withACP(...)`, `decryptForView` also uses the active ACP for the resolved `chainId + account`.
+
+<CodeGroup>
+
+```typescript Active ACP
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint8)
+  .withACP()
+  .execute();
+```
+
+```typescript ACP object
+const acp = await client.acp.getOrCreateSelfACP();
+
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint64)
+  .withACP(acp)
+  .execute();
+```
+
+```typescript ACP hash
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Bool)
+  .withACP(acpHash)
+  .execute();
+```
+
+</CodeGroup>
+
+### `.setAccount(address)` (optional)
+
+Overrides the account used to resolve the active ACP / stored ACP.
+
+```typescript
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .setAccount('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
+  .withACP()
+  .execute();
+```
+
+### `.setChainId(chainId)` (optional)
+
+Overrides the chain used to resolve the Threshold Network URL and ACPs.
+
+```typescript
+const plaintext = await client
+  .decryptForView(ctHash, FheTypes.Uint16)
+  .setChainId(11155111)
+  .withACP()
+  .execute();
+```
+
 ## Common pitfalls
 
-- **Missing permit**: `decryptForView` will fail if there is no active permit for the current `chainId + account`.
-- **Wrong `utype`**: you must pass the correct FHE type for the ciphertext.
-- **Wrong chain/account**: permits are scoped to `chainId + account`. If the user switches wallets or networks, create/select the correct permit.
+- **Missing ACP**: `decryptForView` will fail if there is no active ACP for the current `chainId + account` (or if the ACP you pass doesn't authorize decrypting that handle).
+- **Wrong `utype`**: you must pass the correct FHE type for the handle. `Bool` and `address` are converted into `boolean` / checksummed `0x...` strings; integer types stay as `bigint`.
+- **Wrong chain/account**: ACPs are scoped to `chainId + account`. If the user switches wallets or networks, create or select the correct ACP (or set them explicitly via `.setChainId(...)` / `.setAccount(...)`).

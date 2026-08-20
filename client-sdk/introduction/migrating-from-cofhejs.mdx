@@ -3,16 +3,16 @@ title: Migrating from cofhejs
 description: "Side-by-side migration guide from cofhejs to @cofhe/sdk"
 ---
 
-`@cofhe/sdk` is the successor to `cofhejs`, redesigned around an explicit, builder-pattern API that gives you full control over encryption, decryption, and permit management.
+`@cofhe/sdk` is the successor to `cofhejs`, redesigned around an explicit, builder-pattern API that gives you full control over encryption, decryption, and ACP management.
 
-### Why migrate?
+## Why migrate?
 
-- **Explicit API** — no more implicit initialization or auto-generated permits. Every action is opt-in.
-- **Builder pattern** — `encryptInputs`, `decryptForView`, and `decryptForTx` use a chainable builder so you can set overrides (account, chain, callbacks) before calling `.execute()`.
-- **`decryptForTx` feature** — `cofhejs` does not provide an API for generating decryption signatures for on-chain usage.
-- **Deferred key loading** — FHE keys and TFHE WASM are fetched lazily on the first `encryptInputs` call, not during initialization.
-- **Better multichain support** — configure multiple chains up front and override per-call.
-- **Structured errors** — typed `CofheError` objects with error codes replace the `Result` wrapper.
+- **Explicit API**: no more implicit initialization or auto-generated permits/ACPs. Every action is opt-in.
+- **Builder pattern**: `encryptInputs`, `decryptForView`, and `decryptForTx` use a chainable builder so you can set overrides (account, chain, callbacks) before calling `.execute()`.
+- **`decryptForTx` feature**: `cofhejs` does not provide an API for generating decryption signatures for onchain usage.
+- **Deferred key loading**: FHE keys and TFHE WASM are fetched lazily on the first `encryptInputs` call, not during initialization.
+- **Better multichain support**: configure multiple chains up front and override per-call.
+- **Structured errors**: typed `CofheError` objects with error codes replace the `Result` wrapper.
 
 ### Requirements
 
@@ -30,13 +30,13 @@ npm uninstall cofhejs && npm install @cofhe/sdk
 
 ## 1. Initialization
 
-The single `cofhejs.initializeWithEthers(...)` / `cofhejs.initializeWithViem(...)` call is replaced by a three-step flow: create a config, create a client, then connect. FHE keys and WASM are no longer fetched eagerly during init — they are deferred until the first `encryptInputs` call.
+The single `cofhejs.initializeWithEthers(...)` / `cofhejs.initializeWithViem(...)` call is replaced by a three-step flow: create a config, create a client, then connect. FHE keys and WASM are no longer fetched eagerly during init; they are deferred until the first `encryptInputs` call.
 
 <Accordion title="Changes">
 
 | | `cofhejs` | `@cofhe/sdk` |
 | --- | --- | --- |
-| **Entry** | `cofhejs.initializeWithEthers(...)` / `cofhejs.initializeWithViem(...)` | `createCofheConfig(...)` → `createCofheClient(config)` → `client.connect(...)` |
+| **Entry** | `cofhejs.initializeWithEthers(...)` / `cofhejs.initializeWithViem(...)` | `createCofheConfig(...)` then `createCofheClient(config)` then `client.connect(...)` |
 | **Key fetching** | Immediate (during init) | Deferred (first `encryptInputs` call) |
 | **WASM init** | Immediate (during init) | Deferred (first `encryptInputs` call) |
 | **Environment** | `"LOCAL"` / `"TESTNET"` / `"MAINNET"` string | Chain objects via `supportedChains: [chains.sepolia]` |
@@ -171,17 +171,17 @@ The `Encryptable` factory functions (`Encryptable.uint32(...)`, `Encryptable.boo
 
 `cofhejs` has a single `unseal` function. `@cofhe/sdk` splits decryption into two purpose-built methods:
 
-- **`decryptForView`** — returns the plaintext for UI display (no on-chain signature).
-- **`decryptForTx`** — returns the plaintext **and** a Threshold Network signature for on-chain verification.
+- **`decryptForView`**: returns the plaintext for UI display (no onchain signature).
+- **`decryptForTx`**: returns the plaintext **and** a Threshold Network signature for onchain verification.
 
 <Accordion title="Changes">
 
 | | `cofhejs` | `@cofhe/sdk` |
 | --- | --- | --- |
 | **Function** | `cofhejs.unseal(sealed, type)` | `client.decryptForView(ctHash, type)` or `client.decryptForTx(ctHash)` |
-| **Permit handling** | Automatic (uses most recent permit) | Explicit — `.withPermit()` / `.withoutPermit()` |
+| **ACP handling** | Automatic (uses most recent permit) | Explicit: `.withACP()` / `.withoutACP()` |
 | **Return value** | `Result<bigint \| boolean \| string>` | Direct value for view; `{ ctHash, decryptedValue, signature }` for tx |
-| **On-chain verification** | Not built in | `decryptForTx` returns a signature for `FHE.publishDecryptResult(...)` |
+| **Onchain verification** | Not built in | `decryptForTx` returns a signature for `FHE.publishDecryptResult(...)` |
 
 </Accordion>
 
@@ -201,7 +201,7 @@ if (!result.success) {
 console.log(result.data); // bigint
 ```
 
-### After (@cofhe/sdk) — viewing in UI
+### After (@cofhe/sdk): viewing in UI
 
 ```typescript
 import { FheTypes } from '@cofhe/sdk';
@@ -213,7 +213,7 @@ const balance = await client
   .execute();
 ```
 
-### After (@cofhe/sdk) — publishing on-chain
+### After (@cofhe/sdk): publishing onchain
 
 <CodeGroup>
 
@@ -222,7 +222,7 @@ const ctHash = await myContract.getEncryptedAmount();
 
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 await myContract.publishDecryptResult(ctHash, decryptedValue, signature);
@@ -246,18 +246,18 @@ contract MyContract {
 
 </CodeGroup>
 
-## 4. Permits
+## 4. ACPs (formerly permits)
 
-Permits are no longer auto-generated during initialization. All permit operations are now explicit through `client.permits`.
+ACPs are no longer auto-generated during initialization. All ACP operations are now explicit through `client.acp`. In `cofhejs` these were called permits.
 
 <Accordion title="Changes">
 
 | | `cofhejs` | `@cofhe/sdk` |
 | --- | --- | --- |
-| **Auto-generation** | `generatePermit: true` (default) | Never — always explicit |
-| **Creation** | `cofhejs.createPermit({ type, issuer })` | `client.permits.createSelf(...)`, `client.permits.createSharing(...)` |
-| **Return type** | `Result<Permit>` | Direct `Permit` object |
-| **Active permit** | Implicitly used by `unseal` | `getOrCreateSelfPermit()` sets active; used automatically by decrypt methods |
+| **Auto-generation** | `generatePermit: true` (default) | Never: always explicit |
+| **Creation** | `cofhejs.createPermit({ type, issuer })` | `client.acp.createSelf(...)`, `client.acp.createSharing(...)` |
+| **Return type** | `Result<Permit>` | Direct `ACP` object |
+| **Active ACP** | Implicitly used by `unseal` | `getOrCreateSelfACP()` sets active; used automatically by decrypt methods |
 
 </Accordion>
 
@@ -280,16 +280,16 @@ const result = await cofhejs.createPermit({
 ### After (@cofhe/sdk)
 
 ```typescript
-// Create a self permit (prompts for wallet signature)
-const permit = await client.permits.createSelf({
+// Create a self ACP (prompts for wallet signature)
+const acp = await client.acp.createSelf({
   issuer: account,
-  name: 'My dApp permit',
+  name: 'My dApp ACP',
 });
 
 // Or use the convenience method that creates one only if needed
-const permit2 = await client.permits.getOrCreateSelfPermit();
+const acp2 = await client.acp.getOrCreateSelfACP();
 
-// Use with decryptForView (active permit is used automatically)
+// Use with decryptForView (active ACP is used automatically)
 const value = await client
   .decryptForView(ctHash, FheTypes.Uint32)
   .execute();
@@ -334,7 +334,7 @@ try {
 | `cofhejs/node` | `@cofhe/sdk/node` |
 | `cofhejs/web` | `@cofhe/sdk/web` |
 | N/A | `@cofhe/sdk` (core types, `Encryptable`, `FheTypes`) |
-| N/A | `@cofhe/sdk/permits` |
+| N/A | `@cofhe/sdk/acps` |
 | N/A | `@cofhe/sdk/adapters` |
 | N/A | `@cofhe/sdk/chains` |
 

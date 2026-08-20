@@ -7,7 +7,7 @@ This page shows the common patterns for writing Hardhat tests with the CoFHE plu
 
 ## Test setup
 
-Use `hre.cofhe.createClientWithBatteries` in a `before` hook. It creates and connects a fully configured `CofheClient` — including a self-permit — so the client is ready for every test in the suite:
+Use `hre.cofhe.createClientWithBatteries` in a `before` hook. It creates and connects a fully configured `CofheClient`, including a self ACP, so the client is ready for every test in the suite:
 
 ```typescript
 import hre from 'hardhat';
@@ -25,7 +25,7 @@ before(async () => {
 
 See [Client](/client-sdk/hardhat-plugin/client) for manual setup options.
 
-## Encrypt → store → decrypt
+## Encrypt, store, decrypt
 
 The core test loop: encrypt a value, pass it to a contract, then decrypt the stored handle.
 
@@ -55,7 +55,7 @@ expect(decrypted).to.equal(100n);
 
 ## Reading plaintext directly
 
-In tests you can bypass the normal decrypt flow and read the raw plaintext stored by the mock contracts. This is useful for asserting contract state without needing a permit:
+In tests you can bypass the normal decrypt flow and read the raw plaintext stored by the mock contracts. This is useful for asserting contract state without needing an ACP:
 
 ```typescript
 import hre from 'hardhat';
@@ -69,21 +69,21 @@ await hre.cofhe.mocks.expectPlaintext(ctHash, 100n);
 
 See [Mock Contracts](/client-sdk/hardhat-plugin/mock-contracts) for details.
 
-## Permits
+## ACPs
 
-`createClientWithBatteries` pre-generates a self-permit, so `decryptForView` and `decryptForTx().withPermit()` work immediately. For tests that need named permits or multiple signers, create them explicitly:
+`createClientWithBatteries` pre-generates a self ACP, so `decryptForView` and `decryptForTx().withACP()` work immediately. For tests that need named ACPs or multiple signers, create them explicitly:
 
 ```typescript
-import { PermitUtils } from '@cofhe/sdk/permits';
+import { ACPUtils } from '@cofhe/sdk/acps';
 
-const permit = await cofheClient.permits.createSelf({
+const acp = await cofheClient.acp.createSelf({
   issuer: signer.address,
-  name: 'My Test Permit',
+  name: 'My Test ACP',
 });
 
-// Select it as the active permit
-const permitHash = PermitUtils.getHash(permit);
-cofheClient.permits.selectActivePermit(permitHash);
+// Select it as the active ACP
+const acpHash = ACPUtils.getHash(acp);
+cofheClient.acp.selectActiveACP(acpHash);
 ```
 
 Alternatively, create a separate client for each signer:
@@ -98,43 +98,43 @@ const aliceClient = await hre.cofhe.createClientWithBatteries(alice);
 
 ## `decryptForTx` patterns
 
-[`decryptForTx`](/client-sdk/guides/decrypt-to-tx) returns a `{ ctHash, decryptedValue, signature }` tuple for on-chain submission. The permit mode must be selected explicitly.
+[`decryptForTx`](/client-sdk/guides/decrypt-to-tx) returns a `{ ctHash, decryptedValue, signature }` tuple for onchain submission. The ACP mode must be selected explicitly.
 
-### Globally allowed values (`.withoutPermit()`)
+### Globally allowed values (`.withoutACP()`)
 
-When a contract calls `FHE.allowPublic(handle)`, anyone can decrypt without a permit:
+When a contract calls `FHE.allowPublic(handle)`, anyone can decrypt without an ACP:
 
 ```typescript
 import { expect } from 'chai';
 
 const result = await cofheClient
   .decryptForTx(publicCtHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 expect(result.decryptedValue).to.equal(55n);
 ```
 
-### Access-controlled values (`.withPermit()`)
+### Access-controlled values (`.withACP()`)
 
-For handles restricted by ACL policy, supply a permit:
+For handles restricted by ACL policy, supply an ACP:
 
 <CodeGroup>
 
-```typescript Explicit permit
+```typescript Explicit ACP
 const result = await cofheClient
   .decryptForTx(ctHash)
-  .withPermit(permit)
+  .withACP(acp)
   .execute();
 
 expect(result.decryptedValue).to.equal(99n);
 ```
 
-```typescript Active permit
-// resolves the active permit automatically
+```typescript Active ACP
+// resolves the active ACP automatically
 const result = await cofheClient
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 
 expect(result.decryptedValue).to.equal(99n);

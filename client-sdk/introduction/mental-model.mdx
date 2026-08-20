@@ -3,11 +3,11 @@ title: Mental Model
 description: "Understand how data flows through FHE-enabled dApps using the @cofhe/sdk"
 ---
 
-To understand how `@cofhe/sdk` fits into the Fhenix framework, you'll explore a simple mental model using a Counter smart contract example. This will show you how data flows through FHE-enabled dApps—from encryption to computation to decryption.
+To understand how `@cofhe/sdk` fits into the Fhenix framework, you'll explore a simple mental model using a Counter smart contract example. This will show you how data flows through FHE-enabled dApps: from encryption to computation to decryption.
 
 ## The Counter Example
 
-Imagine a smart contract called **Counter** where each user has their own private counter. Users can increment their counter and read its value with complete privacy—no one, including the smart contract itself, can see the actual counter values.
+Imagine a smart contract called **Counter** where each user has their own private counter. Users can increment their counter and read its value with complete privacy: no one, including the smart contract itself, can see the actual counter values.
 
 ### Key Concepts
 
@@ -64,8 +64,8 @@ When a user wants to read their counter value, they use one of the SDK's two dec
 **For UI display (`decryptForView`):**
 
 1. The user reads the encrypted handle (`ctHash`) from the contract
-2. A permit authorizes decryption — created via `client.permits.getOrCreateSelfPermit()`
-3. The SDK requests re-encryption from the Threshold Network using the permit's sealing key
+2. An ACP authorizes decryption, created via `client.acp.getOrCreateSelfACP()`
+3. The SDK requests re-encryption from the Threshold Network using the ACP's sealing key
 4. The plaintext is returned locally for display
 
 **For on-chain use (`decryptForTx`):**
@@ -79,7 +79,7 @@ When a user wants to read their counter value, they use one of the SDK's two dec
 
 This is like exchanging locks on the box:
 - The box starts locked with the CoFHE co-processor's lock
-- The user sends their own lock to the co-processor (via the permit's sealing key)
+- The user sends their own lock to the co-processor (via the ACP's sealing key)
 - The co-processor removes its lock and applies the user's lock
 - The box remains locked throughout, but now only the user can open it
 - The data remains private at every step
@@ -118,7 +118,7 @@ sequenceDiagram
     Blockchain->>Contract: getCounter(userAddress)
     Contract-->>SDK: ctHash (encrypted handle)
 
-    SDK->>SDK: Use permit with sealing key
+    SDK->>SDK: Use ACP with sealing key
     SDK->>CoFHE: decryptForView(ctHash, FheTypes.Uint32)
     CoFHE->>CoFHE: Re-encrypt with user's sealing key
     CoFHE-->>SDK: Re-encrypted data
@@ -131,7 +131,7 @@ sequenceDiagram
 1. **Encryption happens client-side**: The SDK encrypts data with ZK proofs before it reaches the blockchain
 2. **Computation happens on-chain**: Smart contracts perform operations on encrypted data via `FHE.sol`
 3. **FHE enables privacy-preserving computation**: The blockchain never sees plaintext values
-4. **Permits enable access control**: EIP-712 signed permits authorize who can decrypt specific data
+4. **ACPs enable access control**: EIP-712 signed ACPs (Access Control Permissions, formerly permits) authorize who can decrypt specific data
 5. **Two decryption paths**: `decryptForView` for UI display, `decryptForTx` for on-chain verification
 
-This architecture ensures that sensitive data remains private throughout its entire lifecycle—from input to computation to output—while still enabling powerful decentralized applications.
+This architecture ensures that sensitive data remains private throughout its entire lifecycle, from input to computation to output, while still enabling powerful decentralized applications.

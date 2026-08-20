@@ -1,9 +1,9 @@
 ---
 title: End-to-End Example
-description: "A complete encrypt → store → decrypt flow using @cofhe/sdk"
+description: "A complete encrypt, store, and decrypt flow using @cofhe/sdk"
 ---
 
-This example demonstrates the full lifecycle of working with encrypted data: initialize the SDK, encrypt a value, send it to a contract, and decrypt the result — both for UI display and for on-chain verification.
+This example demonstrates the full lifecycle of working with encrypted data: initialize the SDK, encrypt a value, send it to a contract, and decrypt the result, both for UI display and for onchain verification.
 
 ## The contract
 
@@ -67,8 +67,8 @@ const walletClient = createWalletClient({
 
 await client.connect(publicClient, walletClient);
 
-// 2. Create a permit
-await client.permits.getOrCreateSelfPermit();
+// 2. Create an ACP
+await client.acp.getOrCreateSelfACP();
 
 // 3. Encrypt and deposit
 const [encryptedAmount] = await client
@@ -88,10 +88,10 @@ const balance = await client
 
 console.log('Balance:', balance); // 100n
 
-// 5. Decrypt for on-chain verification
+// 5. Decrypt for onchain verification
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 
 await contract.publishBalance(ctHash, decryptedValue, signature);
@@ -116,8 +116,8 @@ const client = createCofheClient(config);
 const { publicClient, walletClient } = await Ethers6Adapter(provider, wallet);
 await client.connect(publicClient, walletClient);
 
-// 2. Create a permit
-await client.permits.getOrCreateSelfPermit();
+// 2. Create an ACP
+await client.acp.getOrCreateSelfACP();
 
 // 3. Encrypt and deposit
 const [encryptedAmount] = await client
@@ -134,10 +134,10 @@ const balance = await client
 
 console.log('Balance:', balance); // 100n
 
-// 5. Decrypt for on-chain verification
+// 5. Decrypt for onchain verification
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 
 await contract.publishBalance(ctHash, decryptedValue, signature);
@@ -175,7 +175,7 @@ describe('ConfidentialVault', () => {
     expect(balance).to.equal(100n);
   });
 
-  it('publishes a decrypt result on-chain', async () => {
+  it('publishes a decrypt result onchain', async () => {
     const Factory = await hre.ethers.getContractFactory('ConfidentialVault');
     const vault = await Factory.deploy();
 
@@ -185,14 +185,14 @@ describe('ConfidentialVault', () => {
       .execute();
     await (await vault.deposit(encrypted)).wait();
 
-    // Decrypt for on-chain verification
+    // Decrypt for onchain verification
     const ctHash = await vault.getBalance();
     const { decryptedValue, signature } = await cofheClient
       .decryptForTx(ctHash)
-      .withPermit()
+      .withACP()
       .execute();
 
-    // Publish on-chain with Threshold Network proof
+    // Publish onchain with Threshold Network proof
     await (await vault.publishBalance(ctHash, decryptedValue, signature)).wait();
   });
 });
