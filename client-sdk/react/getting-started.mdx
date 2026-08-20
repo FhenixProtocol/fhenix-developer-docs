@@ -1,0 +1,143 @@
+---
+title: Getting Started
+description: "Set up @cofhe/react in a Next.js, Vite, or any React app"
+---
+
+`@cofhe/react` is the React layer on top of [`@cofhe/sdk`](/client-sdk/introduction/overview). It ships a context provider, a set of hooks for reading/writing encrypted state, and an optional styled UI kit (`@cofhe/react/ui`) including the `CofheEncryptInput` input and the `CofheFloatingButton` portal.
+
+<Note>
+The hooks ship from the root `@cofhe/react` import and are **headless** — no styles, no peer deps on `@mui/material`. The styled UI components live behind a separate `@cofhe/react/ui` entry that loads the package CSS for you.
+</Note>
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @cofhe/react @cofhe/sdk @fhenixprotocol/cofhe-contracts
+```
+
+```bash pnpm
+pnpm add @cofhe/react @cofhe/sdk @fhenixprotocol/cofhe-contracts
+```
+
+```bash yarn
+yarn add @cofhe/react @cofhe/sdk @fhenixprotocol/cofhe-contracts
+```
+
+</CodeGroup>
+
+### Peer dependencies
+
+| Package | Range |
+| --- | --- |
+| `react` | `^16.8.0 \|\| ^17 \|\| ^18 \|\| ^19` |
+| `react-dom` | same range as `react` |
+| `viem` | `^2.38.6` |
+
+<Note>
+As of `0.5.0`, `@cofhe/react` **no longer requires** `@mui/material` / `@mui/icons-material` as peers — the internal icons are bundled inside the package.
+</Note>
+
+## Wrap your app with `CofheProvider`
+
+There are two equivalent ways to set up the provider — pass a config and let the provider create the SDK client, or pass an existing client you created yourself.
+
+<CodeGroup>
+
+```tsx Config-only (most apps)
+import { CofheProvider } from '@cofhe/react';
+import { createCofheConfig } from '@cofhe/sdk/web';
+import { chains } from '@cofhe/sdk/chains';
+
+const config = createCofheConfig({
+  environment: 'react',
+  supportedChains: [chains.sepolia],
+  react: {
+    projectName: 'My dApp',
+    // logger: (level, ...args) => console.log(level, ...args),
+  },
+});
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <CofheProvider config={config}>{children}</CofheProvider>;
+}
+```
+
+```tsx Pass an existing client
+import { CofheProvider } from '@cofhe/react';
+import { createCofheConfig, createCofheClient } from '@cofhe/sdk/web';
+import { chains } from '@cofhe/sdk/chains';
+
+const config = createCofheConfig({
+  environment: 'react',
+  supportedChains: [chains.sepolia],
+});
+const client = createCofheClient(config);
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <CofheProvider cofheClient={client}>{children}</CofheProvider>;
+}
+```
+
+</CodeGroup>
+
+`CofheProvider` props:
+
+| Prop | Type | Required | Description |
+| --- | --- | --- | --- |
+| `config` | `CofheConfig` | one of `config` / `cofheClient` | Provider creates and owns the SDK client. |
+| `cofheClient` | `CofheClient` | one of `config` / `cofheClient` | You own the client. The provider asserts `config.environment === 'react'`. |
+| `children` | `ReactNode` | yes | Your app tree. |
+
+### `react.*` config options
+
+`createCofheConfig({ react: { … } })` accepts a few React-specific knobs:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `projectName` | `string` | `undefined` | Shown in the wallet-disconnected portal state so users see *your* app name instead of a generic message. |
+| `logger` | `(level, ...args) => void` | `undefined` | Internal logger for `@cofhe/react`. Pipe to your own observability stack. |
+| `position` | `FloatingButtonPosition` | `'bottom-right'` | Default position of the `CofheFloatingButton`. |
+| `initialTheme` | `'light' \| 'dark'` | follows system | Initial theme for the styled UI. |
+
+The `projectName` and `logger` options were added in [`@cofhe/react@0.5.0`](https://github.com/FhenixProtocol/cofhesdk/blob/master/packages/react/CHANGELOG.md#050).
+
+## Hooks-only vs styled UI
+
+The root `@cofhe/react` entrypoint is **headless** — it ships only the provider and hooks, with **no package CSS** loaded:
+
+```tsx
+import { CofheProvider, useCofheClient } from '@cofhe/react';
+```
+
+The styled UI components live behind `@cofhe/react/ui`. Importing from this entry automatically loads the package styles:
+
+```tsx
+import { CofheProvider } from '@cofhe/react';
+import { CofheFloatingButtonWithProvider, CofheEncryptInput } from '@cofhe/react/ui';
+
+export function App() {
+  return (
+    <CofheProvider config={config}>
+      <YourApp />
+      <CofheFloatingButtonWithProvider />
+    </CofheProvider>
+  );
+}
+```
+
+<Tip>
+If you're styling everything from scratch (Tailwind, CSS-in-JS, design system), stick with the hooks-only entrypoint and skip `@cofhe/react/ui` entirely — you'll save bundle size and own the visuals end-to-end.
+</Tip>
+
+## SSR support
+
+Since [`@cofhe/sdk@0.5.1`](https://github.com/FhenixProtocol/cofhesdk/blob/master/packages/sdk/CHANGELOG.md#051), `@cofhe/sdk/web` no longer crashes Next.js / Remix / Astro server builds with `self is not defined`. The TFHE WASM module is lazy-loaded on the first `encryptInputs(...)` call instead of at import time, so importing the SDK from a Server Component (or any code that runs at build time) is safe.
+
+The provider itself is a Client Component — keep it under a `"use client"` boundary as usual.
+
+## Next steps
+
+- [Hooks](/client-sdk/react/hooks) — `useCofheClient`, `useCofheConnection`, `useCofheEnabled`, `useCofheActivePermit`, read / write / decrypt hooks.
+- [Components & Portal](/client-sdk/react/components-and-portal) — `CofheEncryptInput`, the `CofheFloatingButton` portal, and the custom-token import flow.

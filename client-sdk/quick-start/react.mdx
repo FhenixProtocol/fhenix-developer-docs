@@ -1,10 +1,68 @@
 ---
 title: "Quick Start: React"
-description: "Get started with @cofhe/sdk in a React application"
+description: "Wrap your React app with CofheProvider and use the @cofhe/react hooks to encrypt, decrypt, and read FHE state"
 ---
 
-<Info>
-`@cofhe/react` is currently in development. This page will be updated with a full quick start guide once the React library is available.
-</Info>
+`@cofhe/react` is the React layer on top of [`@cofhe/sdk`](/client-sdk/introduction/overview). It ships a context provider, hooks for connection / permits / encryption / decryption / contract reads / writes, and an optional styled UI kit including the `CofheEncryptInput` field and the `CofheFloatingButton` portal.
 
-In the meantime, you can use `@cofhe/sdk/web` directly in your React app. See the [Client Setup](/client-sdk/guides/client-setup) guide for how to configure and connect the SDK with viem or wagmi.
+## Install
+
+<CodeGroup>
+
+```bash npm
+npm install @cofhe/react @cofhe/sdk @fhenixprotocol/cofhe-contracts viem
+```
+
+```bash pnpm
+pnpm add @cofhe/react @cofhe/sdk @fhenixprotocol/cofhe-contracts viem
+```
+
+```bash yarn
+yarn add @cofhe/react @cofhe/sdk @fhenixprotocol/cofhe-contracts viem
+```
+
+</CodeGroup>
+
+## Wrap your app
+
+```tsx providers.tsx
+'use client';
+
+import { CofheProvider } from '@cofhe/react';
+import { createCofheConfig } from '@cofhe/sdk/web';
+import { chains } from '@cofhe/sdk/chains';
+
+const config = createCofheConfig({
+  environment: 'react',
+  supportedChains: [chains.sepolia],
+  react: { projectName: 'My dApp' },
+});
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <CofheProvider config={config}>{children}</CofheProvider>;
+}
+```
+
+## Encrypt and decrypt
+
+```tsx ConfidentialBalance.tsx
+'use client';
+
+import { useCofheTokenDecryptedBalance, useCofheEncrypt } from '@cofhe/react';
+import { Encryptable } from '@cofhe/sdk';
+
+export function ConfidentialBalance({ tokenAddress }: { tokenAddress: `0x${string}` }) {
+  const { balance, disabledDueToMissingValidPermit } = useCofheTokenDecryptedBalance(tokenAddress);
+  const encrypt = useCofheEncrypt();
+
+  if (disabledDueToMissingValidPermit) return <SignPermitButton />;
+
+  return <div>Balance: {balance?.toString() ?? '…'}</div>;
+}
+```
+
+## Where to next
+
+- [Getting Started](/client-sdk/react/getting-started) — install, provider, SSR notes, `react.*` config options.
+- [Hooks](/client-sdk/react/hooks) — full hook surface (connection, permits, encryption, decryption, reads / writes, token helpers).
+- [Components & Portal](/client-sdk/react/components-and-portal) — `CofheEncryptInput`, `CofheFloatingButton`, custom-token import.
