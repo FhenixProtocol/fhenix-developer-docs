@@ -1,70 +1,101 @@
 ---
 title: Decryption Request Flow
 sidebar_position: 3
-description: "Complete flow of a decryption request in the CoFHE ecosystem through smart contracts"
+description: "End-to-end path of a decryption: SDK request, TEE decryption, signed result, onchain publication, contract read-back"
 ---
 
-# Decryption Request Flow
-
-The process of requesting decryption through Smart Contracts starts the same as every other [FHE Operation Request](/deep-dive/data-flows/fhe-operation-request-flow) 📌steps 1-4
-
-Here we'll continue from FheOS server handling such request as follows:
-
-## Flow Diagram
-
-The following diagram illustrates the complete flow of an FHE Decryption request in the CoFHE ecosystem:
-
-<Frame>
-<img src="/images/Decryption Transactions.svg" alt="End-to-end flow of an FHE Decryption request through the CoFHE system components" />
-</Frame>
-
-*Figure 1: End-to-end flow of an FHE Decryption request through the CoFHE system components*
-
-## Step-by-Step Flow
-
-<Steps>
-<Step title="Steps 1-4 - FHE Operation Request">
-The decryption request follows the same initial steps as a standard FHE operation request:
-
-1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣
-
-Refer to [FHE Operation Request Flow](/deep-dive/data-flows/fhe-operation-request-flow) for details on steps 1-4, which include:
-- Integration with the Client SDK
-- Requesting an FHE Operation
-- Task Manager Processing
-- Slim Listener Processing
-</Step>
-
-<Step title="FheOS server - Decryption Execution">
-The FheOS server handles decryption requests:
-
-1. **Create execution thread** on the fheOS server
-
-2. **FheOS server calls the threshold network** with:
-   - The ciphertext to be decrypted
-   - Transaction hash from the host chain
-   - Original operation handle
-</Step>
-
-<Step title="Threshold network security protocol">
-The Threshold Network performs secure decryption:
-
-- Verify the host chain requested the desired decryption
-- Retrieve the actual ciphertext hash from private storage
-- Validate ciphertext hash integrity
-- Perform secure decryption
-</Step>
-
-<Step title="Result Delivery">
-After decryption is complete: 7️⃣
-
-- The Threshold Network returns the plaintext along with an **ECDSA signature** to the client (via the Client SDK)
-- The client (or any relayer) calls `FHE.publishDecryptResult(ctHash, result, signature)` or `FHE.verifyDecryptResult(ctHash, result, signature)` on-chain
-- The on-chain contract verifies the signature before accepting the result
+This page follows a plaintext all the way onto the chain: from the SDK's `decryptForTx` call, through [Teecryptor](/deep-dive/cofhe-components/teecryptor), to a signed result the TaskManager verifies and any contract can read.
 
 <Note>
-This enables permissionless result delivery — anyone holding a valid signature can publish. This is useful for client-driven settlement or relayer patterns.
+**Contracts cannot request decryption onchain.** The TaskManager rejects decrypt tasks (`DecryptFunctionNotSupported`), and `FHE.decrypt` no longer exists in the FHE library. Decryption is exclusively SDK-driven. A contract's role is to grant access (`FHE.allow`, `FHE.allowGlobal`, or `TaskManager.allowForDecryption`) and later read the published result. This design keeps decryption off the transaction path. The coprocessor never pushes plaintexts into your contract; anyone holding a valid signature publishes the result, and the contract verifies that signature itself.
+</Note>
+
+There are two SDK entry points:
+
+- **`decryptForTx`**: returns the plaintext with a signature you can publish onchain. This page covers it.
+- **`decryptForView`**: returns a sealed result only the permit holder can read, for UI display. Covered in the [Offchain Decryption Flow](/deep-dive/data-flows/off-chain-decryption-flow).
+
+## Step-by-step flow
+
+<Steps>
+
+<Step title="Contract grants access">
+The contract that owns the encrypted value marks the handle decryptable: `FHE.allow(handle, account)` for a specific account, or `FHE.allowGlobal(handle)` when the value may become public. Without an ACL grant, Teecryptor refuses the request.
+</Step>
+
+<Step title="SDK request">
+The user calls `decryptForTx` with the ciphertext handle:
+
+```typescript
+const { ctHash, decryptedValue, signature } = await client
+  .decryptForTx(ctHash)
+  .withPermit()
+  .execute();
+```
+
+The request goes to Teecryptor with the handle, the host chain id, and the [permit](/client-sdk/guides/permits). For publicly decryptable handles, use `.withoutPermit()`.
+</Step>
+
+<Step title="Teecryptor verifies and decrypts">
+Teecryptor authorizes the request against the onchain ACL, fetches the ciphertext exactly as stored, verifies it against the onchain commitment, and decrypts it inside the attested TEE. If the ciphertext or its commitment has not landed yet (a freshly computed handle), the SDK retries automatically until it is available.
+
+See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
+</Step>
+
+<Step title="Signed result">
+Teecryptor returns the plaintext together with an ECDSA signature over a fixed 76-byte message (result, encryption type, chain id, ciphertext hash). The signing key lives only inside the enclave, and its address is registered onchain as the TaskManager's `decryptResultSigner`.
+</Step>
+
+<Step title="Publication onchain">
+Anyone holding the signature submits it in a transaction:
+
+```solidity
+FHE.publishDecryptResult(ctHash, result, signature);
+```
+
+The TaskManager recomputes the message hash, recovers the signer, and rejects anything not signed by `decryptResultSigner`. On success it stores the plaintext in PlaintextsStorage and emits a `DecryptionResult` event. `publishDecryptResultBatch` amortizes gas across multiple results.
+
+<Note>
+Publication is permissionless: any relayer with a valid signature can deliver the result. `decryptForTx` itself costs no gas; gas is paid only by this publish transaction.
 </Note>
 </Step>
+
+<Step title="Contract read-back">
+Once published, any contract reads the plaintext:
+
+```solidity
+uint64 value = FHE.getDecryptResult(handle);                     // reverts if not yet published
+(uint64 value, bool ready) = FHE.getDecryptResultSafe(handle);   // non-reverting variant
+```
+
+To check a signature without storing the result, use the `verifyDecryptResult` family on the TaskManager.
+</Step>
+
 </Steps>
 
+## Flow diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant SDK as Client SDK
+    participant Teecryptor
+    participant TaskManager
+    participant Contract as Your contract
+
+    Contract->>TaskManager: FHE.allow / allowGlobal (grant access)
+    User->>SDK: decryptForTx(ctHash)
+    SDK->>Teecryptor: decrypt request (handle, chain id, permit?)
+    Teecryptor->>TaskManager: ACL check
+    Teecryptor->>Teecryptor: verify commitment, decrypt in TEE, sign
+    Teecryptor-->>SDK: plaintext + signature
+    SDK-->>User: { ctHash, decryptedValue, signature }
+    User->>TaskManager: FHE.publishDecryptResult(ctHash, result, signature)
+    TaskManager->>TaskManager: verify signer, store plaintext, emit DecryptionResult
+    Contract->>TaskManager: FHE.getDecryptResult(handle)
+    TaskManager-->>Contract: plaintext
+```
+
+## Future plans
+
+Decryption is currently performed by Teecryptor inside a hardware-attested TEE. A multi-party Threshold Network is the planned successor; see [Future Plans](/deep-dive/research/future-plans).

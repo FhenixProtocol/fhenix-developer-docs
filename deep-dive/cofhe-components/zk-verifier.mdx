@@ -1,56 +1,63 @@
 ---
 title: ZK Verifier
-description: "Off-chain service that verifies user inputs using Zero-Knowledge Proofs of Knowledge (ZKPoK) to ensure encrypted data is safe to use in smart contracts"
+description: "Offchain service that verifies user inputs using Zero-Knowledge Proofs of Knowledge (ZKPoK) to ensure encrypted data is safe to use in smart contracts"
 ---
 
-**ZK-Verifier** is an essential component for encrypting and providing data as inputs to confidential smart contracts.
+**ZK Verifier** is an essential component for encrypting and providing data as inputs to confidential smart contracts.
 
 | Aspect | Description |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Type** | Off-chain service, used by clients. |
+| **Type** | Offchain service running inside a hardware-attested TEE, used by clients. |
 | **Function** | Verifies the user's input, ensuring that it is safe to use. |
-| **Responsibilities** | • Receives a user's ZKPoK of their inputs.<br/>• Verifies said ZK proofs.<br/>• Generates a signature, allowing the user to use these inputs in a smart contract function call.<br/>• Stores inputs and their proofs in GCS public bucket.<br/>• Communicates directly with FheOS. |
+| **Responsibilities** | • Receives users' ZKPoKs for their inputs.<br/>• Verifies said ZK proofs.<br/>• Signs an approval the user passes with the inputs to the contract.<br/>• Stores the verified ciphertext bytes. |
 
-## ZKPoK - Why?
+## Why ZKPoK?
 
 **Zero-Knowledge Proof of Knowledge (ZKPoK)** provides a crucial security mechanism in CoFHE. It allows users to prove they know the plaintext of an encrypted input they're sending to a smart contract, without revealing the plaintext itself.
 
 ZKPoKs protect against potential malicious vectors, including:
 
-1. **Malleability Attacks**: Without ZKPoK protection, attackers could manipulate encrypted data by applying transformations to observed ciphertexts, even without knowing what's inside them. For example, they might combine existing ciphertexts with encrypted zero values to create new valid-looking encrypted data, potentially compromising user's confidentiality.
+1. **Malleability attacks**: Without ZKPoK protection, attackers could transform observed ciphertexts into new valid-looking ones without knowing their contents, for example by combining them with encrypted zeros.
 
-2. **Chosen Ciphertext Attacks (CCAs)**: Attackers can submit modified ciphertexts to the system and observe the results, potentially exploiting homomorphic operations to infer sensitive information, manipulate data, or even recover the secret key.
+2. **Chosen ciphertext attacks (CCAs)**: Attackers submit modified ciphertexts and observe the results, potentially exploiting homomorphic operations to infer sensitive information or even recover the secret key.
 
-Requiring a ZKPoK for each encrypted input helps running an encryption system in the public space that is a blockchain runtime. It ensures that only users with knowledge of the original plaintext can produce valid proofs. This approach eliminates multiple security risks, protecting sensitive user data and maintaining the system's integrity.
+Requiring a ZKPoK for each encrypted input is what makes it safe to run an encryption system in a public runtime like a blockchain. It ensures that only users with knowledge of the original plaintext can produce valid proofs. This eliminates multiple security risks, protecting sensitive user data and maintaining the system's integrity.
 
 ## Sending encrypted inputs
 
-As mentioned before, when providing ciphertexts as an input to a smart contract, users have to generate a ZKPoK and get a verification approval first. Although most of the work will be handled by the Client SDK (`@cofhe/sdk`) and FHE.sol, we will describe this mechanism in high-level (also in the diagram below).
+When providing ciphertexts as an input to a smart contract, users have to generate a ZKPoK and get a verification approval first. The Client SDK (`@cofhe/sdk`) and `FHE.sol` handle most of this work; the mechanism is described here end to end (also in the diagram below).
 
 <Frame>
 <img src="/images/zk-pok.svg" alt="ZK Proof of Knowledge Flow" />
 </Frame>
 
-The process of sending input(s) to a Smart Contract:
+The process of sending inputs to a smart contract:
 
-1. User encrypts an input(s) and generate a ZK proof of knowledge for it.
-2. User sends the ciphertext(s) and proof(s) to the ZKVerifier.
-3. ZK-Verifier verifies the proof. If valid, sign a message that approves input(s).
-4. ZK-Verifier returns the signed approval to User.
-5. User sends `(ciphertext, signed_approve)` (one or more) as input(s) to a contract call.
-6. Contract verifies the signed message, approving the input(s).
-7. Contract performs actual logic.
+1. The user encrypts the inputs and generates a ZK proof of knowledge for them.
+2. The user sends the ciphertexts and proofs to the ZK Verifier.
+3. The ZK Verifier verifies each proof. If valid, it signs a message that approves the input.
+4. The ZK Verifier returns the signed approval to the user.
+5. The user sends `(ciphertext, signed_approve)` pairs as inputs to a contract call.
+6. The contract verifies the signed message, approving the inputs. This also emits `InputVerified`, which anchors a commitment for the input so it becomes decryptable later.
+7. The contract performs the actual logic.
 
-As mentioned, most of this process is abstracted away. In fact, steps 1-6 are all handled behind the scenes, while step 7 (the actual logic) is, of course, up to the user to write.
+Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK and library calls, while step 7 (the actual logic) is up to you to write.
 
-## ZK-Verifier
+## Trust model
 
-The ZK-Verifier is a zk-verification program. It has two purposes:
+The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is released only to the exact attested code image, so neither the operator nor anyone else can sign approvals outside the reviewed program. After a successful verification, the service stores the ciphertext bytes in the coprocessor's ciphertext store and archives the inputs and proofs for auditability.
 
-1. Verify the ZKPoK's of ciphertexts that are intended to be inputted to a CoFHE smart contract.
-2. Sign a verification message, allowing the said contract to ensure that the inputs are safe and were validated.
+The signed message is verified onchain by the TaskManager using `ecrecover`; the verifier's signer address is registered there as `verifierSigner`.
 
-The signed message that the ZK-Verifier outputs will then be verified by the receiving contract using `ecrecover`. That means that the ZKVerifier's public key will be predetermined and well-known.
+## Signature format
 
-The ZKVerifier is intended to run in a TEE to reduce trust and ensure the integrity of the inputs and signed verification messages.
+For developers integrating without the SDK, the signed pre-image is:
 
+```text
+message_to_sign = keccak256(
+    ct_hash (32 bytes) || ct_type (1 byte) || security_zone (1 byte)
+    || account_addr (bytes) || chain_id (32 bytes, big-endian)
+)
+```
+
+The `recid` value the service returns (0 or 1) must be adjusted to 27 or 28 for Solidity's `ecrecover`.
