@@ -46,7 +46,7 @@ contract EncryptedCounter {
 ```
 
 ```typescript TypeScript (viem)
-import { Encryptable, assertCorrectEncryptedItemInput } from '@cofhe/sdk';
+import { Encryptable } from '@cofhe/sdk';
 import { parseAbi } from 'viem';
 import { sepolia } from 'viem/chains';
 
@@ -58,7 +58,6 @@ const encryptedCounterAbi = parseAbi([
 const [inCount] = await cofheClient
   .encryptInputs([Encryptable.uint32(42n)])
   .execute();
-assertCorrectEncryptedItemInput(inCount);
 
 // 2) Pass the encrypted struct as the InE* argument
 const hash = await walletClient.writeContract({
