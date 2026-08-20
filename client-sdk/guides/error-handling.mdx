@@ -26,8 +26,8 @@ try {
 
 Every `CofheError` has:
 
-- `code` — a `CofheErrorCode` enum value identifying the error type
-- `message` — a human-readable description of what went wrong
+- `code`: a `CofheErrorCode` enum value identifying the error type
+- `message`: a human-readable description of what went wrong
 
 Use `isCofheError(err)` to check if a caught error is a `CofheError`.
 
@@ -36,8 +36,8 @@ Use `isCofheError(err)` to check if a caught error is a `CofheError`.
 | Error code | When it occurs |
 | --- | --- |
 | `ZkPackFailed` | `encryptInputs` exceeded the 2048-bit plaintext limit |
-| `PermitNotFound` | No permit found for the given `chainId + account` |
-| `PermitInvalid` | The permit signature is invalid or expired |
+| `ACPNotFound` | No ACP found for the given `chainId + account` |
+| `ACPInvalid` | The ACP signature is invalid or expired |
 | `DecryptFailed` | Decryption request was rejected by the Threshold Network |
 | `NotConnected` | Attempted an operation before calling `client.connect(...)` |
 
@@ -69,9 +69,9 @@ try {
     .decryptForView(ctHash, FheTypes.Uint32)
     .execute();
 } catch (err) {
-  if (isCofheError(err) && err.code === CofheErrorCode.PermitNotFound) {
-    // Create a permit and retry
-    await client.permits.getOrCreateSelfPermit();
+  if (isCofheError(err) && err.code === CofheErrorCode.ACPNotFound) {
+    // Create an ACP and retry
+    await client.acp.getOrCreateSelfACP();
     const plaintext = await client
       .decryptForView(ctHash, FheTypes.Uint32)
       .execute();
@@ -79,17 +79,17 @@ try {
 }
 ```
 
-### Distinguishing why a permit is invalid
+### Distinguishing why an ACP is invalid
 
-Since `@cofhe/sdk@0.5.0`, the decrypt flows call `PermitUtils.validate(permit)` internally before talking to the Threshold Network. That helper enforces **schema + signed + not-expired** all at once, so when it fails the recovery path depends on **which** check tripped.
+The decrypt flows call `ACPUtils.validate(acp)` internally before talking to the Threshold Network. That helper enforces **schema + signed + not-expired** all at once, so when it fails the recovery path depends on **which** check tripped.
 
-Use the non-throwing `ValidationUtils.isValid` helper from `@cofhe/sdk/permits` to pre-flight the active permit and route based on the typed reason — this avoids the thrown error path entirely:
+Use the non-throwing `ValidationUtils.isValid` helper from `@cofhe/sdk/acps` to pre-flight the active ACP and route based on the typed reason, which avoids the thrown error path entirely:
 
 ```typescript
 import { FheTypes } from '@cofhe/sdk';
-import { ValidationUtils } from '@cofhe/sdk/permits';
+import { ValidationUtils } from '@cofhe/sdk/acps';
 
-const active = client.permits.getActivePermit();
+const active = client.acp.getActiveACP();
 const result = active
   ? ValidationUtils.isValid(active)
   : { valid: false, error: 'not-signed' as const };
@@ -97,13 +97,13 @@ const result = active
 if (!result.valid) {
   switch (result.error) {
     case 'expired':
-      await client.permits.getOrCreateSelfPermit(); // create a fresh one
+      await client.acp.getOrCreateSelfACP(); // create a fresh one
       break;
     case 'not-signed':
-      await client.permits.getOrCreateSelfPermit(); // prompt the wallet to sign
+      await client.acp.getOrCreateSelfACP(); // prompt the wallet to sign
       break;
     case 'invalid-schema':
-      client.permits.removeActivePermit(); // stored payload is malformed
+      client.acp.removeActiveACP(); // stored payload is malformed
       break;
   }
 }
@@ -113,8 +113,8 @@ const plaintext = await client
   .execute();
 ```
 
-`ValidationResult.error` is the typed union `'invalid-schema' | 'expired' | 'not-signed' | null` — see [Permits → Validating permits](/client-sdk/guides/permits#validating-permits) for the full helper surface.
+`ValidationResult.error` is the typed union `'invalid-schema' | 'expired' | 'not-signed' | null`. See [validating permits](/client-sdk/guides/permits#validating-permits) for the full helper surface.
 
 <Note>
-If you prefer the throwing path: `PermitUtils.validate(permit)` raises plain `Error`s with messages `Permit is expired` / `Permit is not signed` (or a Zod schema error). These are not wrapped in `CofheError`, so use `err.message` rather than an error code to branch.
+If you prefer the throwing path: `ACPUtils.validate(acp)` raises plain `Error`s with messages `ACP is expired` / `ACP is not signed` (or a Zod schema error). These are not wrapped in `CofheError`, so use `err.message` rather than an error code to branch.
 </Note>
