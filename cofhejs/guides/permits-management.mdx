@@ -3,6 +3,10 @@ title: Permits Management
 description: "Create and manage permits for accessing encrypted data in FHE-enabled smart contracts"
 ---
 
+<Warning>
+**`cofhejs` is the legacy client library.** New projects should use [`@cofhe/sdk`](/client-sdk/guides/permits) instead. See [Migrating from cofhejs](/client-sdk/introduction/migrating-from-cofhejs) for a side-by-side guide. These pages remain for reference for projects that haven't migrated yet.
+</Warning>
+
 ## Creating Permits
 
 After encryption, values can be passed into FHE-enabled smart contracts, and the contract can operate on this data securely, within its own logic. However, to ensure that only the respective user can view the processed (encrypted) data, **permissions** and **sealing** mechanisms are used. These ensure that data remains private and viewable exclusively by the user who owns it.
