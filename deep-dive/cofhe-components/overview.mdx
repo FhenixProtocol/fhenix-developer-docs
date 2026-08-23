@@ -74,6 +74,6 @@ Services communicate through message queues rather than direct calls, so each st
 2. **[FHE operation flow](/deep-dive/data-flows/fhe-operation-request-flow)**: a contract requests a computation; the coprocessor executes it and commits to the result.
 3. **[Decryption](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor to decrypt a handle, either as a signed plaintext for onchain publication or sealed to a permit for offchain reads.
 
-## What comes next
+## Future plans
 
 Decryption is currently performed by Teecryptor inside a hardware-attested TEE. A multi-party [Threshold Network](/deep-dive/research/future-plans) is the planned successor.
