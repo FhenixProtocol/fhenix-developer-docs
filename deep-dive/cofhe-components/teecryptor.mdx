@@ -26,7 +26,7 @@ Concurrently with authorization, Teecryptor confirms that the [FHE Engine](/deep
 </Step>
 
 <Step title="Ciphertext fetch and integrity check">
-The ciphertext is fetched from the ciphertext store exactly as the FHE Engine stored it, and its bytes must hash to the onchain commitment. A missing commitment or mismatched bytes rejects the request. This validates the ciphertext against the onchain commitment before anything is decrypted: Teecryptor only ever decrypts bytes the coprocessor committed to publicly.
+The ciphertext is fetched from the CT Server exactly as the FHE Engine stored it, and its bytes must hash to the onchain commitment. A missing commitment or mismatched bytes rejects the request. This validates the ciphertext against the onchain commitment before anything is decrypted: Teecryptor only ever decrypts bytes the coprocessor committed to publicly.
 </Step>
 
 <Step title="Decryption">
@@ -50,7 +50,7 @@ sequenceDiagram
     participant Teecryptor
     participant TaskManager
     participant Registry as CommitmentRegistry
-    participant Store as Ciphertext store
+    participant Store as CT Server
 
     SDK->>Teecryptor: decrypt / sealoutput (handle, chain id, permit?)
     par Authorization

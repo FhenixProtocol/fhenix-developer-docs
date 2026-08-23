@@ -45,7 +45,7 @@ Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK 
 
 ## Trust model
 
-The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is released only to the exact attested code image, so neither the operator nor anyone else can sign approvals outside the reviewed program. After a successful verification, the service stores the ciphertext bytes in the coprocessor's ciphertext store and archives the inputs and proofs for auditability.
+The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is released only to the exact attested code image, so neither the operator nor anyone else can sign approvals outside the reviewed program. After a successful verification, the service stores the ciphertext bytes in the CT Server and archives the inputs and proofs for auditability.
 
 The signed message is verified onchain by the TaskManager using `ecrecover`; the verifier's signer address is registered there as `verifierSigner`.
 

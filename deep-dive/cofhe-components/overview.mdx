@@ -23,7 +23,7 @@ flowchart LR
         SL["Slim Listener"]
         FheOS["FheOS Server"]
         Engine["FHE Engine"]
-        CTS["Ciphertext Server"]
+        CTS["CT Server"]
         BP["Blockchain Poster"]
         TEE["Teecryptor (TEE)"]
     end
@@ -63,7 +63,7 @@ flowchart LR
 - **[Slim Listener](/deep-dive/cofhe-components/slim-listener)**: watches TaskManager events on each host chain and forwards them into the coprocessor's queues.
 - **[FheOS Server](/deep-dive/cofhe-components/fheos-server)**: ingests task events, verifies inputs, creates result placeholders, and routes work to the FHE Engine. It does not execute FHE operations itself.
 - **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)**: executes every FHE operation on encrypted data, persists the resulting ciphertexts, and emits a commitment for each result.
-- **Ciphertext Server**: stores and serves ciphertext bytes to the other services.
+- **CT Server**: the ciphertext store. It holds the ciphertext bytes and serves them to the other services.
 - **Blockchain Poster**: batches result commitments and posts them to the CommitmentRegistry.
 - **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption service. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
 

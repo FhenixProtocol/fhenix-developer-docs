@@ -12,7 +12,7 @@ This page follows an encrypted input from the plaintext in your application to a
 | **dApp** | The application that interacts with the user and the contracts |
 | **Client SDK** (`@cofhe/sdk`) | TypeScript library that encrypts inputs locally and submits them for verification |
 | **ZK Verifier** | Attested offchain service that verifies the proof attached to every encrypted input |
-| **Ciphertext Server** | Stores the verified ciphertext bytes for the coprocessor |
+| **CT Server** | Stores the verified ciphertext bytes for the coprocessor |
 | **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Verifies the ZK Verifier's signature when the input is used onchain |
 
 ## Flow diagram
@@ -23,7 +23,7 @@ sequenceDiagram
     participant App as Your app
     participant SDK as Client SDK
     participant ZK as ZK Verifier
-    participant CTS as Ciphertext Server
+    participant CTS as CT Server
     participant TM as TaskManager
 
     App->>SDK: encryptInputs([...]).execute()
