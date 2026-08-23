@@ -39,4 +39,4 @@ The last two are what the decryption path runs on. For every `decrypt` or `sealo
 
 ## Upgrades
 
-The contract is `UUPSUpgradeable` with owner-gated `_authorizeUpgrade`, ownership is `Ownable2Step`, and storage uses ERC-7201 namespaced slots for upgrade safety.
+The contract is UUPS-upgradeable behind a proxy, and storage uses ERC-7201 namespaced slots for upgrade safety.

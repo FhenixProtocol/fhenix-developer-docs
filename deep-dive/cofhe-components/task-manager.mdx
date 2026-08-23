@@ -14,16 +14,14 @@ description: "Onchain entry point for CoFHE integration that initiates FHE opera
 
 The TaskManager holds two distinct signer addresses, one per trust boundary:
 
-| Signer | Verifies | Set by |
-|--------|----------|--------|
-| `verifierSigner` | Encrypted inputs: the ZK Verifier signs each input it verified, and `verifyInput` checks that signature before emitting `InputVerified(ctHash, commitment)`. | Owner |
-| `decryptResultSigner` | Decrypt results: [Teecryptor](/deep-dive/cofhe-components/teecryptor) signs each plaintext it returns, and the publish path checks that signature before storing the result. | Owner |
-
-Either signer set to `address(0)` skips its verification (debug mode only, never in production).
+| Signer | Verifies |
+|--------|----------|
+| `verifierSigner` | Encrypted inputs: the ZK Verifier signs each input it verified, and `verifyInput` checks that signature before emitting `InputVerified(ctHash, commitment)`. |
+| `decryptResultSigner` | Decrypt results: [Teecryptor](/deep-dive/cofhe-components/teecryptor) signs each plaintext it returns, and the publish path checks that signature before storing the result. |
 
 ## Decrypt result signature verification
 
-The TaskManager supports **permissionless publishing of decrypt results**. Anyone holding a valid signature from the decryption service can publish the result onchain, provided the contract is enabled (the owner holds an `isEnabled` kill switch). Today that signature comes from Teecryptor; a decentralized [Threshold Network](/deep-dive/research/future-plans) is the planned successor.
+The TaskManager supports **permissionless publishing of decrypt results**. Anyone holding a valid signature from the decryption service can publish the result onchain. Today that signature comes from Teecryptor; a decentralized [Threshold Network](/deep-dive/research/future-plans) is the planned successor.
 
 Verified results are stored in the [PlaintextsStorage](/deep-dive/cofhe-components/plaintext-storage) contract, where any contract can read them back with `getDecryptResult` (reverts with `DecryptionResultNotReady` if pending) or `getDecryptResultSafe` (returns a ready flag).
 
@@ -37,7 +35,7 @@ Verified results are stored in the [PlaintextsStorage](/deep-dive/cofhe-componen
 | `verifyDecryptResultSafe(ctHash, result, signature)` | Verify a signature without publishing (view). Returns `false` on failure. |
 | `verifyDecryptResultBatch(ctHashes[], results[], signatures[])` | Batch verify (view). Reverts on the first failure. |
 | `verifyDecryptResultBatchSafe(ctHashes[], results[], signatures[])` | Batch verify (view). Returns a `bool[]` of per-item outcomes. |
-| `setDecryptResultSigner(address)` | Owner-only (two-step ownable). Set the authorized signer address. |
+| `setDecryptResultSigner(address)` | Admin-only. Set the authorized signer address. |
 
 ### Signature message format
 
@@ -51,7 +49,3 @@ The signed message is a fixed **76-byte** buffer:
 | `ct_hash` | 32 bytes | uint256, big-endian |
 
 The message is hashed with `keccak256` and verified using OpenZeppelin's `ECDSA.tryRecover`. The `enc_type` and `chain_id` are derived onchain, binding each signature to a specific ciphertext type and chain.
-
-## Upgrades
-
-The contract is `UUPSUpgradeable` with `_authorizeUpgrade` gated to the owner, and ownership is `Ownable2Step` (transfers require an explicit accept). The constructor calls `_disableInitializers()`, so the implementation contract can never be initialized directly.
