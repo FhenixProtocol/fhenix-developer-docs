@@ -119,6 +119,8 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 
 A page full of callouts has none.
 
+- Long code identifiers in narrow table columns get chopped mid-word by the table layout. Keep the first column to bare names (no argument lists) and guard each one with `<code style={{ whiteSpace: "nowrap" }}>name</code>`. Full signatures belong in prose above the table or in the description column.
+
 ## Code samples
 
 - Every sample must compile or run against the currently published versions. If it would not run when pasted, it does not ship.

@@ -14,24 +14,10 @@ description: "Onchain entry point for CoFHE integration that initiates FHE opera
 
 The TaskManager holds two distinct signer addresses, one per trust boundary:
 
-<table>
-<thead>
-<tr>
-<th style={{ whiteSpace: "nowrap" }}>Signer</th>
-<th>Verifies</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style={{ whiteSpace: "nowrap" }}><code>verifierSigner</code></td>
-<td>Encrypted inputs: the ZK Verifier signs each input it verified, and <code>verifyInput</code> checks that signature before emitting <code>InputVerified(ctHash, commitment)</code>.</td>
-</tr>
-<tr>
-<td style={{ whiteSpace: "nowrap" }}><code>decryptResultSigner</code></td>
-<td>Decrypt results: <a href="/deep-dive/cofhe-components/teecryptor">Teecryptor</a> signs each plaintext it returns, and the publish path checks that signature before storing the result.</td>
-</tr>
-</tbody>
-</table>
+| Signer | Verifies |
+|--------|----------|
+| <code style={{ whiteSpace: "nowrap" }}>verifierSigner</code> | Encrypted inputs: the ZK Verifier signs each input it verified, and `verifyInput` checks that signature before emitting `InputVerified(ctHash, commitment)`. |
+| <code style={{ whiteSpace: "nowrap" }}>decryptResultSigner</code> | Decrypt results: [Teecryptor](/deep-dive/cofhe-components/teecryptor) signs each plaintext it returns, and the publish path checks that signature before storing the result. |
 
 ## Decrypt result signature verification
 
@@ -41,15 +27,17 @@ Verified results are stored in the [PlaintextsStorage](/deep-dive/cofhe-componen
 
 ### Functions
 
+All take `(ctHash, result, signature)`; the batch variants take parallel arrays.
+
 | Function | Description |
 |----------|-------------|
-| `publishDecryptResult(ctHash, result, signature)` | Verify the signature and store the decrypt result onchain. Emits `DecryptionResult`. |
-| `publishDecryptResultBatch(ctHashes[], results[], signatures[])` | Batch publish multiple results in one transaction for gas efficiency. |
-| `verifyDecryptResult(ctHash, result, signature)` | Verify a signature without publishing (view). Reverts on failure. |
-| `verifyDecryptResultSafe(ctHash, result, signature)` | Verify a signature without publishing (view). Returns `false` on failure. |
-| `verifyDecryptResultBatch(ctHashes[], results[], signatures[])` | Batch verify (view). Reverts on the first failure. |
-| `verifyDecryptResultBatchSafe(ctHashes[], results[], signatures[])` | Batch verify (view). Returns a `bool[]` of per-item outcomes. |
-| `setDecryptResultSigner(address)` | Admin-only. Set the authorized signer address. |
+| <code style={{ whiteSpace: "nowrap" }}>publishDecryptResult</code> | Verify the signature and store the decrypt result onchain. Emits `DecryptionResult`. |
+| <code style={{ whiteSpace: "nowrap" }}>publishDecryptResultBatch</code> | Batch publish multiple results in one transaction for gas efficiency. |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResult</code> | Verify a signature without publishing (view). Reverts on failure. |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResultSafe</code> | Verify a signature without publishing (view). Returns `false` on failure. |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResultBatch</code> | Batch verify (view). Reverts on the first failure. |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResultBatchSafe</code> | Batch verify (view). Returns a `bool[]` of per-item outcomes. |
+| <code style={{ whiteSpace: "nowrap" }}>setDecryptResultSigner</code> | Admin-only. Takes an address; sets the authorized signer. |
 
 ### Signature message format
 
