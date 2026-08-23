@@ -8,7 +8,7 @@ description: "Registry-chain contract that records FHE computation commitments. 
 | **Type** | UUPS-upgradeable Solidity contract deployed on a dedicated **registry chain**. |
 | **Function** | Records `(version, handle) → commitHash` entries for every FHE operation result that the coprocessor produces. |
 | **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
-| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. Initialized with `(initialOwner, initialPoster)`. Owner is `Ownable2Step`; transfers require an explicit accept. |
+| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. |
 
 ## Why a separate registry chain?
 
@@ -45,16 +45,11 @@ stateDiagram-v2
 | `Deprecated` | New commitments rejected. Existing lookups still resolve. Used during a parameter rollover. | to `Revoked` |
 | `Revoked` | Hard kill. No further transitions; the version is dead. | none (terminal) |
 
-Owner-only `setVersionStatus(version, newStatus)` enforces these transitions and reverts with `InvalidVersionTransition` otherwise. The transition emits `VersionStatusChanged(version, oldStatus, newStatus)`.
+The admin-only `setVersionStatus(version, newStatus)` enforces these transitions and reverts with `InvalidVersionTransition` otherwise. The transition emits `VersionStatusChanged(version, oldStatus, newStatus)`.
 
-## Roles and write surface
+## Write surface
 
-| Role | How it's set | What it can do |
-|------|--------------|----------------|
-| **Owner** | `initialize(initialOwner, …)`, then `Ownable2Step` transfer. | `addPoster`, `removePoster`, `setVersionStatus`, `_authorizeUpgrade`. |
-| **Poster** | Owner-only `addPoster(address)`. Initial poster supplied to `initialize`. | `postCommitments`, `postCommitmentsSafe`. |
-
-Non-poster posts revert with `OnlyPosterAllowed(caller)`. In production, the poster role is held by the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05) service's relayer signer (OpenZeppelin Relayer).
+Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05) service's relayer signer (OpenZeppelin Relayer).
 
 ## Writing commitments
 
@@ -110,10 +105,6 @@ The paginated `getHandles` is the recommended way to enumerate a version: `getSi
 | `CommitmentsPostedSafe(bytes32 indexed version, uint256 newlyPosted, uint256 skipped)` | `postCommitmentsSafe` | Reconcile "how many were new" in an idempotent flow. |
 | `VersionStatusChanged(bytes32 indexed version, VersionStatus oldStatus, VersionStatus newStatus)` | `setVersionStatus` | Watch for `Active → Deprecated` to know when to stop posting under a version. |
 | `PosterAdded(address indexed poster)` / `PosterRemoved(address indexed poster)` | `addPoster` / `removePoster` | Audit role changes. |
-
-## Upgrades
-
-The contract is `UUPSUpgradeable`. `_authorizeUpgrade` is gated by `onlyOwner`. The constructor calls `_disableInitializers()` so the implementation contract itself can never be initialized; initialization happens through the proxy via `initialize(initialOwner, initialPoster)`.
 
 ## Source
 
