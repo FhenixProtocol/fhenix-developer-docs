@@ -3,17 +3,17 @@ title: ZK Verifier
 description: "Offchain service that verifies user inputs using Zero-Knowledge Proofs of Knowledge (ZKPoK) to ensure encrypted data is safe to use in smart contracts"
 ---
 
-**ZK Verifier** is an essential component for encrypting and providing data as inputs to confidential smart contracts.
+**ZK Verifier** checks every encrypted input before it can enter a confidential smart contract.
 
 | Aspect | Description |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Type** | Offchain service running inside a hardware-attested TEE, used by clients. |
+| **Type** | Offchain service running inside a hardware-attested TEE. |
 | **Function** | Verifies the user's input, ensuring that it is safe to use. |
-| **Responsibilities** | • Receives users' ZKPoKs for their inputs.<br/>• Verifies said ZK proofs.<br/>• Signs an approval the user passes with the inputs to the contract.<br/>• Stores the verified ciphertext bytes. |
+| **Responsibilities** | • Receives users' ZKPoKs for their inputs.<br/>• Verifies those proofs.<br/>• Signs an approval the user passes with the inputs to the contract.<br/>• Stores the verified ciphertext bytes. |
 
 ## Why ZKPoK?
 
-**Zero-Knowledge Proof of Knowledge (ZKPoK)** provides a crucial security mechanism in CoFHE. It allows users to prove they know the plaintext of an encrypted input they're sending to a smart contract, without revealing the plaintext itself.
+A **Zero-Knowledge Proof of Knowledge (ZKPoK)** lets a user prove they know the plaintext behind an encrypted input, without revealing that plaintext.
 
 ZKPoKs protect against potential malicious vectors, including:
 
@@ -21,7 +21,7 @@ ZKPoKs protect against potential malicious vectors, including:
 
 2. **Chosen ciphertext attacks (CCAs)**: Attackers submit modified ciphertexts and observe the results, potentially exploiting homomorphic operations to infer sensitive information or even recover the secret key.
 
-Requiring a ZKPoK for each encrypted input is what makes it safe to run an encryption system in a public runtime like a blockchain. It ensures that only users with knowledge of the original plaintext can produce valid proofs. This eliminates multiple security risks, protecting sensitive user data and maintaining the system's integrity.
+Requiring a ZKPoK for each encrypted input is what makes it safe to run an encryption system in a public runtime like a blockchain. Only someone who knows the original plaintext can produce a valid proof.
 
 ## Sending encrypted inputs
 
@@ -56,7 +56,7 @@ For developers integrating without the SDK, the signed pre-image is:
 ```text
 message_to_sign = keccak256(
     ct_hash (32 bytes) || ct_type (1 byte) || security_zone (1 byte)
-    || account_addr (bytes) || chain_id (32 bytes, big-endian)
+    || account_addr (20 bytes, the sender's address) || chain_id (32 bytes, big-endian)
 )
 ```
 

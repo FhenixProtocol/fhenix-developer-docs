@@ -2,7 +2,7 @@
   "theme": "base",
   "themeVariables": {
     "fontFamily": "Menlo, Monaco, Consolas, monospace",
-    "fontSize": "13px",
+    "fontSize": "16px",
     "primaryColor": "#8FBAF5",
     "primaryBorderColor": "#2E7CF6",
     "primaryTextColor": "#0A1626",
@@ -33,6 +33,9 @@
     "actorFontFamily": "Menlo, Monaco, Consolas, monospace",
     "messageFontFamily": "Menlo, Monaco, Consolas, monospace",
     "noteFontFamily": "Menlo, Monaco, Consolas, monospace",
-    "width": 220
+    "width": 220,
+    "actorFontSize": 16,
+    "messageFontSize": 16,
+    "noteFontSize": 15
   }
 }

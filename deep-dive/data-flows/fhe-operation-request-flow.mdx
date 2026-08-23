@@ -22,7 +22,7 @@ This page follows a single FHE operation from the contract call that requests it
 ## Flow diagram
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "13px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
     participant Contract as Your contract (FHE.sol)
     participant TM as TaskManager
@@ -88,7 +88,7 @@ The TaskManager is the gateway for all FHE operation requests. It:
 </Step>
 
 <Step title="Slim Listener pickup">
-One Slim Listener instance runs per host chain. It watches for `TaskCreated` events and publishes them to the coprocessor's `blockchain-events` queue.
+One Slim Listener instance runs per host chain per flow. This flow's listener watches for `TaskCreated` events and publishes them to the coprocessor's `blockchain-events` queue.
 </Step>
 
 <Step title="FheOS Server routing">
@@ -100,7 +100,7 @@ The FHE Engine consumes `engine-requests` and:
 
 1. Executes the requested operation on the encrypted data.
 2. Stores the result ciphertext in the coprocessor's store, keyed by the handle.
-3. Resolves any queued operations that were waiting on this handle.
+3. Releases any dependent operations that were deferred while waiting for this result.
 4. Publishes a commitment for the result (the hash of the stored ciphertext bytes) to the `commitment-requests` queue.
 </Step>
 

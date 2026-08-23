@@ -3,11 +3,11 @@ title: "CoFHE Architecture Overview"
 description: "How CoFHE's onchain contracts and offchain services fit together to run FHE computations for any EVM chain"
 ---
 
-CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts compute on encrypted data. Contracts request operations through onchain calls; a set of offchain services executes them and commits to the results. Data stays encrypted through the entire lifecycle, and every result can be verified against an onchain commitment.
+CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts compute on encrypted data. Contracts request operations through onchain calls; a set of offchain services executes them and commits to the results. Data stays encrypted until an authorized decryption, and every result can be verified against an onchain commitment.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "13px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220}}}%%
-flowchart LR
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
+flowchart TB
     subgraph App["Application"]
         SDK["Client SDK"]
     end
@@ -20,10 +20,10 @@ flowchart LR
 
     subgraph CoFHE["CoFHE services (offchain)"]
         ZK["ZK Verifier"]
+        CTS["CT Server"]
         SL["Slim Listener"]
         FheOS["FheOS Server"]
         Engine["FHE Engine"]
-        CTS["CT Server"]
         BP["Blockchain Poster"]
         TEE["Teecryptor (TEE)"]
     end

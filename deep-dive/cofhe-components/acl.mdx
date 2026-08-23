@@ -33,9 +33,9 @@ All state-mutating entry points require `msg.sender` to be the TaskManager; dire
 | `persistAllowed(handle, account)` | Is there a persistent grant? |
 | `globalAllowed(handle)` | Is the handle globally allowed? |
 | `isAllowedForDecryption(handle)` | Is the handle on the decryption allowlist? |
-| `isAllowedWithPermission(permission, handle)` | Does this EIP-712 [permit](/client-sdk/guides/permits) authorize its issuer for the handle? |
+| <code style={{ whiteSpace: "nowrap" }}>isAllowedWithPermission</code> | Does this EIP-712 [permit](/client-sdk/guides/permits) authorize its issuer for the given handle? |
 
-The last two are what the decryption path runs on. For every `decrypt` or `sealoutput` request, Teecryptor queries the ACL through the TaskManager: `isAllowedWithPermission` when a permit is attached, or the public-decryptability check when none is. A future [Threshold Network](/deep-dive/research/future-plans) will consume the same interface.
+The last two are what the decryption path runs on. For every `decrypt` or `sealoutput` request, Teecryptor queries the ACL through the TaskManager: `isAllowedWithPermission` when a permit is attached, or `isPubliclyAllowed` (the TaskManager's wrapper over `globalAllowed`) when none is. A future [Threshold Network](/deep-dive/research/future-plans) will consume the same interface.
 
 ## Upgrades
 

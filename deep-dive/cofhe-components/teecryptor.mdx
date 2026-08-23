@@ -22,11 +22,11 @@ Teecryptor checks the handle against the onchain ACL through the [TaskManager](/
 </Step>
 
 <Step title="Commitment verification">
-Concurrently with authorization, Teecryptor confirms that the [FHE Engine](/deep-dive/cofhe-components/fheos-server) posted a commitment for this handle in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry). Commitments are write-once, so a verified result is cached permanently.
+Concurrently with authorization, Teecryptor confirms that the [FHE Engine](/deep-dive/cofhe-components/fhe-engine) posted a commitment for this handle in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry). Commitments are write-once, so a verified result is cached permanently.
 </Step>
 
 <Step title="Ciphertext fetch and integrity check">
-The ciphertext is fetched from the CT Server exactly as the FHE Engine stored it, and its bytes must hash to the onchain commitment. A missing commitment or mismatched bytes rejects the request. This validates the ciphertext against the onchain commitment before anything is decrypted: Teecryptor only ever decrypts bytes the coprocessor committed to publicly.
+The ciphertext is fetched from the CT Server exactly as the FHE Engine stored it, and its bytes must hash to the onchain commitment. A missing commitment or mismatched bytes rejects the request. Teecryptor only ever decrypts bytes the coprocessor committed to publicly.
 </Step>
 
 <Step title="Decryption">
@@ -44,7 +44,7 @@ A handle whose ciphertext or commitment has not landed yet is not an error. Teec
 </Note>
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "13px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
     participant SDK as Client SDK
     participant Teecryptor

@@ -6,7 +6,7 @@ description: "Registry-chain contract that records FHE computation commitments. 
 | Aspect | Description |
 |--------|-------------|
 | **Type** | UUPS-upgradeable Solidity contract deployed on a dedicated **registry chain**. |
-| **Function** | Records `(version, handle) → commitHash` entries for every FHE operation result that the coprocessor produces. |
+| **Function** | Records `(version, handle) → commitHash` entries for every ciphertext the coprocessor produces or verifies, computed results and encrypted inputs alike. |
 | **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
 | **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. |
 
@@ -29,10 +29,10 @@ mapping(address => bool)                                                  poster
 
 ## Version lifecycle
 
-`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change, currently the ASCII tag `"2"` (see [the FHE Engine `COMMITMENT_VERSION` notes](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05)). Every version moves through a small state machine:
+`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change, currently the ASCII tag `"2"` (see [the `COMMITMENT_VERSION` changelog notes](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05)). Every version moves through a small state machine:
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "13px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 stateDiagram-v2
     direction LR
     Unset --> Active
@@ -52,7 +52,7 @@ The admin-only `setVersionStatus(version, newStatus)` enforces these transitions
 
 ## Write surface
 
-Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05) service's relayer signer (OpenZeppelin Relayer).
+Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/tree/master/src/services/blockchain-poster) service's relayer signer (OpenZeppelin Relayer).
 
 ## Writing commitments
 
@@ -94,8 +94,8 @@ Both enforce **write-once per (version, handle)**: a commitment can never be ove
 | `getCommitment(version, handle)` | `bytes32` | `bytes32(0)` means "not posted". |
 | `getVersionStatus(version)` | `VersionStatus` | `Unset` if never registered. |
 | `getSize(version)` | `uint256` | Number of handles ever committed under `version`. |
-| `getHandleByIndex(version, index)` | `bytes32` | Direct array lookup. Reverts on out-of-range. |
-| `getHandles(version, offset, limit)` | `bytes32[]` | Paginated. Returns an empty array if `offset >= total`; clamps `offset + limit` at `total`. |
+| <code style={{ whiteSpace: "nowrap" }}>getHandleByIndex(version, index)</code> | `bytes32` | Direct array lookup. Reverts on out-of-range. |
+| <code style={{ whiteSpace: "nowrap" }}>getHandles(version, offset, limit)</code> | `bytes32[]` | Paginated. Returns an empty array if `offset >= total`; clamps `offset + limit` at `total`. |
 | `isPoster(address)` | `bool` | Useful for offchain ops dashboards. |
 
 The paginated `getHandles` is the recommended way to enumerate a version: `getSize` first to compute pages, then `getHandles(version, offset, pageSize)` in a loop.
@@ -104,10 +104,10 @@ The paginated `getHandles` is the recommended way to enumerate a version: `getSi
 
 | Event | Emitted by | Use |
 |-------|-----------|-----|
-| `CommitmentsPosted(bytes32 indexed version, uint256 batchSize)` | `postCommitments` | Confirm a strict batch landed. |
-| `CommitmentsPostedSafe(bytes32 indexed version, uint256 newlyPosted, uint256 skipped)` | `postCommitmentsSafe` | Reconcile "how many were new" in an idempotent flow. |
-| `VersionStatusChanged(bytes32 indexed version, VersionStatus oldStatus, VersionStatus newStatus)` | `setVersionStatus` | Watch for `Active → Deprecated` to know when to stop posting under a version. |
-| `PosterAdded(address indexed poster)` / `PosterRemoved(address indexed poster)` | `addPoster` / `removePoster` | Audit role changes. |
+| <code style={{ whiteSpace: "nowrap" }}>CommitmentsPosted</code> | `postCommitments` | Confirm a strict batch landed. Carries the version and batch size. |
+| <code style={{ whiteSpace: "nowrap" }}>CommitmentsPostedSafe</code> | `postCommitmentsSafe` | Reconcile "how many were new" in an idempotent flow. Carries newlyPosted and skipped counts. |
+| <code style={{ whiteSpace: "nowrap" }}>VersionStatusChanged</code> | `setVersionStatus` | Watch for the `Active` to `Deprecated` transition to know when to stop posting under a version. |
+| <code style={{ whiteSpace: "nowrap" }}>PosterAdded</code> / <code style={{ whiteSpace: "nowrap" }}>PosterRemoved</code> | `addPoster` / `removePoster` | Audit role changes. |
 
 ## Source
 
