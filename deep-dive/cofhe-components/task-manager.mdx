@@ -14,8 +14,24 @@ description: "Onchain entry point for CoFHE integration that initiates FHE opera
 
 The TaskManager holds two distinct signer addresses, one per trust boundary:
 
-- **`verifierSigner`** covers encrypted inputs: the ZK Verifier signs each input it verified, and `verifyInput` checks that signature before emitting `InputVerified(ctHash, commitment)`.
-- **`decryptResultSigner`** covers decrypt results: [Teecryptor](/deep-dive/cofhe-components/teecryptor) signs each plaintext it returns, and the publish path checks that signature before storing the result.
+<table>
+<thead>
+<tr>
+<th style={{ whiteSpace: "nowrap" }}>Signer</th>
+<th>Verifies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style={{ whiteSpace: "nowrap" }}><code>verifierSigner</code></td>
+<td>Encrypted inputs: the ZK Verifier signs each input it verified, and <code>verifyInput</code> checks that signature before emitting <code>InputVerified(ctHash, commitment)</code>.</td>
+</tr>
+<tr>
+<td style={{ whiteSpace: "nowrap" }}><code>decryptResultSigner</code></td>
+<td>Decrypt results: <a href="/deep-dive/cofhe-components/teecryptor">Teecryptor</a> signs each plaintext it returns, and the publish path checks that signature before storing the result.</td>
+</tr>
+</tbody>
+</table>
 
 ## Decrypt result signature verification
 
