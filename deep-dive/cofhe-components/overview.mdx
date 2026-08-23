@@ -51,7 +51,8 @@ flowchart LR
 ## The onchain contracts
 
 - **FHE.sol**: the Solidity library your contract imports. It exposes arithmetic, comparison, and logical operations on encrypted values, plus access control (`allow`, `allowGlobal`) and decrypt-result verification.
-- **[TaskManager](/deep-dive/cofhe-components/task-manager)**: the gateway for all FHE operation requests. It validates requests, emits task events for the offchain services, and manages permissions through the [ACL](/deep-dive/cofhe-components/acl).
+- **[TaskManager](/deep-dive/cofhe-components/task-manager)**: the gateway for all FHE operation requests. It validates requests, emits task events for the offchain services, and manages permissions through the ACL.
+- **[ACL](/deep-dive/cofhe-components/acl)**: the access control contract. It records who may use or decrypt each handle; all writes to it go through the TaskManager.
 - **[PlaintextsStorage](/deep-dive/cofhe-components/plaintext-storage)**: stores decrypted results after they are published onchain with a verified Teecryptor signature.
 - **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)**: lives on a dedicated registry chain and records a hash commitment for every ciphertext the coprocessor produces or verifies. Teecryptor checks it before decrypting anything.
 
