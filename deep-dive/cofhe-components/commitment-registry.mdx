@@ -10,9 +10,11 @@ description: "Registry-chain contract that records FHE computation commitments. 
 | **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
 | **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. |
 
-## Why a separate registry chain?
+## Why commitments?
 
-[Teecryptor](/deep-dive/cofhe-components/teecryptor) needs to confirm that the ciphertext it is about to decrypt is **exactly** the one the FHE Engine produced, not a tampered or stale handle. The natural place to anchor that proof is onchain, but anchoring on every host chain would mean paying gas on N chains for every FHE operation. Instead, the coprocessor posts commitments to a **single registry chain**, and the decryption path watches only that one.
+The commitment is a safety check in the decryption flow. Before decrypting anything, [Teecryptor](/deep-dive/cofhe-components/teecryptor) confirms that the ciphertext bytes it fetched hash to the commitment anchored onchain. It only ever decrypts a ciphertext the coprocessor actually produced, never a tampered or substituted one.
+
+The registry also makes the coprocessor accountable. Every result it has ever produced is committed publicly, permanently, and write-once, so its computation history is tamper-evident and open to independent audit. Commitments for every host chain land on one dedicated **registry chain**, which gives the decryption path a single place to verify against.
 
 ## Storage shape
 
@@ -32,6 +34,7 @@ mapping(address => bool)                                                  poster
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "13px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220}}}%%
 stateDiagram-v2
+    direction LR
     Unset --> Active
     Active --> Deprecated
     Active --> Revoked
