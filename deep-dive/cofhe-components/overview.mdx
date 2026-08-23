@@ -72,8 +72,7 @@ Services communicate through message queues rather than direct calls, so each st
 
 1. **[Encryption request](/deep-dive/data-flows/encryption-request-flow)**: an input is encrypted client-side and proven valid with a zero-knowledge proof before it enters the chain.
 2. **[FHE operation flow](/deep-dive/data-flows/fhe-operation-request-flow)**: a contract requests a computation; the coprocessor executes it and commits to the result.
-3. **[Decryption request](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor for a signed plaintext that can be published onchain.
-4. **[Offchain decryption](/deep-dive/data-flows/off-chain-decryption-flow)**: the SDK receives the plaintext sealed to a permit, for reads that never touch the chain.
+3. **[Decryption](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor to decrypt a handle, either as a signed plaintext for onchain publication or sealed to a permit for offchain reads.
 
 ## What comes next
 

@@ -252,8 +252,7 @@
             "pages": [
               "deep-dive/data-flows/encryption-request-flow",
               "deep-dive/data-flows/fhe-operation-request-flow",
-              "deep-dive/data-flows/decryption-request-flow",
-              "deep-dive/data-flows/off-chain-decryption-flow"
+              "deep-dive/data-flows/decryption-request-flow"
             ]
           },
           { 
@@ -320,6 +319,10 @@
     {
       "source": "/deep-dive/cofhe-components/ct-registry",
       "destination": "/deep-dive/cofhe-components/commitment-registry"
+    },
+    {
+      "source": "/deep-dive/data-flows/off-chain-decryption-flow",
+      "destination": "/deep-dive/data-flows/decryption-request-flow"
     }
   ],
   "integrations": {

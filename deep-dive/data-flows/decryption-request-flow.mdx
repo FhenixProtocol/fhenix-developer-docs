@@ -1,21 +1,27 @@
 ---
-title: Decryption Request Flow
+title: Decryption Flow
 sidebar_position: 3
-description: "End-to-end path of a decryption: SDK request, TEE decryption, signed result, onchain publication, contract read-back"
+description: "How CoFHE values get decrypted: decryptForTx with onchain publication, decryptForView with sealed output"
 ---
 
-This page follows a plaintext all the way onto the chain: from the SDK's `decryptForTx` call, through [Teecryptor](/deep-dive/cofhe-components/teecryptor), to a signed result the TaskManager verifies and any contract can read.
+Decryption in CoFHE is SDK-driven and happens offchain, inside [Teecryptor](/deep-dive/cofhe-components/teecryptor). A contract's role is to grant access and, when the result should go onchain, to read it back after publication.
 
 <Note>
-**Contracts cannot request decryption onchain.** The TaskManager rejects decrypt tasks (`DecryptFunctionNotSupported`), and `FHE.decrypt` no longer exists in the FHE library. Decryption is exclusively SDK-driven. A contract's role is to grant access (`FHE.allow`, `FHE.allowGlobal`, or `TaskManager.allowForDecryption`) and later read the published result. This design keeps decryption off the transaction path. The coprocessor never pushes plaintexts into your contract; anyone holding a valid signature publishes the result, and the contract verifies that signature itself.
+**Contracts cannot request decryption onchain.** The TaskManager rejects decrypt tasks (`DecryptFunctionNotSupported`), and `FHE.decrypt` no longer exists in the FHE library. The coprocessor never pushes plaintexts into your contract.
 </Note>
 
-There are two SDK entry points:
+There are two SDK entry points, one per destination:
 
-- **`decryptForTx`**: returns the plaintext with a signature you can publish onchain. This page covers it.
-- **`decryptForView`**: returns a sealed result only the permit holder can read, for UI display. Covered in the [Offchain Decryption Flow](/deep-dive/data-flows/off-chain-decryption-flow).
+- **`decryptForTx`**: returns the plaintext with a Teecryptor signature you can publish onchain. Guide: [Decrypt to Tx](/client-sdk/guides/decrypt-to-tx).
+- **`decryptForView`**: returns the plaintext sealed to your [permit](/client-sdk/guides/permits), for UI display and offchain reads. Guide: [Decrypt to View](/client-sdk/guides/decrypt-to-view).
 
-## Step-by-step flow
+<Note>
+A freshly computed handle may not be decryptable immediately: its ciphertext and commitment land shortly after the transaction. Until then Teecryptor answers with a retryable status and the SDK re-submits automatically.
+</Note>
+
+## The shared pipeline
+
+Both entry points start the same way.
 
 <Steps>
 
@@ -24,7 +30,7 @@ The contract that owns the encrypted value marks the handle decryptable: `FHE.al
 </Step>
 
 <Step title="SDK request">
-The user calls `decryptForTx` with the ciphertext handle:
+The application calls one of the two builders:
 
 ```typescript
 const { ctHash, decryptedValue, signature } = await client
@@ -33,20 +39,28 @@ const { ctHash, decryptedValue, signature } = await client
   .execute();
 ```
 
-The request goes to Teecryptor with the handle, the host chain id, and the [permit](/client-sdk/guides/permits). For publicly decryptable handles, use `.withoutPermit()`.
+```typescript
+const balance = await client
+  .decryptForView(ctHash, FheTypes.Uint32)
+  .withPermit()
+  .execute();
+```
+
+The request goes to Teecryptor with the handle, the host chain id, and the permit. For publicly decryptable handles, `decryptForTx` can use `.withoutPermit()` instead.
 </Step>
 
 <Step title="Teecryptor verifies and decrypts">
-Teecryptor authorizes the request against the onchain ACL, fetches the ciphertext exactly as stored, verifies it against the onchain commitment, and decrypts it inside the attested TEE. If the ciphertext or its commitment has not landed yet (a freshly computed handle), the SDK retries automatically until it is available.
-
-See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
+Teecryptor authorizes the request against the onchain ACL, fetches the ciphertext exactly as stored, verifies it against the onchain commitment, and decrypts it inside the attested enclave. See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
 </Step>
 
-<Step title="Signed result">
-Teecryptor returns the plaintext together with an ECDSA signature over a fixed 76-byte message (result, encryption type, chain id, ciphertext hash). The signing key lives only inside the enclave, and its address is registered onchain as the TaskManager's `decryptResultSigner`.
-</Step>
+</Steps>
 
-<Step title="Publication onchain">
+From here the two paths diverge.
+
+## The transaction path
+
+For `decryptForTx`, Teecryptor returns the plaintext together with an ECDSA signature over a fixed 76-byte message (result, encryption type, chain id, ciphertext hash). The signing key lives only inside the enclave, and its address is registered onchain as the TaskManager's `decryptResultSigner`.
+
 Anyone holding the signature submits it in a transaction:
 
 ```solidity
@@ -58,9 +72,7 @@ The TaskManager recomputes the message hash, recovers the signer, and rejects an
 <Note>
 Publication is permissionless: any relayer with a valid signature can deliver the result. `decryptForTx` itself costs no gas; gas is paid only by this publish transaction.
 </Note>
-</Step>
 
-<Step title="Contract read-back">
 Once published, any contract reads the plaintext:
 
 ```solidity
@@ -69,33 +81,45 @@ uint64 value = FHE.getDecryptResult(handle);                     // reverts if n
 ```
 
 To check a signature without storing the result, use the `verifyDecryptResult` family on the TaskManager.
-</Step>
 
-</Steps>
+## The view path
+
+For `decryptForView`, Teecryptor never returns a bare plaintext. It encrypts the result to the permit's sealing key, and the SDK unseals it locally, so the plaintext is not exposed in transit. There is nothing to publish; the value goes straight to your application.
 
 ## Flow diagram
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "13px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220}}}%%
 sequenceDiagram
-    participant User
+    participant App as Your app
     participant SDK as Client SDK
     participant Teecryptor
-    participant TaskManager
-    participant Contract as Your contract
+    participant Chain as Host chain
 
-    Contract->>TaskManager: FHE.allow / allowGlobal (grant access)
-    User->>SDK: decryptForTx(ctHash)
-    SDK->>Teecryptor: decrypt request (handle, chain id, permit?)
-    Teecryptor->>TaskManager: ACL check
-    Teecryptor->>Teecryptor: verify commitment, decrypt in TEE, sign
-    Teecryptor-->>SDK: plaintext + signature
-    SDK-->>User: { ctHash, decryptedValue, signature }
-    User->>TaskManager: FHE.publishDecryptResult(ctHash, result, signature)
-    TaskManager->>TaskManager: verify signer, store plaintext, emit DecryptionResult
-    Contract->>TaskManager: FHE.getDecryptResult(handle)
-    TaskManager-->>Contract: plaintext
+    App->>SDK: decryptForTx / decryptForView (ctHash)
+    SDK->>Teecryptor: decrypt or sealoutput request (handle, chain id, permit?)
+    Teecryptor->>Chain: ACL check (isAllowedWithPermission / isPubliclyAllowed)
+    Teecryptor->>Teecryptor: verify commitment, decrypt in enclave
+    alt decryptForTx
+        Teecryptor-->>SDK: plaintext + signature
+        SDK-->>App: { ctHash, decryptedValue, signature }
+        App->>Chain: FHE.publishDecryptResult(ctHash, result, signature)
+    else decryptForView
+        Teecryptor-->>SDK: result sealed to the permit's sealing key
+        SDK->>SDK: unseal locally
+        SDK-->>App: plaintext
+    end
 ```
+
+## Comparison
+
+| | `decryptForTx` | `decryptForView` |
+|---|---|---|
+| **Returns** | Plaintext + Teecryptor signature | Plaintext (sealed in transit, unsealed by the SDK) |
+| **Use case** | Submit the decrypted value onchain | Display in a UI, offchain reads |
+| **Requires permit** | Only if the handle is not publicly decryptable | Yes |
+| **Onchain verification** | `publishDecryptResult` or `verifyDecryptResult` | Not applicable |
+| **Gas cost** | None for the decryption itself; gas only for the publish transaction | None |
 
 ## Future plans
 
