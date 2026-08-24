@@ -73,7 +73,7 @@ Remote attestation is what turns "trust the operator" into "verify the code". Be
 
 ## Key custody
 
-The FHE secret key is never stored whole. It is split with Shamir secret sharing into six shares held by independent parties, with any three required for reconstruction (3-of-6). At boot, the attested enclave collects shares from the custodians, reconstructs the key in memory, and zeroizes the transient share material. The reconstructed key exists only inside the enclave for the lifetime of the process. It is never persisted. The result-signing key travels inside the same split secret, so it too can only materialize inside the attested enclave.
+The FHE secret key is never stored whole. It is split with Shamir secret sharing into six shares held by independent parties, with any three required for reconstruction (3-of-6). At boot, the attested enclave collects shares from the custodians, reconstructs the key in memory, and zeroizes the transient share material. The reconstructed key exists only inside the enclave for the lifetime of the process. It is never persisted. The result-signing key travels inside the same split secret, so it too can only materialize inside the attested enclave. See [Key Management](/deep-dive/cofhe-components/key-management) for the ceremony that creates and distributes the shares.
 
 ## Result signing
 

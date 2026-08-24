@@ -32,6 +32,8 @@ flowchart TB
         CR["CommitmentRegistry"]
     end
 
+    PRT["Partners (key custodians)"]
+
     SDK -- "encrypt input + ZK proof" --> ZK
     ZK -- "store ciphertext" --> CTS
     FHEC --> TM
@@ -46,6 +48,8 @@ flowchart TB
     TEE -- "verify commitment" --> CR
     SDK -- "publish signed result" --> TM
     TM --> PS
+    PRT -- "release key shares (attested)" --> TEE
+    PRT -- "release signing key (attested)" --> ZK
 ```
 
 ## The onchain contracts
@@ -66,6 +70,7 @@ flowchart TB
 - **CT Server**: the ciphertext store. It holds the ciphertext bytes and serves them to the other services.
 - **Blockchain Poster**: batches result commitments and posts them to the CommitmentRegistry.
 - **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption service. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
+- **Partners**: independent custodians of the key material. Each holds a Shamir share and releases it only to an attested enclave. See [Key Management](/deep-dive/cofhe-components/key-management).
 
 Services communicate through message queues rather than direct calls, so each stage can retry and scale independently.
 
