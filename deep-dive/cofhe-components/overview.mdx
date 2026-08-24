@@ -16,15 +16,13 @@ flowchart TB
 
     subgraph CoFHE["CoFHE services (offchain)"]
         subgraph TEES[" "]
-            ZK["ZK Verifier"]
             TEE["Teecryptor (TEE)"]
+            ZK["ZK Verifier"]
         end
+        CTS["CT Server"]
         subgraph K8S[" "]
-            SL["Slim Listener"]
-            FheOS["FheOS Server"]
-            Engine["FHE Engine"]
-            BP["Blockchain Poster"]
-            CTS["CT Server"]
+            direction LR
+            SL["Slim Listener"] --> FheOS["FheOS Server"] --> Engine["FHE Engine"] -- "commitments" --> BP["Blockchain Poster"]
         end
     end
 
@@ -38,25 +36,22 @@ flowchart TB
         CR["CommitmentRegistry"]
     end
 
-    SDK -- "encrypt inputs" --> ZK
-    ZK -- "store ciphertext" --> CTS
-    FHEC --> TM
-    TM -- "task events" --> SL
-    SL --> FheOS
-    FheOS --> Engine
-    Engine -- "commitments" --> BP
-    BP --> CR
     SDK -- "decrypt" --> TEE
     TEE -- "ACL check" --> TM
     TEE -- "fetch ciphertext" --> CTS
     TEE -- "verify commitment" --> CR
+    SDK -- "encrypt inputs" --> ZK
+    ZK -- "store ciphertext" --> CTS
+    FHEC --> TM
+    TM -- "task events" --> K8S
+    K8S -- "post commitments" --> CR
     SDK -- "publish result" --> TM
     TM --> PS
     PRT -- "key shares (attested)" --> TEE
     PRT -- "signing key (attested)" --> ZK
 
-    linkStyle 0,1 stroke:#7FDB8F
-    linkStyle 8,9,10,11,12,13 stroke:#0AD9DC
+    linkStyle 7,8 stroke:#7FDB8F
+    linkStyle 3,4,5,6,12,13 stroke:#0AD9DC
     linkStyle 14,15 stroke:#E0C36A
 ```
 
