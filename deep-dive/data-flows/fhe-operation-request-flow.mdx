@@ -99,7 +99,7 @@ The FheOS Server consumes `blockchain-events`, validates the task, and routes FH
 The FHE Engine consumes `engine-requests` and:
 
 1. Executes the requested operation on the encrypted data.
-2. Stores the result ciphertext in the coprocessor's store, keyed by the handle.
+2. Stores the result ciphertext in the ciphertext database, keyed by the handle.
 3. Releases any dependent operations that were deferred while waiting for this result.
 4. Publishes a commitment for the result (the hash of the stored ciphertext bytes) to the `commitment-requests` queue.
 </Step>

@@ -8,8 +8,20 @@ CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts comput
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 flowchart TB
+    PRT["Partners (key custodians)"]
+
     subgraph App["Application"]
         SDK["Client SDK"]
+    end
+
+    subgraph CoFHE["CoFHE services (offchain)"]
+        ZK["ZK Verifier"]
+        CTS["CT Server"]
+        TEE["Teecryptor (TEE)"]
+        SL["Slim Listener"]
+        FheOS["FheOS Server"]
+        Engine["FHE Engine"]
+        BP["Blockchain Poster"]
     end
 
     subgraph Host["Host chain"]
@@ -18,38 +30,30 @@ flowchart TB
         PS["PlaintextsStorage"]
     end
 
-    subgraph CoFHE["CoFHE services (offchain)"]
-        ZK["ZK Verifier"]
-        CTS["CT Server"]
-        SL["Slim Listener"]
-        FheOS["FheOS Server"]
-        Engine["FHE Engine"]
-        BP["Blockchain Poster"]
-        TEE["Teecryptor (TEE)"]
-    end
-
     subgraph Registry["Registry chain"]
         CR["CommitmentRegistry"]
     end
 
-    PRT["Partners (key custodians)"]
-
-    SDK -- "encrypt input + ZK proof" --> ZK
+    SDK -- "encrypt inputs" --> ZK
     ZK -- "store ciphertext" --> CTS
     FHEC --> TM
     TM -- "task events" --> SL
     SL --> FheOS
     FheOS --> Engine
-    Engine -- "result commitments" --> BP
+    Engine -- "commitments" --> BP
     BP --> CR
-    SDK -- "decrypt / sealoutput" --> TEE
+    SDK -- "decrypt" --> TEE
     TEE -- "ACL check" --> TM
     TEE -- "fetch ciphertext" --> CTS
     TEE -- "verify commitment" --> CR
-    SDK -- "publish signed result" --> TM
+    SDK -- "publish result" --> TM
     TM --> PS
-    PRT -- "release key shares (attested)" --> TEE
-    PRT -- "release signing key (attested)" --> ZK
+    PRT -- "key shares (attested)" --> TEE
+    PRT -- "signing key (attested)" --> ZK
+
+    linkStyle 0,1 stroke:#7FDB8F
+    linkStyle 8,9,10,11,12,13 stroke:#0AD9DC
+    linkStyle 14,15 stroke:#E0C36A
 ```
 
 ## The onchain contracts
@@ -67,7 +71,7 @@ flowchart TB
 - **[Slim Listener](/deep-dive/cofhe-components/slim-listener)**: watches TaskManager events on each host chain and forwards them into the coprocessor's queues.
 - **[FheOS Server](/deep-dive/cofhe-components/fheos-server)**: ingests task events, verifies inputs, creates result placeholders, and routes work to the FHE Engine. It does not execute FHE operations itself.
 - **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)**: executes every FHE operation on encrypted data, persists the resulting ciphertexts, and emits a commitment for each result.
-- **CT Server**: the ciphertext store. It holds the ciphertext bytes and serves them to the other services.
+- **CT Server**: the gate to the ciphertext database. Every ciphertext read and write for the other services goes through it.
 - **Blockchain Poster**: batches result commitments and posts them to the CommitmentRegistry.
 - **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption service. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
 - **Partners**: independent custodians of the key material. Each holds a Shamir share and releases it only to an attested enclave. See [Key Management](/deep-dive/cofhe-components/key-management).
