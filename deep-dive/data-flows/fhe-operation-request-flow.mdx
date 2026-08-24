@@ -47,7 +47,7 @@ sequenceDiagram
 
 <Steps>
 <Step title="Encrypt the input with the Client SDK">
-The application encrypts its input client-side with the [Client SDK](/client-sdk/introduction/overview) (`@cofhe/sdk`) and proves it valid, producing an `InEuint` structure the contract can accept. The [Encryption Request Flow](/deep-dive/data-flows/encryption-request-flow) covers this step.
+The application encrypts its input client-side and proves it valid, producing an encrypted-input handle plus a batch proof the contract can accept. The [Encryption Request Flow](/deep-dive/data-flows/encryption-request-flow) covers this step.
 
 <Note>
 This step happens on the client side, before any blockchain interaction.
@@ -64,9 +64,9 @@ import "@fhenixprotocol/cofhe-contracts/FHE.sol";
 Call the appropriate FHE function from the imported library:
 
 ```solidity
-// Using trivial encrypt or the structure returned by the previous step.
-function addExample(InEuint32 memory encryptedInput) public {
-    euint32 lhs = FHE.asEuint32(encryptedInput);
+// Using trivial encrypt or the handle and proof from the previous step.
+function addExample(externalEuint32 input, bytes calldata proof) public {
+    euint32 lhs = FHE.asEuint32(input, proof);
     euint32 rhs = FHE.asEuint32(10);
 
     // Request an operation (addition in this example)
