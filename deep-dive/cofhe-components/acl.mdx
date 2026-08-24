@@ -24,6 +24,12 @@ Every encrypted value in CoFHE is guarded by this contract. A handle is useless 
 
 All state-mutating entry points require `msg.sender` to be the TaskManager; direct calls revert with `DirectAllowForbidden`. Contracts grant access through the `FHE.sol` helpers (`allow`, `allowThis`, `allowSender`, `allowGlobal`, `allowTransient`), which route through the TaskManager.
 
+## Permits
+
+Offchain reads are authorized by a [permit](/client-sdk/guides/permits), which onchain is an `ACP` (Access Control Permission): an EIP-712 body signed by its issuer. Beyond the issuer, expiration, and the sealing key used for sealed outputs, an ACP carries a **scope**: global, limited to specific contracts, or limited to specific handles. A scope only narrows what the issuer could already access; it never grants more.
+
+An ACP can be shared with a recipient, revoked through a revoker contract, and handed over onchain through the ACP share registry.
+
 ## Read surface
 
 | Function | Answers |
@@ -33,7 +39,7 @@ All state-mutating entry points require `msg.sender` to be the TaskManager; dire
 | `persistAllowed(handle, account)` | Is there a persistent grant? |
 | `globalAllowed(handle)` | Is the handle globally allowed? |
 | `isAllowedForDecryption(handle)` | Is the handle on the decryption allowlist? |
-| <code style={{ whiteSpace: "nowrap" }}>isAllowedWithPermission</code> | Does this EIP-712 [permit](/client-sdk/guides/permits) authorize its issuer for the given handle? |
+| <code style={{ whiteSpace: "nowrap" }}>isAllowedWithPermission</code> | Does this permit (ACP) authorize its issuer for the given handle? |
 
 The last two are what the decryption path runs on. For every `decrypt` or `sealoutput` request, Teecryptor queries the ACL through the TaskManager: `isAllowedWithPermission` when a permit is attached, or `isPubliclyAllowed` (the TaskManager's wrapper over `globalAllowed`) when none is. A future [Threshold Network](/deep-dive/research/future-plans) will consume the same interface.
 
