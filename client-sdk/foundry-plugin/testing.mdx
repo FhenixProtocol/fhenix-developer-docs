@@ -3,7 +3,7 @@ title: Testing
 description: "Canonical test-writing patterns for FHE contracts under Foundry"
 ---
 
-This page shows the load-bearing patterns for writing FHE contract tests under Foundry with `@cofhe/foundry-plugin`. Hardhat counterpart: [Hardhat Plugin → Testing](/client-sdk/hardhat-plugin/testing).
+This page shows the load-bearing patterns for writing FHE contract tests under Foundry with `@cofhe/foundry-plugin`. Hardhat counterpart: [Hardhat Plugin: Testing](/client-sdk/hardhat-plugin/testing).
 
 ## Skeleton
 
@@ -39,7 +39,7 @@ contract CounterTest is CofheTest {
 }
 ```
 
-That's the load-bearing shape. Everything below is what to add when the contract gets non-trivial.
+That's the load-bearing shape. Everything below is what to add as the contract grows more complex.
 
 ## Rules
 
@@ -49,16 +49,16 @@ That's the load-bearing shape. Everything below is what to add when the contract
 
 ### 2. One `CofheClient` per scenario address
 
-Each user with their own permit/encrypted inputs gets their own client. Connect with a deterministic plaintext private key — don't recycle real keys; these are visible in test output.
+Each user with their own permit/encrypted inputs gets their own client. Connect with a deterministic plaintext private key. Don't recycle real keys; these are visible in test output.
 
 ```solidity
 CofheClient bob = createCofheClient();
 bob.connect(0xB0B);         // bob.account() == vm.addr(0xB0B)
 ```
 
-You don't pass `account` to `createInEuintN` — the client is bound at `connect`.
+You don't pass `account` to `createInEuintN`; the client is bound at `connect`.
 
-### 3. `vm.prank(client.account())` to act on-chain as that user
+### 3. `vm.prank(client.account())` to act onchain as that user
 
 ```solidity
 vm.prank(bob.account());
@@ -93,7 +93,7 @@ counter.revealCounter(uint32(plaintext), sig);
 assertEq(counter.getDecryptedValue(), plaintext);
 ```
 
-Same shape runs unmodified against real CoFHE on testnet — the mock signature is produced by the same `MockThresholdNetworkSigner` that `FHE.verifyDecryptResult` accepts.
+Same shape runs unmodified against real CoFHE on testnet. The mock signature is produced by the same `MockThresholdNetworkSigner` that `FHE.verifyDecryptResult` accepts.
 
 ### 6. Permit-based unseal: `decryptForView` for the success path
 
@@ -105,9 +105,9 @@ uint256 value = bob.decryptForView(ctHash, bobPermit);
 assertEq(value, expected);
 ```
 
-`permit_createSelf` builds the EIP-712 typed-data, derives a sealing key from the connected account, and signs — no manual `signPermissionSelf` boilerplate.
+`permit_createSelf` builds the EIP-712 typed-data, derives a sealing key from the connected account, and signs, with no manual `signPermissionSelf` boilerplate.
 
-### 7. Deny path: asserting "Alice cannot decrypt Bob's value"
+### 7. Deny path: when the caller is not on the ACL {#deny-path}
 
 `decryptForView` reverts when the caller isn't on the ACL. To assert the deny path, drop down to the mock directly:
 
@@ -133,7 +133,7 @@ function testFuzz_Reset(uint32 v) public {
 }
 ```
 
-`createInEuintN` accepts the full `uintN` range — no shaping needed.
+`createInEuintN` accepts the full `uintN` range, so no shaping needed.
 
 ## Migration from the old `mock-contracts` API
 
@@ -147,7 +147,7 @@ If you're upgrading from `@cofhe/mock-contracts@0.4.x` (where `CoFheTest` lived 
 | `mockStorage(ctHash)` | `getPlaintext(ctHash)` |
 | `createInEuint32(v, bob)` | `bob.createInEuint32(v)` |
 | `createPermissionSelf(bob)` + `signPermissionSelf(perm, bobKey)` | `bob.permit_createSelf()` (auto-signs) |
-| `createSealingKey(seed)` | `bob.createSealingKey(seed)` (rarely needed — `permit_createSelf` derives one) |
+| `createSealingKey(seed)` | `bob.createSealingKey(seed)` (rarely needed: `permit_createSelf` derives one) |
 | `queryDecrypt(hash, chainId, permit)` | `bob.decryptForView(hash, permit)` (reverts on deny) |
 | Same, asserting deny | `mockThresholdNetwork.querySealOutput(hash, block.chainid, permit)` |
 | `querySealOutput` + `unseal` | `bob.decryptForView` (does both) |
@@ -157,11 +157,11 @@ If you're upgrading from `@cofhe/mock-contracts@0.4.x` (where `CoFheTest` lived 
 
 <AccordionGroup>
 <Accordion title="IDE Solidity errors but `forge test` passes" icon="triangle-exclamation">
-LSPs like Wake/Cursor often resolve from the monorepo root; the plugin's remappings are package-local. **`forge` is the truth** — if `forge build` and `forge test` succeed, the test is correct.
+LSPs like Wake/Cursor often resolve from the monorepo root; the plugin's remappings are package-local. **`forge` is the truth.** If `forge build` and `forge test` succeed, the test is correct.
 </Accordion>
 
 <Accordion title="Forgetting `FHE.allowThis` in the contract" icon="key">
-Tests pass on the first op, then a second op reverts with `ACLNotAllowed` because the contract itself isn't on the ACL. Toggle `enableLogs()` to see the missing grant — every op prints a line showing whether `allowThis`/`allow` was called.
+Tests pass on the first op, then a second op reverts with `ACLNotAllowed` because the contract itself isn't on the ACL. Toggle `enableLogs()` to see the missing grant. Every op prints a line showing whether `allowThis`/`allow` was called.
 </Accordion>
 
 <Accordion title="Wrong client for the prank" icon="user">
@@ -188,6 +188,6 @@ The `pkey` passed to `connect` must derive the address used as `permit.issuer`. 
 
 ## Related
 
-- [CofheTest](/client-sdk/foundry-plugin/cofhe-test) — the test base contract API.
-- [CofheClient](/client-sdk/foundry-plugin/cofhe-client) — the per-user shim API.
-- [Hardhat → Testing](/client-sdk/hardhat-plugin/testing) — the same patterns under Hardhat.
+- [CofheTest](/client-sdk/foundry-plugin/cofhe-test): the test base contract API.
+- [CofheClient](/client-sdk/foundry-plugin/cofhe-client): the per-user shim API.
+- [Testing under Hardhat](/client-sdk/hardhat-plugin/testing): the same patterns for Hardhat.
