@@ -9,7 +9,7 @@ description: "Offchain service that verifies user inputs using Zero-Knowledge Pr
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Type** | Offchain service running inside a hardware-attested TEE. |
 | **Function** | Verifies the user's input, ensuring that it is safe to use. |
-| **Responsibilities** | • Receives users' ZKPoKs for their inputs.<br/>• Verifies those proofs.<br/>• Signs an approval the user passes with the inputs to the contract.<br/>• Stores the verified ciphertext bytes. |
+| **Responsibilities** | • Receives users' ZKPoKs for their input batches.<br/>• Verifies those proofs.<br/>• Signs one approval per verified batch.<br/>• Stores the verified ciphertext bytes. |
 
 ## Why ZKPoK?
 
@@ -34,11 +34,11 @@ When providing ciphertexts as an input to a smart contract, users have to genera
 The process of sending inputs to a smart contract:
 
 1. The user encrypts the inputs and generates a ZK proof of knowledge for them.
-2. The user sends the ciphertexts and proofs to the ZK Verifier.
-3. The ZK Verifier verifies each proof. If valid, it signs a message that approves the input.
-4. The ZK Verifier returns the signed approval to the user.
-5. The user sends `(ciphertext, signed_approve)` pairs as inputs to a contract call.
-6. The contract verifies the signed message, approving the inputs. This also emits `InputVerified`, which anchors a commitment for the input so it becomes decryptable later.
+2. The user sends the ciphertexts and proofs to the ZK Verifier, as one batch.
+3. The ZK Verifier verifies each proof. If all are valid, it signs one message approving the whole batch.
+4. The ZK Verifier returns the handles and the batch approval to the user.
+5. The user sends the handles and the approval as inputs to a contract call.
+6. The contract verifies the batch signature, approving the inputs and emitting `InputVerified` per input, which anchors a commitment so each input becomes decryptable later.
 7. The contract performs the actual logic.
 
 Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK and library calls, while step 7 (the actual logic) is up to you to write.
@@ -51,13 +51,12 @@ The signed message is verified onchain by the TaskManager using `ecrecover`; the
 
 ## Signature format
 
-For developers integrating without the SDK, the signed pre-image is:
+For developers integrating without the SDK, the signature covers a batch digest. Each input is hashed, the hashes are concatenated in input order, and the digest of that concatenation is signed:
 
 ```text
-message_to_sign = keccak256(
-    ct_hash (32 bytes) || ct_type (1 byte) || security_zone (1 byte)
-    || account_addr (20 bytes, the sender's address) || chain_id (32 bytes, big-endian)
-)
+h_i    = keccak256(ct_hash (32 bytes) || utype (1 byte) || security_zone (1 byte)
+         || sender (20 bytes) || chain_id (32 bytes, big-endian) || consuming_contract (20 bytes))
+digest = keccak256(h_0 || h_1 || ... || h_n)
 ```
 
-The `recid` value the service returns (0 or 1) must be adjusted to 27 or 28 for Solidity's `ecrecover`.
+The digest binds the sender and the consuming contract, so a verified batch cannot be replayed by another account or into another contract. The `recid` value the service returns (0 or 1) must be adjusted to 27 or 28 for Solidity's `ecrecover`.
