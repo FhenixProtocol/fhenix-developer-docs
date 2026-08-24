@@ -3,7 +3,7 @@ title: Encryption Request Flow
 description: "How a plaintext becomes a verified encrypted input: local encryption, ZK proof, verification, and onchain use"
 ---
 
-This page follows an encrypted input from the plaintext in your application to a handle a smart contract can compute on. Everything sensitive happens client-side: the value is encrypted and proven locally, and only the ciphertext and its proof ever leave the user's machine.
+This page follows encrypted inputs from the plaintext in your application to handles a smart contract can compute on. Everything sensitive happens client-side: the values are encrypted and proven locally, and only the ciphertexts and their proofs ever leave the user's machine. Inputs travel as one batch, verified with a single signature that is bound to the contract that will consume them.
 
 ## Key components
 
@@ -11,9 +11,9 @@ This page follows an encrypted input from the plaintext in your application to a
 |-----------|-------------|
 | **dApp** | The application that interacts with the user and the contracts |
 | **Client SDK** (`@cofhe/sdk`) | TypeScript library that encrypts inputs locally and submits them for verification |
-| **ZK Verifier** | Attested offchain service that verifies the proof attached to every encrypted input |
+| **ZK Verifier** | Attested offchain service that verifies the proofs of every encrypted-input batch |
 | **CT Server** | Stores the verified ciphertext bytes for the coprocessor |
-| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Verifies the ZK Verifier's signature when the input is used onchain |
+| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Verifies the ZK Verifier's batch signature when the inputs are used onchain |
 
 ## Flow diagram
 
@@ -27,16 +27,16 @@ sequenceDiagram
     participant TM as TaskManager
     participant CR as CommitmentRegistry
 
-    App->>SDK: encryptInputs([...]).execute()
-    SDK->>SDK: encrypt with TFHE, generate zkPoK
-    SDK->>ZK: ciphertext + proof
-    ZK->>ZK: verify the proof in the attested TEE
+    App->>SDK: encryptInputs([...]).setConsumingContract(addr).execute()
+    SDK->>SDK: encrypt with TFHE, generate zkPoKs
+    SDK->>ZK: ciphertext batch + proofs
+    ZK->>ZK: verify the proofs in the attested TEE
     ZK->>CTS: store ciphertext bytes
-    ZK-->>SDK: handle + signature per input
-    SDK-->>App: encrypted inputs (InEuint structures)
-    App->>TM: contract call with the encrypted input
-    TM->>TM: verify signature, emit InputVerified
-    TM--)CR: input commitment (relayed by the coprocessor)
+    ZK-->>SDK: handles + one batch signature
+    SDK-->>App: [handles..., proof]
+    App->>TM: contract call with handles + proof
+    TM->>TM: batchVerifyInputs, emit InputVerified per input
+    TM--)CR: input commitments (relayed by the coprocessor)
 ```
 
 ## Step-by-step flow
@@ -56,23 +56,24 @@ const { createCofheConfig, createCofheClient } = require("@cofhe/sdk/node");
 </Step>
 
 <Step title="Encrypt and prove locally">
-The application encrypts its values with a single builder call:
+The application encrypts its values with a single builder call, naming the contract that will consume them:
 
 ```typescript
-const [encryptedInput] = await cofheClient
+const [encryptedInput, proof] = await cofheClient
   .encryptInputs([Encryptable.uint32(42n)])
+  .setConsumingContract(contractAddress)
   .execute();
 ```
 
-Internally, `encryptInputs` encrypts each value with the TFHE library and generates a zkPoK (zero-knowledge proof of knowledge) that the encryption is correct. It then submits the ciphertext and proof to the ZK Verifier.
+Internally, `encryptInputs` encrypts each value with the TFHE library and generates a zkPoK (zero-knowledge proof of knowledge) that the encryption is correct. It then submits the whole batch to the ZK Verifier. The verifier's signature is bound to the consuming contract, so the batch cannot be replayed into a different one.
 </Step>
 
 <Step title="Verification and storage">
-The ZK Verifier checks the proof inside its attested enclave. A valid proof shows the ciphertext is a correct, untampered encryption of a known plaintext. On success, the verifier stores the ciphertext bytes and returns a handle and a signature per input. The SDK packages these into the `InEuint` structures your contract accepts.
+The ZK Verifier checks each proof inside its attested enclave. A valid proof shows the ciphertext is a correct, untampered encryption of a known plaintext. On success, the verifier stores the ciphertext bytes and returns the handles with one signature covering the batch. The SDK hands your application the tuple `[handles..., proof]`; each handle is an `external` encrypted value such as `externalEuint32`.
 </Step>
 
 <Step title="Use the encrypted input onchain">
-The application passes the `InEuint` structure to the contract as an encrypted input. When the contract consumes it, the TaskManager verifies the ZK Verifier's signature and emits an `InputVerified` event. The coprocessor picks that event up and posts a commitment for the input to the CommitmentRegistry, so the ciphertext is anchored onchain like every computed result.
+The application passes the handles and the proof to the contract as encrypted inputs. When the contract consumes them, the TaskManager's `batchVerifyInputs` checks the ZK Verifier's signature over the batch and emits an `InputVerified` event per input. The coprocessor picks those events up and posts a commitment for each input to the CommitmentRegistry, so the ciphertexts are anchored onchain like every computed result.
 </Step>
 </Steps>
 
