@@ -1,23 +1,23 @@
 ---
 title: "Data Evaluation"
-description: "Understanding how FHE operations communicate with off-chain compute engines"
+description: "How FHE operations reach CoFHE's offchain engine, and how encrypted values are represented in your contract."
 ---
 
-## Sending Computation Requests
+## How your contract requests computation
 
-The blockchain that you write Smart Contracts on (for example, Arbitrum One) does not natively support FHE computation. This is why CoFHE is mostly an **off-chain system**, performing all the FHE heavy lifting asynchronously. All the logic happening on-chain is **giving instructions** for the off-chain component, CoFHE's **FHE Engine**, on what to compute. This concept is commonly referred to as [Symbolic Execution](https://en.wikipedia.org/wiki/Symbolic_execution).
+The chain you deploy to, for example Arbitrum One, cannot run FHE computation natively. CoFHE runs it offchain instead. Your contract records which operations to perform; it does not perform them. This is [symbolic execution](https://en.wikipedia.org/wiki/Symbolic_execution): the contract builds a graph of pending operations, and the FHE Engine evaluates it asynchronously.
 
-### How On-Chain Smart Contracts Communicate with the Off-Chain Engine
+### How the request reaches the FHE Engine
 
-Through **Events**. Every FHE operation exposed in `FHE.sol` that requires an FHE computation emits an event. For example:
+Through events. Every `FHE.sol` function that needs FHE computation calls `TaskManager.createTask`, and the TaskManager emits a `TaskCreated` event. CoFHE watches for that event and routes the work to the FHE Engine.
 
 ```solidity
-res = FHE.sub(first, second);
+euint32 res = FHE.sub(first, second);
 ```
 
-This code snippet computes subtraction between two numbers. Behind the scenes, the function `FHE.sub()` is **emitting an event**, basically broadcasting "Hey FheOS! you need to compute `first - second`!". CoFHE then picks up this event, and forwards it to FheOS (the compute engine) for execution.
+This line emits one `TaskCreated` event describing a subtraction over two operands. The FHE Engine computes the ciphertext later, and your transaction continues without waiting.
 
-### More Examples
+### More examples
 
 **Creating a trivially encrypted value:**
 
@@ -25,7 +25,7 @@ This code snippet computes subtraction between two numbers. Behind the scenes, t
 euint8 res = FHE.asEuint8(42);
 ```
 
-This command emits an event saying "Create a trivially encrypted ciphertext representing the plaintext number `42`".
+This emits a task saying "create a trivially encrypted ciphertext for the plaintext `42`". See [trivial encryption](/fhe-library/core-concepts/trivial-encryption) for when this is safe to use.
 
 **Adding encrypted values:**
 
@@ -33,68 +33,96 @@ This command emits an event saying "Create a trivially encrypted ciphertext repr
 balance = FHE.add(amount, balance);
 ```
 
-This command emits an event saying "Compute the encrypted result of adding the encrypted variables `balance` and `amount`".
+This emits a task saying "compute the encrypted sum of the ciphertexts behind `amount` and `balance`".
 
 <Note>
-But how does CoFHE know how to connect two variables (e.g. `balance` and `amount`) to the underlying encrypted data to calculate the result? To understand this, you need to understand how encrypted data is represented in smart contracts.
+How does CoFHE connect `amount` and `balance` to the underlying encrypted data? That is what a handle is for.
 </Note>
 
 ---
 
-## Data Representation
+## How encrypted values are represented
 
-In the context of a Smart Contract, most FHE operations result in a new ciphertext. Let's look at an example:
-
-```solidity
-function addNumbers() public view returns (euint32) {
-    euint32 a = FHE.asEuint32(10); // Creating two trivially-encrypted ciphertexts
-    euint32 b = FHE.asEuint32(20);
-    euint32 result = FHE.add(a, b); // Add them together
-
-    return result;
-}
-```
-
-In the example above, you are:
-
-1. Creating two trivially-encrypted 32-bit ciphertexts using `FHE.asEuint32()`
-2. Performing an FHE-addition, calculating the encrypted sum of both, using `FHE.add()`
-3. Returning the result
-
-The result of every operation is a value of type `euint32`, which represents a new 32-bit ciphertext. But what does `euint32` represent exactly? Let's look at the type's declaration:
+A real FHE ciphertext is far too large to store onchain or emit in an event. So your contract never holds one. It holds a **handle**: a 32-byte reference to a ciphertext that CoFHE stores offchain. Every encrypted type in `FHE.sol` is a `bytes32` handle:
 
 ```solidity
-type euint32 is uint128;
+type ebool is bytes32;
+type euint8 is bytes32;
+type euint16 is bytes32;
+type euint32 is bytes32;
+type euint64 is bytes32;
+type euint128 is bytes32;
+type eaddress is bytes32;
 ```
+
+The `external*` input types (`externalEuint32` and friends) are `bytes32` too. The handle width does not depend on the encrypted type: an `ebool` handle and an `euint128` handle are both 32 bytes.
 
 <Warning>
-The `euint32` type is actually a `uint128` wrapper, not the encrypted data itself.
+Handles changed from `uint256` to `bytes32` in `@fhenixprotocol/cofhe-contracts` v0.1.0. This changed the compiled ABI of every function that accepts or returns an encrypted type. Solidity code still compiles, because the `euintNN` wrappers hide the change, but stale ABIs and generated bindings break at runtime. Regenerate them.
 </Warning>
 
-### Understanding Ciphertext Handles
-
-The actual ciphertext values of FHE-encrypted integers are too big to be stored directly in the blockchain, or emitted in an event. That's why in your smart contracts, the ciphertexts are represented by a 128-bit handle regardless of their encrypted type. You can think of this handle as an ID, or a pointer to the ciphertext stored off-chain. This handle is the identifier of said ciphertext. In practice, CoFHE actually stores full ciphertexts in an off-chain Data Availability (DA) layer.
-
-So, when evaluating the following statement:
+So when your contract evaluates this:
 
 ```solidity
 ebool isBigger = FHE.gt(newBid, currentBid);
 ```
 
-`FHE.sol` is actually emitting the following event: "Check which number is bigger: `0xab12...` or `0xcd34..`". The result's handle (or identifier) will be stored in the variable `isBigger`, of type `ebool`.
+`FHE.sol` submits a task meaning "compare the ciphertexts behind `0xab12...` and `0xcd34...`". The handle of the result lands in `isBigger`, typed `ebool`.
 
 <Tip>
-Wondering what to do with `ebool isBigger`? Check out the page on [Conditionals](/fhe-library/core-concepts/conditions).
+Wondering what to do with `ebool isBigger`? Read [conditionals](/fhe-library/core-concepts/conditions). You cannot branch on it with `if`.
 </Tip>
+
+### Working with a raw handle
+
+Solidity user-defined value types do not convert implicitly, so `FHE.sol` gives you explicit accessors:
+
+```solidity
+euint64 balance = FHE.asEuint64(100);
+
+bytes32 raw = FHE.unwrap(balance);        // or balance.unwrap()
+euint64 restored = FHE.wrapEuint64(raw);
+bool ready = FHE.isInitialized(balance);  // false when the handle is bytes32(0)
+```
+
+`isInitialized` is the check you want before using a handle read from storage. An unwritten storage slot yields `bytes32(0)`, which is not a valid handle.
+
+### What the 32 bytes contain
+
+A handle is not an opaque counter. The TaskManager derives it from the operation itself and packs two metadata fields into the low bytes:
+
+| Bytes | Field | Meaning |
+|---|---|---|
+| 0-29 | Truncated `keccak256` | Hash of the operand handles concatenated with the operation's function ID. |
+| 30 | Trivial flag and type code | High bit set when the value is trivially encrypted. Low 7 bits hold the ciphertext type. |
+| 31 | Security zone | The security zone the ciphertext belongs to. |
+
+The type codes in byte 30 are:
+
+| Type | Code |
+|---|---|
+| `ebool` | 0 |
+| `euint8` | 2 |
+| `euint16` | 3 |
+| `euint32` | 4 |
+| `euint64` | 5 |
+| `euint128` | 6 |
+| `eaddress` | 7 |
+
+Because the type and security zone travel inside the handle, the TaskManager validates an operation without a storage lookup. It reads both fields off the operand handles and reverts on a mismatch, for example `InvalidInputForFunction` when you pass an `eaddress` to an arithmetic operation.
+
+<Note>
+Two ABI types describe the same 32 bytes. Contract functions that expose an encrypted type encode it as `bytes32`. The `ITaskManager` functions, the `InEuintNN` input structs, and the TaskManager events (`TaskCreated`, `DecryptionResult`, `InputVerified`) all use `uint256 ctHash`. If you are writing an offchain decoder, decode against the signature you are actually calling, and cast between the two as needed.
+</Note>
 
 ---
 
-## Deep Dive: Handle Determination
+## How handles are known before the result exists
 
-<Accordion title="How are handles determined for asynchronous operations?">
-Since computation is executed asynchronously, you might wonder: how can you know the ciphertext's handle in real time?
+<Accordion title="Computation is asynchronous, so how does the contract get a handle immediately?">
+The handle does not depend on the ciphertext's value. It is derived from the operation that will produce it, so the TaskManager can compute it synchronously and hand it back in the same call.
 
-In fact, the ciphertext's handle is determined regardless of its value. It basically represents the operation that needs to be performed to create this value.
+`TaskManager.calcPlaceholderKey` hashes the operand handles together with the operation's function ID, then overwrites the low two bytes with the result type and security zone. Nothing in that preimage requires the answer.
 
 **Example:**
 
@@ -103,29 +131,28 @@ euint64 num = FHE.asEuint64(31);
 euint64 meaning = FHE.add(num, FHE.asEuint64(11));
 ```
 
-The handle of `num` is a numerical representation of "trivially-encrypted `31`", while the handle of `meaning` is a similar representation of "result of addition between `num` and trivially-encrypted `11`". The actual encrypted value is, as mentioned before, evaluated asynchronously.
+The handle of `num` derives from "trivially encrypt `31` as `euint64`". The handle of `meaning` derives from "add these two operand handles". The FHE Engine fills in the ciphertexts afterwards.
 
-This design allows smart contracts to continue executing without waiting for expensive FHE computations to complete.
 </Accordion>
 
 ---
 
-## Key Concepts Summary
+## Key concepts
 
 <CardGroup cols={2}>
-<Card title="Event-Driven Communication" icon="bolt">
-All FHE operations emit events that instruct the off-chain engine what to compute. This enables symbolic execution of encrypted operations.
+<Card title="Event-driven communication" icon="bolt">
+FHE operations call `TaskManager.createTask`, which emits a task event for the offchain FHE Engine. The contract records the operation instead of running it.
 </Card>
 
-<Card title="Ciphertext Handles" icon="fingerprint">
-Encrypted values are represented by 128-bit handles that act as identifiers. The actual ciphertext data is stored off-chain in a DA layer.
+<Card title="32-byte handles" icon="fingerprint">
+Every encrypted type is a `bytes32` handle referencing a ciphertext held offchain. The low two bytes carry the ciphertext type and security zone.
 </Card>
 
-<Card title="Asynchronous Execution" icon="clock">
-FHE computations happen asynchronously off-chain. Handles are determined immediately based on the operation, not the result value.
+<Card title="Asynchronous execution" icon="clock">
+The FHE Engine computes offchain. Handles are derived from the operation, not the result, so your contract gets one in the same transaction.
 </Card>
 
-<Card title="Storage Efficiency" icon="database">
-By using handles instead of storing full ciphertexts on-chain, CoFHE dramatically reduces gas costs and blockchain storage requirements.
+<Card title="Deterministic and public" icon="database">
+The same operation over the same operands always yields the same handle. Handles are not secrets; access control is enforced by the ACL.
 </Card>
 </CardGroup>
