@@ -48,6 +48,15 @@ jobs:
 
       # External links stay unchecked: they would put the job on the network and
       # make it fail for reasons no pull request introduced.
+      #
+      # --check-snippets covers links inside <Snippet> components. No page uses
+      # one today, so it currently changes nothing; it is here so the coverage
+      # arrives with the first snippet instead of being remembered afterwards.
+      # Files under snippets/ are already checked without it, being .mdx.
+      #
+      # The CLI ignores flags it does not recognise rather than failing, so a
+      # typo here fails open. Confirm a flag by breaking a link on purpose and
+      # watching the job go red, never by reading a green log.
       - name: mint broken-links
         if: ${{ !cancelled() }}
         run: mint broken-links --check-redirects --check-snippets
