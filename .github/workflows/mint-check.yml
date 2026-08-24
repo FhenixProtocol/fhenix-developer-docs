@@ -57,7 +57,7 @@ jobs:
       # --check-snippets covers links inside <Snippet> components. No page uses
       # one today, so it currently changes nothing; it is here so the coverage
       # arrives with the first snippet instead of being remembered afterwards.
-      # Files under snippets/ are already checked without it, being .mdx.
+      # A snippet file is checked without it anyway, being .mdx like any page.
       #
       # The CLI ignores flags it does not recognise rather than failing, so a
       # typo here fails open. Confirm a flag by breaking a link on purpose and
