@@ -15,13 +15,17 @@ flowchart TB
     end
 
     subgraph CoFHE["CoFHE services (offchain)"]
-        ZK["ZK Verifier"]
-        CTS["CT Server"]
-        TEE["Teecryptor (TEE)"]
-        SL["Slim Listener"]
-        FheOS["FheOS Server"]
-        Engine["FHE Engine"]
-        BP["Blockchain Poster"]
+        subgraph TEES[" "]
+            ZK["ZK Verifier"]
+            TEE["Teecryptor (TEE)"]
+        end
+        subgraph K8S[" "]
+            SL["Slim Listener"]
+            FheOS["FheOS Server"]
+            Engine["FHE Engine"]
+            BP["Blockchain Poster"]
+            CTS["CT Server"]
+        end
     end
 
     subgraph Host["Host chain"]
