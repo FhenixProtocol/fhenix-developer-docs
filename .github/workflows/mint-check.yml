@@ -49,6 +49,11 @@ jobs:
       # External links stay unchecked: they would put the job on the network and
       # make it fail for reasons no pull request introduced.
       #
+      # --check-anchors means a heading rename cannot silently strand an inbound
+      # #fragment. Give headings you link to a stable {#custom-id} rather than
+      # relying on the generated slug, which keeps apostrophes and any numeric
+      # prefix and so is easy to hand-write wrongly.
+      #
       # --check-snippets covers links inside <Snippet> components. No page uses
       # one today, so it currently changes nothing; it is here so the coverage
       # arrives with the first snippet instead of being remembered afterwards.
@@ -59,4 +64,4 @@ jobs:
       # watching the job go red, never by reading a green log.
       - name: mint broken-links
         if: ${{ !cancelled() }}
-        run: mint broken-links --check-redirects --check-snippets
+        run: mint broken-links --check-anchors --check-redirects --check-snippets
