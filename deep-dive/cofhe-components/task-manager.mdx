@@ -16,7 +16,7 @@ The TaskManager holds two distinct signer addresses, one per trust boundary:
 
 | Signer | Verifies |
 |--------|----------|
-| <code style={{ whiteSpace: "nowrap" }}>verifierSigner</code> | Encrypted inputs: the ZK Verifier signs each input it verified, and `verifyInput` checks that signature before emitting `InputVerified(ctHash, commitment)`. |
+| <code style={{ whiteSpace: "nowrap" }}>verifierSigner</code> | Encrypted inputs: the ZK Verifier signs each verified batch, and `batchVerifyInputs` checks that signature before emitting `InputVerified(ctHash, commitment)` per input. The signature binds the consuming contract, so a batch cannot be replayed elsewhere. |
 | <code style={{ whiteSpace: "nowrap" }}>decryptResultSigner</code> | Decrypt results: [Teecryptor](/deep-dive/cofhe-components/teecryptor) signs each plaintext it returns, and the publish path checks that signature before storing the result. |
 
 ## Decrypt result signature verification
