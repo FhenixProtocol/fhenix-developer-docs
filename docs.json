@@ -244,7 +244,8 @@
               "deep-dive/cofhe-components/zk-verifier",
               "deep-dive/cofhe-components/fheos-server",
               "deep-dive/cofhe-components/fhe-engine",
-              "deep-dive/cofhe-components/teecryptor"
+              "deep-dive/cofhe-components/teecryptor",
+              "deep-dive/cofhe-components/key-management"
             ]
           },
           {
