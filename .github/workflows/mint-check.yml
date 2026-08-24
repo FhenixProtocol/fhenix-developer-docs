@@ -1,0 +1,67 @@
+name: Mint check
+
+on:
+  pull_request:
+    paths:
+      - '**/*.mdx'
+      - '**/*.md'
+      - 'docs.json'
+  workflow_dispatch:
+
+# A force-push supersedes the previous run; the site-wide checks take long
+# enough that letting both finish wastes minutes for no signal.
+concurrency:
+  group: mint-check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MINT_VERSION: 4.2.819
+  # mint depends on puppeteer, whose postinstall downloads ~200 MB of Chrome.
+  # validate and broken-links never open a browser, so skip it: the download is
+  # the slowest step in the job and the one most likely to fail on a bad network.
+  PUPPETEER_SKIP_DOWNLOAD: true
+
+jobs:
+  mint:
+    name: validate + broken-links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Pinned, like Vale in docs-style.yml. The CLI ships several releases a
+      # week and validation rules change with it, so an unpinned install turns
+      # unrelated pull requests red. Bumping this is a deliberate commit.
+      - name: Install Mint CLI
+        run: |
+          npm install -g "mint@${MINT_VERSION}"
+          mint --version
+
+      # Both commands read the whole site, and neither takes file arguments,
+      # so they judge the build as it will ship, not just the changed pages.
+      - name: mint validate
+        run: mint validate
+
+      # External links stay unchecked: they would put the job on the network and
+      # make it fail for reasons no pull request introduced.
+      #
+      # --check-anchors means a heading rename cannot silently strand an inbound
+      # #fragment. Give headings you link to a stable {#custom-id} rather than
+      # relying on the generated slug, which keeps apostrophes and any numeric
+      # prefix and so is easy to hand-write wrongly.
+      #
+      # --check-snippets covers links inside <Snippet> components. No page uses
+      # one today, so it currently changes nothing; it is here so the coverage
+      # arrives with the first snippet instead of being remembered afterwards.
+      # A snippet file is checked without it anyway, being .mdx like any page.
+      #
+      # The CLI ignores flags it does not recognise rather than failing, so a
+      # typo here fails open. Confirm a flag by breaking a link on purpose and
+      # watching the job go red, never by reading a green log.
+      - name: mint broken-links
+        if: ${{ !cancelled() }}
+        run: mint broken-links --check-anchors --check-redirects --check-snippets
