@@ -14,6 +14,8 @@ exceptions:
   - SDK
   - API
   - ACL
+  - ACP
+  - ACPs
   - TEE
   - ZK
   - MPC
