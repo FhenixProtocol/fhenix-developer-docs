@@ -65,7 +65,7 @@ If you don't call `FHE.allowThis()` after modifying encrypted values, you won't 
 
 ## Allowance for Decryptions
 
-To decrypt a ciphertext off-chain via the decryption network, the issuer must be allowed on the ciphertext handle via `FHE.allow(userAddress)`.
+To decrypt a ciphertext offchain via the decryption network, the issuer must be allowed on the ciphertext handle via `FHE.allow(userAddress)`.
 
 ```solidity
 contract A {
@@ -88,7 +88,7 @@ contract A {
 ```
 
 <Tip>
-When allowing users to decrypt their own encrypted values, use `FHE.allow()` to grant persistent access. This enables users to decrypt values off-chain using `decryptForView` without requiring additional transactions.
+When allowing users to decrypt their own encrypted values, use `FHE.allow()` to grant persistent access. This enables users to decrypt values offchain using `decryptForView` without requiring additional transactions.
 </Tip>
 
 ## Allow Other Contracts
@@ -165,7 +165,7 @@ After modifying any encrypted state variable, call `FHE.allowThis()` to ensure t
 </Step>
 
 <Step title="Allow users for decryption">
-If users need to decrypt their own values off-chain, use `FHE.allow()` or `FHE.allowSender()` to grant them access.
+If users need to decrypt their own values offchain, use `FHE.allow()` or `FHE.allowSender()` to grant them access.
 </Step>
 
 <Step title="Use transient for single-use access">

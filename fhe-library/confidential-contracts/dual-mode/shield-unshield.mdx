@@ -5,15 +5,15 @@ description: "The built-in bridge that moves value between the public and confid
 
 ## Overview
 
-`ERC20Confidential` bridges its two balances with three operations. **Shielding** (public → confidential) is synchronous. **Unshielding** (confidential → public) is a two-step, asynchronous flow because FHE decryption happens off-chain.
+`ERC20Confidential` bridges its two balances with three operations. **Shielding** (public to confidential) is synchronous. **Unshielding** (confidential to public) is a two-step, asynchronous flow because FHE decryption happens offchain.
 
 <CardGroup cols={2}>
 <Card title="shield()" icon="arrow-down">
-Move public tokens into the confidential pool and mint yourself an equal encrypted balance — in a single transaction.
+Move public tokens into the confidential pool and mint yourself an equal encrypted balance, in a single transaction.
 </Card>
 
-<Card title="unshield() → claimUnshielded()" icon="arrow-up">
-Burn confidential tokens, decrypt the burned amount off-chain, then claim the equivalent public tokens back out of the pool.
+<Card title="unshield() to claimUnshielded()" icon="arrow-up">
+Burn confidential tokens, decrypt the burned amount offchain, then claim the equivalent public tokens back out of the pool.
 </Card>
 </CardGroup>
 
@@ -21,7 +21,7 @@ Both directions are governed by the [conversion rate](/fhe-library/confidential-
 
 ---
 
-## Shielding (Public → Confidential)
+## Shielding (Public to Confidential)
 
 ```solidity
 function shield(uint256 amount) public virtual {
@@ -61,7 +61,7 @@ An equal (rate-scaled) encrypted amount is credited to the caller's confidential
 </Steps>
 
 <Note>
-Shielding requires no approval — it moves the caller's **own** public balance. The caller must already hold at least `amountToShield` public tokens.
+Shielding requires no approval, it moves the caller's **own** public balance. The caller must already hold at least `amountToShield` public tokens.
 </Note>
 
 ### Example
@@ -84,11 +84,11 @@ await token.shield(999n); // rate = 1e12 → rounds to 0 → AmountTooSmallForCo
 
 ---
 
-## Unshielding (Confidential → Public)
+## Unshielding (Confidential to Public)
 
-Unshielding is asynchronous. `unshield` burns the confidential tokens and marks the burned ciphertext publicly decryptable; the network decrypts it off-chain; `claimUnshielded` then verifies the decryption proof and releases the public tokens.
+Unshielding is asynchronous. `unshield` burns the confidential tokens and marks the burned ciphertext publicly decryptable; the network decrypts it offchain; `claimUnshielded` then verifies the decryption proof and releases the public tokens.
 
-### Step 1 — Burn and create a claim
+### Step 1: Burn and create a claim
 
 There are two overloads: one takes a plaintext `uint64`, the other an already-encrypted `euint64` handle.
 
@@ -113,12 +113,12 @@ function _unshield(euint64 amount, uint64 requestedAmount) internal virtual retu
 ```
 
 <Warning>
-Because of [zero-replacement](/fhe-library/confidential-contracts/dual-mode/dual-balance-model#the-confidential-update-engine), unshielding more than your confidential balance burns **zero** — it does not revert. You'll end up with a claim for zero tokens. Ensure sufficient balance before unshielding.
+Because of [zero-replacement](/fhe-library/confidential-contracts/dual-mode/dual-balance-model#the-confidential-update-engine), unshielding more than your confidential balance burns **zero**, it does not revert. You'll end up with a claim for zero tokens. Ensure sufficient balance before unshielding.
 </Warning>
 
-### Step 2 — Decrypt off-chain
+### Step 2: Decrypt offchain
 
-`unshield` returns the burned `euint64` handle and calls `FHE.allowPublic(burned)`, so **anyone** can decrypt it — no permit needed. Retrieve the claim's `ctHash` and request decryption:
+`unshield` returns the burned `euint64` handle and calls `FHE.allowPublic(burned)`, so **anyone** can decrypt it, no permit needed. Retrieve the claim's `ctHash` and request decryption:
 
 ```typescript
 // Find the pending claim's ctHash
@@ -135,7 +135,7 @@ const decryptResult = await cofheClient
 // decryptResult.signature      → the decryption proof
 ```
 
-### Step 3 — Claim the public tokens
+### Step 3: Claim the public tokens
 
 Submit the plaintext and proof. The contract verifies the proof (via `FHE.verifyDecryptResult`), then transfers the rate-scaled public amount out of the pool.
 
@@ -163,7 +163,7 @@ const publicBal = await token.balanceOf(user.address);
 ```
 
 <Note>
-The public payout goes to the claim's stored `to` (the address that called `unshield`), regardless of who submits the `claimUnshielded` transaction. The proof — not the sender — authorizes the release.
+The public payout goes to the claim's stored `to` (the address that called `unshield`), regardless of who submits the `claimUnshielded` transaction. The proof, not the sender, authorizes the release.
 </Note>
 
 ---
@@ -228,7 +228,7 @@ function getUserClaims(address user) public view returns (Claim[] memory);
 </CodeGroup>
 
 <Note>
-`getUserClaims` returns only **pending** claims — a claim is removed from the user's set once it is successfully claimed. Use it to drive a "claimable balance" view in your UI.
+`getUserClaims` returns only **pending** claims, a claim is removed from the user's set once it is successfully claimed. Use it to drive a "claimable balance" view in your UI.
 </Note>
 
 ### Claim errors
@@ -296,4 +296,4 @@ event UnshieldedTokensClaimed(
 - Understand the backing pool and rate in [The Dual-Balance Model](/fhe-library/confidential-contracts/dual-mode/dual-balance-model)
 - Move tokens privately with [Confidential Operations](/fhe-library/confidential-contracts/dual-mode/confidential-operations)
 - Compare with the [FHERC20 wrapper unshield flow](/fhe-library/confidential-contracts/fherc20/fherc20-wrapper#unshielding-tokens)
-- Decrypt handles off-chain with the [Client SDK — Decrypt to Transaction](/client-sdk/guides/decrypt-to-tx)
+- Decrypt handles offchain with the [Client SDK. Decrypt to Transaction](/client-sdk/guides/decrypt-to-tx)

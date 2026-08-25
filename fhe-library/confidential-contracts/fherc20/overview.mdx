@@ -5,7 +5,7 @@ description: "Introduction to the FHERC20 confidential token standard (ERC-7984)
 
 ## What is FHERC20?
 
-FHERC20 is a Fully Homomorphic Encryption (FHE) enabled token standard that provides **complete confidentiality** for token balances while maintaining compatibility with existing ERC20 infrastructure. Built on the Fhenix CoFHE protocol and implementing the [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) standard, FHERC20 allows users to transfer and manage tokens without revealing their balances or transaction amounts to anyone—not even other participants in the same smart contract.
+FHERC20 is a Fully Homomorphic Encryption (FHE) enabled token standard that provides **complete confidentiality** for token balances while maintaining compatibility with existing ERC20 infrastructure. Built on the Fhenix CoFHE protocol and implementing the [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) standard, FHERC20 allows users to transfer and manage tokens without revealing their balances or transaction amounts to anyone, not even other participants in the same smart contract.
 
 <CardGroup cols={2}>
 <Card title="Private by Default" icon="lock">
@@ -100,7 +100,7 @@ function requestDiscloseEncryptedAmount(euint64 amount) external;
 function discloseEncryptedAmount(euint64 amount, uint64 cleartext, bytes memory proof) external;
 ```
 
-This emits an `AmountDisclosed` event, allowing accounts with access to an encrypted amount to voluntarily reveal it on-chain.
+This emits an `AmountDisclosed` event, allowing accounts with access to an encrypted amount to voluntarily reveal it onchain.
 
 ---
 
@@ -108,10 +108,10 @@ This emits an `AmountDisclosed` event, allowing accounts with access to an encry
 
 <Steps>
 <Step title="Client-Side Encryption">
-Users encrypt their transaction data (amounts, recipients) off-chain using the Client SDK (`@cofhe/sdk`) before submitting to the blockchain.
+Users encrypt their transaction data (amounts, recipients) offchain using the Client SDK (`@cofhe/sdk`) before submitting to the blockchain.
 </Step>
 
-<Step title="On-Chain FHE Operations">
+<Step title="Onchain FHE Operations">
 The FHERC20 contract performs all operations (additions, subtractions, comparisons) on encrypted data without ever decrypting it.
 </Step>
 
@@ -153,10 +153,11 @@ Standard ERC20 functions like `balanceOf()` must return a `uint256`. For confide
 The `balanceOfIsIndicator()` function returns `true`, signalling to wallets and block explorers that `balanceOf` returns an indicator, not a real balance.
 
 This allows:
-- ✅ Wallets to display "activity" for the token
-- ✅ Block explorers to show transactions occurred
-- ✅ Basic compatibility with existing infrastructure
-- ❌ But doesn't reveal actual token amounts
+- Wallets to display "activity" for the token
+- Block explorers to show that transactions occurred
+- Basic compatibility with existing infrastructure
+
+It does not reveal actual token amounts.
 
 Users can opt out by calling `resetIndicatedBalance()` to set their indicator back to zero.
 </Accordion>

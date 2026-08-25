@@ -1,13 +1,13 @@
 ---
 title: "Decryption"
-description: "publishDecryptResult, verifyDecryptResult, getDecryptResult — on-chain decryption result handling"
+description: "publishDecryptResult, verifyDecryptResult, getDecryptResult. Onchain decryption result handling"
 ---
 
 Decryption in CoFHE is a two-phase process:
 
-1. **On-chain**: Mark a value as decryptable with `FHE.allowPublic(ctHash)`
-2. **Off-chain**: Client calls `decryptForTx(ctHash)` via the SDK to get `{ plaintext, signature }`
-3. **On-chain**: Submit the result via `publishDecryptResult` or `verifyDecryptResult`
+1. **Onchain**: Mark a value as decryptable with `FHE.allowPublic(ctHash)`
+2. **Offchain**: Client calls `decryptForTx(ctHash)` via the SDK to get `{ plaintext, signature }`
+3. **Onchain**: Submit the result via `publishDecryptResult` or `verifyDecryptResult`
 
 ---
 
@@ -15,7 +15,7 @@ Decryption in CoFHE is a two-phase process:
 
 ### publishDecryptResult
 
-Publishes a decrypted result on-chain by verifying the Threshold Network signature. The plaintext is stored and can be read via `getDecryptResultSafe`.
+Publishes a decrypted result onchain by verifying the Threshold Network signature. The plaintext is stored and can be read via `getDecryptResultSafe`.
 
 <ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
 Ciphertext handle
@@ -30,7 +30,7 @@ Threshold Network signature
 </ParamField>
 
 <Warning>
-Reverts if the signature is invalid. The value must have been granted public access via `allowPublic` before decryption was requested off-chain.
+Reverts if the signature is invalid. The value must have been granted public access via `allowPublic` before decryption was requested offchain.
 </Warning>
 
 ```solidity
@@ -77,7 +77,7 @@ The compiler resolves the overload from the handle array's element type. There i
 
 ### verifyDecryptResult
 
-Verifies a Threshold Network signature **without** storing the plaintext on-chain. Returns `bool`.
+Verifies a Threshold Network signature **without** storing the plaintext onchain. Returns `bool`.
 
 <Tip>
 Use this when you only need to act on the decrypted value within the transaction without making it permanently public.
@@ -103,7 +103,7 @@ if (valid) {
 
 ### verifyDecryptResultBatch
 
-Verifies multiple signatures in a single call. Returns `true` only if every entry is valid; reverts if any signature fails to recover (consistent with the single-entry `verifyDecryptResult`). Typed overloads exist for every encrypted type — same handle/result type table as [`publishDecryptResultBatch`](#publishdecryptresultbatch).
+Verifies multiple signatures in a single call. Returns `true` only if every entry is valid; reverts if any signature fails to recover (consistent with the single-entry `verifyDecryptResult`). Typed overloads exist for every encrypted type, same handle/result type table as [`publishDecryptResultBatch`](#publishdecryptresultbatch).
 
 ```solidity
 bool allValid = FHE.verifyDecryptResultBatch(handles, values, sigs);
@@ -111,7 +111,7 @@ bool allValid = FHE.verifyDecryptResultBatch(handles, values, sigs);
 
 ### verifyDecryptResultBatchSafe
 
-Returns a `bool[]` indicating which entries are valid instead of reverting. Typed overloads cover every encrypted type — same handle/result type table as [`publishDecryptResultBatch`](#publishdecryptresultbatch).
+Returns a `bool[]` indicating which entries are valid instead of reverting. Typed overloads cover every encrypted type, same handle/result type table as [`publishDecryptResultBatch`](#publishdecryptresultbatch).
 
 ```solidity
 bool[] memory results = FHE.verifyDecryptResultBatchSafe(handles, values, sigs);

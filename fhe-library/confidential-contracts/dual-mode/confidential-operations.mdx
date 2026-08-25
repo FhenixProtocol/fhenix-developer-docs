@@ -5,17 +5,17 @@ description: "Confidential transfers, the operator system, and transfer callback
 
 ## Overview
 
-Once value is [shielded](/fhe-library/confidential-contracts/dual-mode/shield-unshield) into the confidential layer, `ERC20Confidential` exposes the full [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) surface for moving it privately. This API is **identical to FHERC20's** — confidential transfers, a time-based operator system, and safe transfers with receiver callbacks. This page covers each, with the specifics of the `ERC20Confidential` implementation.
+Once value is [shielded](/fhe-library/confidential-contracts/dual-mode/shield-unshield) into the confidential layer, `ERC20Confidential` exposes the full [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) surface for moving it privately. This API is **identical to FHERC20's**. Confidential transfers, a time-based operator system, and safe transfers with receiver callbacks. This page covers each, with the specifics of the `ERC20Confidential` implementation.
 
 <Note>
-The confidential-transfer API here mirrors FHERC20. If you already know FHERC20's [operators](/fhe-library/confidential-contracts/fherc20/operators) and [transfer callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks), the same mental model applies — only the contract name and errors differ.
+The confidential-transfer API here mirrors FHERC20. If you already know FHERC20's [operators](/fhe-library/confidential-contracts/fherc20/operators) and [transfer callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks), the same mental model applies, only the contract name and errors differ.
 </Note>
 
 ---
 
 ## Confidential Transfers
 
-Every transfer function comes in two overloads: an `InEuint64` overload for encrypted input coming from off-chain users, and an `euint64` overload for already-encrypted, contract-to-contract values.
+Every transfer function comes in two overloads: an `InEuint64` overload for encrypted input coming from offchain users, and an `euint64` overload for already-encrypted, contract-to-contract values.
 
 ```solidity
 // From caller
@@ -54,7 +54,7 @@ function _confidentialTransfer(address from, address to, euint64 value)
 ```
 
 <Warning>
-**Zero-replacement:** if the sender's confidential balance is insufficient, the transfer moves **encrypted zero** rather than reverting (to avoid leaking balance information). Always use the returned `transferred` handle — not the requested amount — for any downstream logic.
+**Zero-replacement:** if the sender's confidential balance is insufficient, the transfer moves **encrypted zero** rather than reverting (to avoid leaking balance information). Always use the returned `transferred` handle, not the requested amount, for any downstream logic.
 </Warning>
 
 ### Usage
@@ -72,7 +72,7 @@ await token.confidentialTransfer(recipient.address, enc);
 ```
 
 <Tip>
-The caller is granted **transient** access (`FHE.allowTransient`) to the `transferred` handle — access valid only for the current transaction. Both the sender and recipient receive persistent access to it inside `_confidentialUpdate`.
+The caller is granted **transient** access (`FHE.allowTransient`) to the `transferred` handle. Access valid only for the current transaction. Both the sender and recipient receive persistent access to it inside `_confidentialUpdate`.
 </Tip>
 
 ---
@@ -135,7 +135,7 @@ function confidentialTransferFrom(address from, address to, euint64 value)
 ```
 
 <Warning>
-An operator has access to a holder's **entire** confidential balance until expiry, not a specific amount. Grant only to trusted addresses and prefer short windows. Expiry is silent — a `confidentialTransferFrom` after `until` reverts with `ERC20ConfidentialUnauthorizedSpender`.
+An operator has access to a holder's **entire** confidential balance until expiry, not a specific amount. Grant only to trusted addresses and prefer short windows. Expiry is silent, a `confidentialTransferFrom` after `until` reverts with `ERC20ConfidentialUnauthorizedSpender`.
 </Warning>
 
 `OperatorSet(holder, operator, until)` is emitted on every grant or revocation.
@@ -155,7 +155,7 @@ function confidentialTransferFromAndCall(address from, address to, euint64 amoun
 
 ### The accept-or-refund mechanism
 
-`ERC20Confidential` moves the tokens first, asks the recipient, and **refunds** whatever the recipient rejects — all under FHE, without revealing amounts:
+`ERC20Confidential` moves the tokens first, asks the recipient, and **refunds** whatever the recipient rejects, all under FHE, without revealing amounts:
 
 ```solidity
 function _confidentialTransferAndCall(address from, address to, euint64 amount, bytes calldata data)
@@ -183,7 +183,7 @@ function _confidentialTransferAndCall(address from, address to, euint64 amount, 
 </Step>
 
 <Step title="Net transfer reported">
-`transferred = sent - refund` — the actual net amount that stuck with the recipient.
+`transferred = sent - refund`, the actual net amount that stuck with the recipient.
 </Step>
 </Steps>
 
@@ -203,7 +203,7 @@ interface IERC7984Receiver {
 ```
 
 - Return `FHE.asEbool(true)` to accept the transfer.
-- Return `FHE.asEbool(false)` to reject it — the tokens are refunded to the sender under FHE.
+- Return `FHE.asEbool(false)` to reject it, the tokens are refunded to the sender under FHE.
 
 ```solidity
 contract ConfidentialVault is IERC7984Receiver {
@@ -230,7 +230,7 @@ contract ConfidentialVault is IERC7984Receiver {
 ```
 
 <Note>
-Unlike an all-or-nothing revert, the accept/reject decision is evaluated under encryption and settled by refunding the rejected portion. See [FHERC20 Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for receiver patterns, reentrancy guidance, and data-passing examples — the receiver contract is written the same way.
+Unlike an all-or-nothing revert, the accept/reject decision is evaluated under encryption and settled by refunding the rejected portion. See [FHERC20 Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for receiver patterns, reentrancy guidance, and data-passing examples, the receiver contract is written the same way.
 </Note>
 
 ---
@@ -262,7 +262,7 @@ event OperatorSet(address indexed holder, address indexed operator, uint48 until
 ```
 
 <Note>
-`ConfidentialTransfer` carries an encrypted `euint64` handle, never a plaintext amount — you cannot index transfer amounts off-chain from events. The sidecar `ERC20ConfidentialIndicator` also emits a standard `Transfer(from, to, 10110000001)` so explorers register activity without exposing amounts.
+`ConfidentialTransfer` carries an encrypted `euint64` handle, never a plaintext amount, you cannot index transfer amounts offchain from events. The sidecar `ERC20ConfidentialIndicator` also emits a standard `Transfer(from, to, 10110000001)` so explorers register activity without exposing amounts.
 </Note>
 
 ---

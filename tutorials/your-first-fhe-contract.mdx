@@ -157,9 +157,9 @@ This value is an encrypted value that we created client-side using the SDK (read
 
 ### Decryption: Allow Public and Reveal
 
-Decryption follows a two-step on-chain pattern, with an off-chain step in between.
+Decryption follows a two-step onchain pattern, with an offchain step in between.
 
-**Step 1: Allow public decryption (on-chain)**
+**Step 1: Allow public decryption (onchain)**
 
 The owner calls `allow_counter_publicly` to mark the counter as eligible for public decryption:
 
@@ -169,9 +169,9 @@ function allow_counter_publicly() external onlyOwner {
 }
 ```
 
-**Step 2: Decrypt off-chain**
+**Step 2: Decrypt offchain**
 
-Anyone can now request decryption off-chain using `decryptForTx`, which returns the plaintext value and a Threshold Network signature:
+Anyone can now request decryption offchain using `decryptForTx`, which returns the plaintext value and a Threshold Network signature:
 
 ```typescript
 const countCtHash = await counter.counter();
@@ -182,9 +182,9 @@ const result = await client
   .execute();
 ```
 
-**Step 3: Publish on-chain with proof**
+**Step 3: Publish onchain with proof**
 
-The decrypted value and signature are submitted on-chain. `FHE.publishDecryptResult` verifies the signature and stores the plaintext — if the signature is invalid, the transaction reverts:
+The decrypted value and signature are submitted onchain. `FHE.publishDecryptResult` verifies the signature and stores the plaintext. If the signature is invalid, the transaction reverts:
 
 ```solidity
 function reveal_counter(uint64 _decrypted, bytes memory _signature) external {
@@ -210,13 +210,13 @@ If the result has not been published yet, the function reverts. Otherwise, it re
 
 ## Privacy Considerations
 
-In this contract, only the owner can allow public decryption. Once `reveal_counter` is called, the plaintext value is published on-chain and visible to everyone.
+In this contract, only the owner can allow public decryption. Once `reveal_counter` is called, the plaintext value is published onchain and visible to everyone.
 
 What if we want to allow the owner to privately read the value without revealing it publicly?
 
 For that, we need to add a call for `FHE.allow(counter, owner)` or `FHE.allowSender(counter)` every time that we change the counter's value.
 
-This will allow the owner to read the encrypted counter's value using the `get_encrypted_counter_value` function and decrypt it privately off-chain using `decryptForView`:
+This will allow the owner to read the encrypted counter's value using the `get_encrypted_counter_value` function and decrypt it privately offchain using `decryptForView`:
 
 ```solidity
 function increment_counter() external onlyOwner {

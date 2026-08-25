@@ -19,16 +19,16 @@ Before reading this guide, you should:
 
 ### Publish Decrypted Data Carefully
 
-Decryption is a multi-step process: the client requests a plaintext + signature off-chain via `decryptForTx`, then publishes or verifies the result on-chain using `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`. Once published, the plaintext is visible to everyone on the blockchain.
+Decryption is a multi-step process: the client requests a plaintext + signature offchain via `decryptForTx`, then publishes or verifies the result onchain using `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`. Once published, the plaintext is visible to everyone on the blockchain.
 
 **Key principles:**
 
-- **Evaluate information leakage**: Before publishing a decrypted value on-chain, consider what information you're exposing and what an observer might learn from it
-- **Minimize published values**: Only publish decrypted results when your protocol truly requires the plaintext on-chain. Use `decryptForView` if you only need to display the value in a UI
+- **Evaluate information leakage**: Before publishing a decrypted value onchain, consider what information you're exposing and what an observer might learn from it
+- **Minimize published values**: Only publish decrypted results when your protocol truly requires the plaintext onchain. Use `decryptForView` if you only need to display the value in a UI
 - **Use `verifyDecryptResult` when possible**: If your contract only needs to confirm a value without storing it publicly, prefer `FHE.verifyDecryptResult` over `FHE.publishDecryptResult`
 
 <Warning>
-Publishing a decrypted value on-chain makes it permanently visible to all observers. Always consider whether you need `decryptForTx` (on-chain proof) or `decryptForView` (UI-only) for your use case.
+Publishing a decrypted value onchain makes it permanently visible to all observers. Always consider whether you need `decryptForTx` (onchain proof) or `decryptForView` (UI-only) for your use case.
 </Warning>
 
 ### Always update permissions
@@ -88,11 +88,11 @@ FHE operations are computationally expensive. Optimize your contracts to minimiz
 - **Use the minimum bit-width necessary**: Choose the smallest integer type that can safely represent your data
 
 <CodeGroup>
-```solidity ❌ Less Efficient
+```solidity Less efficient
 euint64 counter;  // Using 64 bits when 32 would suffice
 ```
 
-```solidity ✅ More Efficient
+```solidity More efficient
 euint32 counter;  // Using 32 bits when that's sufficient
 ```
 </CodeGroup>
@@ -155,7 +155,7 @@ const handleEncrypt = async () => {
 };
 ```
 
-The `EncryptStep` enum values fire in order: `InitTfhe` → `FetchKeys` → `Pack` → `Prove` → `Verify`.
+The `EncryptStep` enum values fire in order: `InitTfhe` to `FetchKeys` to `Pack` to `Prove` to `Verify`.
 
 <Info>
 CoFHE operations may take time to complete, especially on testnets. Always provide user feedback during these operations to improve user experience.

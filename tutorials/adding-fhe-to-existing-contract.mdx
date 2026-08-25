@@ -248,7 +248,7 @@ function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
 
 ### Step 5: Constant time computation
 
-In order to preserve the confidentiality of the user's vote, we must make sure that we aren't leaking any information about the user's choice. If we only updated the voting option that the user has selected, then a user's vote could be deduced by simply watching which vote counter changes. Therefore, we must update _all_ the vote counters to hide the user's true vote:
+To preserve the confidentiality of the user's vote, we must make sure that we aren't leaking any information about the user's choice. If we only updated the voting option that the user has selected, then a user's vote could be deduced by simply watching which vote counter changes. Therefore, we must update _all_ the vote counters to hide the user's true vote:
 
 ```solidity
 function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
@@ -369,7 +369,7 @@ function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
 ```
 
 <Warning>
-It is critical to ensure that `FHE.allowThis` is used on encrypted variables that need to be used later in the contract's lifecycle. Contracts must have access to variables in order to perform FHE operations on those variables.
+It is critical to ensure that `FHE.allowThis` is used on encrypted variables that need to be used later in the contract's lifecycle. Contracts must have access to variables to perform FHE operations on them.
 </Warning>
 
 ### Step 9: Finalize the voting with `FHE.allowPublic`
@@ -390,11 +390,11 @@ function finalizeVote(uint256 _proposalId) external {
 }
 ```
 
-`FHE.allowPublic` marks each vote count as eligible for public decryption. Anyone can now request the plaintext values off-chain.
+`FHE.allowPublic` marks each vote count as eligible for public decryption. Anyone can now request the plaintext values offchain.
 
 ### Step 10: Reveal the results with `FHE.publishDecryptResult`
 
-After `finalizeVote` is called, the vote counts need to be decrypted off-chain and published on-chain with proof. We add a `revealResults` function that accepts the decrypted values and their Threshold Network signatures:
+After `finalizeVote` is called, the vote counts need to be decrypted offchain and published onchain with proof. We add a `revealResults` function that accepts the decrypted values and their Threshold Network signatures:
 
 ```solidity
 function revealResults(
@@ -515,10 +515,10 @@ In this tutorial, we walked through migrating a simple voting contract to use Co
 1. Changing the vote counts from plain `uint64` to encrypted values using `euint64`
 2. Modifying the voting function to use encrypted addition instead of plain addition
 3. Using `FHE.allowPublic` to mark values as decryptable after the voting deadline
-4. Adding a `revealResults` function that publishes decrypted values on-chain with `FHE.publishDecryptResult`
+4. Adding a `revealResults` function that publishes decrypted values onchain with `FHE.publishDecryptResult`
 5. Updating the getter function to handle decryption of results safely
 
-The resulting contract provides the same functionality as the original, but with the added privacy benefit that individual votes are not visible on-chain until the final tally is decrypted. This demonstrates how CoFHE can be used to add privacy to existing contracts with minimal changes to the core logic.
+The resulting contract provides the same functionality as the original, but with the added privacy benefit that individual votes are not visible onchain until the final tally is decrypted. This demonstrates how CoFHE can be used to add privacy to existing contracts with minimal changes to the core logic.
 
 ## Final `FHEVotingExample.sol`
 

@@ -5,7 +5,7 @@ description: "Step-by-step guide for migrating Solidity contracts from FHE.decry
 
 ## Overview
 
-The old decryption pattern used `FHE.decrypt(ctHash)` to trigger an asynchronous decryption, followed by `FHE.getDecryptResultSafe(ctHash)` to read the result once available. The new pattern replaces `FHE.decrypt` with an off-chain decryption step using the Client SDK, and uses `FHE.publishDecryptResult` to submit the result on-chain with a cryptographic proof.
+The old decryption pattern used `FHE.decrypt(ctHash)` to trigger an asynchronous decryption, followed by `FHE.getDecryptResultSafe(ctHash)` to read the result once available. The new pattern replaces `FHE.decrypt` with an offchain decryption step using the Client SDK, and uses `FHE.publishDecryptResult` to submit the result onchain with a cryptographic proof.
 
 This guide walks through concrete before/after Solidity examples.
 
@@ -13,13 +13,13 @@ This guide walks through concrete before/after Solidity examples.
 
 | | Old pattern | New pattern |
 |---|---|---|
-| **Trigger decrypt** | `FHE.decrypt(ctHash)` (on-chain) | `FHE.allowPublic(ctHash)` (on-chain) + `client.decryptForTx(ctHash)` (off-chain) |
+| **Trigger decrypt** | `FHE.decrypt(ctHash)` (onchain) | `FHE.allowPublic(ctHash)` (onchain) + `client.decryptForTx(ctHash)` (offchain) |
 | **Submit result** | Automatic (async, no proof) | `FHE.publishDecryptResult(ctHash, plaintext, signature)` |
 | **Verify only** | N/A | `FHE.verifyDecryptResult(ctHash, plaintext, signature)` |
 | **Read result** | `FHE.getDecryptResultSafe(ctHash)` | `FHE.getDecryptResultSafe(ctHash)` (same) |
 
 <Note>
-The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow requires a Threshold Network signature, ensuring the plaintext is cryptographically verified before being used on-chain.
+The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow requires a Threshold Network signature, ensuring the plaintext is cryptographically verified before being used onchain.
 </Note>
 
 ---
@@ -27,7 +27,7 @@ The key difference: `FHE.decrypt` triggered decryption without any proof. The ne
 ## The New Decryption Flow
 
 <Steps>
-<Step title="Grant decryption permission (on-chain)">
+<Step title="Grant decryption permission (onchain)">
 Instead of calling `FHE.decrypt()`, mark the value as decryptable:
 
 ```solidity
@@ -39,7 +39,7 @@ FHE.allow(encryptedValue, authorizedAddress);
 ```
 </Step>
 
-<Step title="Decrypt off-chain (client-side)">
+<Step title="Decrypt offchain (client-side)">
 The client requests decryption from the Threshold Network, which returns the plaintext and a signature:
 
 ```typescript
@@ -53,7 +53,7 @@ const result = await client
 ```
 </Step>
 
-<Step title="Submit result on-chain with proof">
+<Step title="Submit result onchain with proof">
 The decrypted value and signature are submitted to your contract:
 
 ```solidity
@@ -215,9 +215,9 @@ function claimUnshielded(
 </CodeGroup>
 
 **Key differences:**
-- `FHE.decrypt(burned)` → `FHE.allowPublic(burned)` — no on-chain decryption is triggered, just a permission grant
-- `claimUnshielded(bytes32 ctHash)` → `claimUnshielded(bytes32 ctHash, uint64 decryptedAmount, bytes signature)` — the caller now provides the decrypted value + proof
-- `FHE.getDecryptResultSafe` → `FHE.publishDecryptResult` — the contract verifies the Threshold Network signature instead of polling for a result
+- `FHE.decrypt(burned)` to `FHE.allowPublic(burned)`: no onchain decryption is triggered, just a permission grant
+- `claimUnshielded(bytes32 ctHash)` to `claimUnshielded(bytes32 ctHash, uint64 decryptedAmount, bytes signature)`: the caller now provides the decrypted value + proof
+- `FHE.getDecryptResultSafe` to `FHE.publishDecryptResult`: the contract verifies the Threshold Network signature instead of polling for a result
 
 **Client-side flow (new):**
 
@@ -295,7 +295,7 @@ function getResult() external view returns (uint256) {
 
 ## `publishDecryptResult` vs `verifyDecryptResult`
 
-| Method | Stores result on-chain | Others can read it | Use case |
+| Method | Stores result onchain | Others can read it | Use case |
 |---|---|---|---|
 | `publishDecryptResult` | Yes | Yes, via `getDecryptResultSafe` | Revealing results publicly (auctions, votes, counters) |
 | `verifyDecryptResult` | No | No | One-time verification (transfers, burns) |
@@ -336,7 +336,7 @@ Create a new function that accepts `(plaintext, signature)` parameters and calls
 </Step>
 
 <Step title="Update client code">
-Add the off-chain decryption step using `client.decryptForTx()` between the two on-chain calls.
+Add the offchain decryption step using `client.decryptForTx()` between the two onchain calls.
 </Step>
 </Steps>
 

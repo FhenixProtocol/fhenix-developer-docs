@@ -170,7 +170,7 @@ it('Full Client SDK flow', async function () {
 ```
 </CodeGroup>
 
-### Deploying to Testnet
+### Deploying to testnet
 
 When ready for more realistic testing, deploy to a Sepolia testnet:
 
@@ -243,7 +243,7 @@ These contracts provide mock implementations for FHE functionality:
 
 - Allows testing without actual FHE operations
 - Simulates the behavior of the real FHE environment
-- Stores plaintext values on-chain for testing purposes
+- Stores plaintext values onchain for testing purposes
 
 <Note>
 In the mock environment, gas costs are higher than in production due to the additional operations needed to simulate FHE behavior. This is especially noticeable when logging is enabled.
@@ -266,7 +266,7 @@ CoFHE supports multiple development environments:
 - No external dependencies
 - Uses mock contracts to simulate FHE operations
 
-### Sepolia Testnet
+### Sepolia testnet
 
 - Public testnet for real FHE operations
 - Requires ETH from the Sepolia faucet
@@ -311,7 +311,7 @@ Always set proper permissions with `FHE.allowThis()` and `FHE.allowSender()` to 
 
 ### Error Handling
 
-Implement robust error handling for FHE operations. Be prepared for potential decryption delays and use appropriate retry mechanisms.
+Handle errors from FHE operations explicitly. Be prepared for potential decryption delays and use appropriate retry mechanisms.
 
 ### Gas Optimization
 
@@ -328,7 +328,7 @@ Now that you have your development environment set up, you can:
 
 ## Resources
 
-- [Fhenix Documentation](https://docs.fhenix.zone)
+- [Fhenix documentation](/)
 - [Client SDK GitHub](https://github.com/FhenixProtocol/cofhesdk)
 - [CoFHE Contracts GitHub](https://github.com/FhenixProtocol/cofhe-contracts)
 - [cofhe-hardhat-starter GitHub](https://github.com/fhenixprotocol/cofhe-hardhat-starter)

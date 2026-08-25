@@ -45,7 +45,7 @@ Each encrypted type has a corresponding input struct used when receiving encrypt
 
 1. **Initialization**: All FHE functions check if their inputs are initialized and set them to 0 if not.
 
-2. **Decryption**: Decryption is a two-phase process — mark values with `allowPublic` on-chain, decrypt off-chain via the Client SDK, then publish/verify the result with `publishDecryptResult` or `verifyDecryptResult`. Only reveal values when absolutely necessary.
+2. **Decryption**: Decryption is a two-phase process. Mark values with `allowPublic` onchain, decrypt offchain via the Client SDK, then publish/verify the result with `publishDecryptResult` or `verifyDecryptResult`. Only reveal values when absolutely necessary.
 
 3. **Security Zones**: Some functions accept a `securityZone` parameter to isolate different encrypted computations. FHE operations can only be performed between ciphertexts that share the same security zone.
 

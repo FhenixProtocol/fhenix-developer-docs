@@ -30,7 +30,7 @@ abstract contract ERC20Confidential is ERC20, ERC165, IERC20Confidential, FHERC2
 <Card title="Public Layer" icon="eye">
 **Inherited from OpenZeppelin `ERC20`**
 
-Transparent balances tracked in the standard `_balances` mapping. `balanceOf`, `transfer`, `approve`, `transferFrom`, and `totalSupply` behave like any ERC-20. Fully visible on-chain.
+Transparent balances tracked in the standard `_balances` mapping. `balanceOf`, `transfer`, `approve`, `transferFrom`, and `totalSupply` behave like any ERC-20. Fully visible onchain.
 </Card>
 
 <Card title="Confidential Layer" icon="lock">
@@ -40,7 +40,7 @@ Encrypted balances stored as `euint64` handles. Readable only by the holder (via
 </Card>
 </CardGroup>
 
-Because `ERC20Confidential` inherits the **real** OpenZeppelin `ERC20`, the public side is genuinely functional — this is the inversion of FHERC20, where those same functions revert.
+Because `ERC20Confidential` inherits the **real** OpenZeppelin `ERC20`, the public side is genuinely functional. This is the inversion of FHERC20, where those same functions revert.
 
 ```solidity
 /// @dev `false` because {balanceOf} returns the real public ERC-20 balance, not an indicator.
@@ -90,7 +90,7 @@ function confidentialTotalSupply() public view virtual returns (euint64) {
 ```
 
 <Warning>
-The `euint64` returned by `confidentialTotalSupply()` is **synthetic** — it wraps a plaintext number, not a registered ciphertext. It is for display/inspection only; you cannot decrypt it or feed it into FHE operations.
+The `euint64` returned by `confidentialTotalSupply()` is **synthetic**, it wraps a plaintext number, not a registered ciphertext. It is for display/inspection only; you cannot decrypt it or feed it into FHE operations.
 </Warning>
 
 ---
@@ -124,7 +124,7 @@ Dust below one confidential unit cannot be shielded. `shield()` reverts with `Am
 
 ## The Confidential Update Engine
 
-`_confidentialUpdate` is the encrypted analog of ERC-20's `_update`. Every confidential mutation — shield mint, confidential transfer, unshield burn — flows through it. Passing `address(0)` as `from` means *mint*; passing `address(0)` as `to` means *burn*.
+`_confidentialUpdate` is the encrypted analog of ERC-20's `_update`. Every confidential mutation (shield mint, confidential transfer, unshield burn) flows through it. Passing `address(0)` as `from` means *mint*; passing `address(0)` as `to` means *burn*.
 
 ```solidity
 function _confidentialUpdate(
@@ -170,7 +170,7 @@ Key behaviors baked into this function:
 <Accordion title="Zero-replacement on insufficient balance" icon="circle-xmark" defaultOpen>
 `FHESafeMath.tryDecrease` returns an encrypted `success` flag. If the sender's balance is too low, `FHE.select(success, amount, 0)` sets the transferred amount to **encrypted zero** instead of reverting.
 
-This is deliberate: reverting would leak whether the sender had enough balance. The trade-off is that transfers can silently move zero tokens — always work with the returned `transferred` handle, never the requested amount.
+This is deliberate: reverting would leak whether the sender had enough balance. The trade-off is that transfers can silently move zero tokens, always work with the returned `transferred` handle, never the requested amount.
 </Accordion>
 
 <Accordion title="Fresh handle on every update" icon="rotate" defaultOpen>
@@ -179,9 +179,9 @@ Each balance change stores a **new** `euint64` handle (`ptr`). Any `FHE.allow` y
 
 <Accordion title="Access control is granted inline" icon="key" defaultOpen>
 After each mutation the function grants:
-- `FHE.allowThis(...)` on the new balance and the transferred amount — so the contract can keep operating on them.
-- `FHE.allow(balance, holder)` — so the holder can decrypt their own balance.
-- `FHE.allow(transferred, from/to)` — so both parties can see what moved.
+- `FHE.allowThis(...)` on the new balance and the transferred amount, so the contract can keep operating on them.
+- `FHE.allow(balance, holder)`: so the holder can decrypt their own balance.
+- `FHE.allow(transferred, from/to)`: so both parties can see what moved.
 
 Learn more in [Access Control](/fhe-library/core-concepts/access-control).
 </Accordion>
@@ -191,7 +191,7 @@ Learn more in [Access Control](/fhe-library/core-concepts/access-control).
 
 ## The Indicator Sidecar Token
 
-On FHERC20 the token's own `balanceOf` doubles as a wallet "activity indicator." `ERC20Confidential` can't do that — its `balanceOf` is a real balance. Instead, the constructor deploys a **separate companion token**, `ERC20ConfidentialIndicator`, dedicated to showing confidential activity in wallets and explorers **without revealing real amounts**.
+On FHERC20 the token's own `balanceOf` doubles as a wallet "activity indicator." `ERC20Confidential` can't do that, its `balanceOf` is a real balance. Instead, the constructor deploys a **separate companion token**, `ERC20ConfidentialIndicator`, dedicated to showing confidential activity in wallets and explorers **without revealing real amounts**.
 
 ```solidity
 constructor(address parentAddress, string memory parentName, string memory parentSymbol)
@@ -212,9 +212,9 @@ function balanceOf(address account) public view override returns (uint256) {
 Characteristics of the sidecar:
 
 - **Name/symbol:** `"1011000 <ParentName>"` / `"c<PARENTSYMBOL>"` (e.g. `cMDT`), with **4 decimals**.
-- **Fake balances:** `balanceOf` returns `10110000000 + _indicatedBalances[account]` — a deliberately non-revealing number that changes with activity but encodes no real amount.
+- **Fake balances:** `balanceOf` returns `10110000000 + _indicatedBalances[account]`: a deliberately non-revealing number that changes with activity but encodes no real amount.
 - **Driven only by the parent:** `emitConfidentialTransfer(from, to)` is `onlyParent`. The parent calls it inside `_confidentialUpdate`, nudging a bounded internal counter and emitting a `Transfer(from, to, 10110000001)` so explorers register that *something* happened.
-- **Inert on its own:** `transfer`, `transferFrom`, `approve`, and `allowance` all revert with `ERC20ConfidentialIndicatorNoOp()`. You cannot move or approve the indicator token — it exists purely for display.
+- **Inert on its own:** `transfer`, `transferFrom`, `approve`, and `allowance` all revert with `ERC20ConfidentialIndicatorNoOp()`. You cannot move or approve the indicator token, it exists purely for display.
 
 ```solidity
 function emitConfidentialTransfer(address from, address to) public onlyParent {
@@ -225,7 +225,7 @@ function emitConfidentialTransfer(address from, address to) public onlyParent {
 ```
 
 <Note>
-The indicator's counter jitters within bounds (increment seeds at `5001`, capped at `9999`; decrement seeds at `4999`, floored at `1`). These numbers are intentionally meaningless — they signal activity, not balance. Access the deployed sidecar via the parent's public `indicatorToken` variable.
+The indicator's counter jitters within bounds (increment seeds at `5001`, capped at `9999`; decrement seeds at `4999`, floored at `1`). These numbers are intentionally meaningless, they signal activity, not balance. Access the deployed sidecar via the parent's public `indicatorToken` variable.
 </Note>
 
 ---
@@ -259,7 +259,7 @@ if (handle && handle !== 0n) {
 </CodeGroup>
 
 <Warning>
-A confidential balance handle of `0` means the account has **never** held a confidential balance — not that the balance is zero. Always check before attempting to decrypt.
+A confidential balance handle of `0` means the account has **never** held a confidential balance, not that the balance is zero. Always check before attempting to decrypt.
 </Warning>
 
 ---

@@ -1,20 +1,20 @@
 ---
 title: "ERC20Confidential Overview"
-description: "The dual-mode confidential token — a real public ERC-20 and an encrypted balance in one contract"
+description: "The dual-mode confidential token, a real public ERC-20 and an encrypted balance in one contract"
 ---
 
 ## What is ERC20Confidential?
 
-`ERC20Confidential` is a **dual-mode** confidential token. Unlike [FHERC20](/fhe-library/confidential-contracts/fherc20/overview)—where every balance is encrypted and the public ERC-20 surface is only a decorative shim—`ERC20Confidential` gives each holder **two real balances in the same contract**:
+`ERC20Confidential` is a **dual-mode** confidential token. Unlike [FHERC20](/fhe-library/confidential-contracts/fherc20/overview), where every balance is encrypted and the public ERC-20 surface is only a decorative shim, `ERC20Confidential` gives each holder **two real balances in the same contract**:
 
 1. A **public ERC-20 balance**, inherited from the standard OpenZeppelin `ERC20`. `balanceOf`, `transfer`, `approve`, `transferFrom`, and `totalSupply` all work exactly as they do on any normal token.
-2. A **confidential, FHE-encrypted balance**, stored as an `euint64` handle. Nobody—not even the contract—can read it without an ACL grant and a decryption permit.
+2. A **confidential, FHE-encrypted balance**, stored as an `euint64` handle. Nobody, not even the contract, can read it without an ACL grant and a decryption permit.
 
-Tokens move between the two layers with **shield** (public → confidential) and **unshield → claim** (confidential → public). Think of it as a normal ERC-20 with a built-in privacy pool baked directly into the token.
+Tokens move between the two layers with **shield** (public to confidential) and **unshield to claim** (confidential to public). Think of it as a normal ERC-20 with a built-in privacy pool baked directly into the token.
 
 <CardGroup cols={2}>
 <Card title="Two Balances, One Contract" icon="layer-group">
-A working public ERC-20 balance **and** a parallel encrypted balance for the same holder — no separate wrapper contract required.
+A working public ERC-20 balance **and** a parallel encrypted balance for the same holder, no separate wrapper contract required.
 </Card>
 
 <Card title="Built-in Shield / Unshield" icon="shield-halved">
@@ -89,11 +89,11 @@ Move public tokens into the confidential pool and mint yourself an equal encrypt
 </Step>
 
 <Step title="Confidential layer (ERC-7984)">
-Transfer privately with `confidentialTransfer`, delegate with operators, and receive with callbacks — all on encrypted amounts.
+Transfer privately with `confidentialTransfer`, delegate with operators, and receive with callbacks, all on encrypted amounts.
 </Step>
 
-<Step title="Unshield → Claim">
-Burn confidential tokens (async), decrypt the burned amount off-chain, then claim the equivalent public tokens back out of the pool.
+<Step title="Unshield to Claim">
+Burn confidential tokens (async), decrypt the burned amount offchain, then claim the equivalent public tokens back out of the pool.
 </Step>
 </Steps>
 
@@ -146,7 +146,7 @@ Auto-deployed by the constructor. Shows non-revealing "activity" balances in wal
 <Card title="IERC20Confidential" icon="file-code">
 **Interface**
 
-`IERC20Confidential is IFHERC20` — adds the shield/unshield bridge to the shared confidential-token surface.
+`IERC20Confidential is IFHERC20`. Adds the shield/unshield bridge to the shared confidential-token surface.
 </Card>
 </CardGroup>
 

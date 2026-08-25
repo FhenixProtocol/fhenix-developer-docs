@@ -5,7 +5,7 @@ description: "Introduction to @cofhe/sdk - the TypeScript client SDK for buildin
 
 `@cofhe/sdk` is the TypeScript client SDK for [CoFHE](/deep-dive/cofhe-components/overview). It handles the client-side operations required to interact with FHE-enabled smart contracts: encrypting inputs with ZK proofs, decrypting ciphertext handles via the Threshold Network, and managing EIP-712 permits for access control.
 
-On-chain, contracts use [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted data. Off-chain, this SDK prepares the inputs and reads the outputs.
+Onchain, contracts use [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted data. Offchain, this SDK prepares the inputs and reads the outputs.
 
 ## What the SDK does
 
@@ -16,11 +16,11 @@ On-chain, contracts use [`FHE.sol`](/fhe-library/introduction/overview) to opera
 </Card>
 
 <Card title="Decrypt for View" icon="eye">
-  Requests decryption of a ciphertext handle via the Threshold Network using a permit. Returns the plaintext locally, not published on-chain.
+  Requests decryption of a ciphertext handle via the Threshold Network using a permit. Returns the plaintext locally, not published onchain.
 </Card>
 
 <Card title="Decrypt for Tx" icon="arrow-right-arrow-left">
-  Requests decryption and returns the plaintext with a Threshold Network signature for on-chain verification.
+  Requests decryption and returns the plaintext with a Threshold Network signature for onchain verification.
 </Card>
 
 <Card title="Manage Permits" icon="id-card">
@@ -58,9 +58,9 @@ import { Ethers6Adapter } from '@cofhe/sdk/adapters';
 
 ## Client lifecycle
 
-The SDK follows a three-step lifecycle: **config → client → connect**.
+The SDK follows a three-step lifecycle: **config to client to connect**.
 
-```
+```text
 createCofheConfig({ supportedChains }) → createCofheClient(config) → client.connect(publicClient, walletClient)
 ```
 
@@ -94,7 +94,7 @@ const balance = await client
 <CardGroup cols={2}>
 
 <Card title="Quick Start" icon="rocket" href="/client-sdk/quick-start">
-  Install the SDK, write a contract, and run your first encrypt → store → decrypt test in minutes.
+  Install the SDK, write a contract, and run your first encrypt to store to decrypt test in minutes.
 </Card>
 
 <Card title="Encrypting Inputs" icon="lock" href="/client-sdk/guides/encrypting-inputs">
@@ -110,7 +110,7 @@ const balance = await client
 </Card>
 
 <Card title="Decrypt to Transact" icon="arrow-right-arrow-left" href="/client-sdk/guides/decrypt-to-tx">
-  Decrypt with a verifiable Threshold Network signature for on-chain use.
+  Decrypt with a verifiable Threshold Network signature for onchain use.
 </Card>
 
 </CardGroup>

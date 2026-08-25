@@ -3,17 +3,17 @@ title: Mental Model
 description: "Understand how data flows through FHE-enabled dApps using the @cofhe/sdk"
 ---
 
-To understand how `@cofhe/sdk` fits into the Fhenix framework, you'll explore a simple mental model using a Counter smart contract example. This will show you how data flows through FHE-enabled dApps—from encryption to computation to decryption.
+To understand how `@cofhe/sdk` fits into the Fhenix framework, you'll explore a simple mental model using a Counter smart contract example. This will show you how data flows through FHE-enabled dApps, from encryption to computation to decryption.
 
 ## The Counter Example
 
-Imagine a smart contract called **Counter** where each user has their own private counter. Users can increment their counter and read its value with complete privacy—no one, including the smart contract itself, can see the actual counter values.
+Imagine a smart contract called **Counter** where each user has their own private counter. Users can increment their counter and read its value with complete privacy, no one, including the smart contract itself, can see the actual counter values.
 
 ### Key Concepts
 
 - **Public Key** = A lock that anyone can use to seal data
 - **Private Key** = The unique key to unlock sealed data
-- **CoFHE Co-Processor** = Fhenix's off-chain service that handles FHE operations
+- **CoFHE Co-Processor** = Fhenix's offchain service that handles FHE operations
 - **Ciphertext** = Encrypted data that can be computed on without decryption
 
 <Steps>
@@ -26,7 +26,7 @@ When a user wants to add `5` to their counter, the data must first be encrypted 
 
 1. The user's plaintext value `5` is encrypted using `client.encryptInputs([Encryptable.uint32(5n)]).execute()`
 2. The SDK generates a ZK proof and submits the encrypted value to the CoFHE verifier
-3. The returned `EncryptedItemInput` is sent to the smart contract on-chain
+3. The returned `EncryptedItemInput` is sent to the smart contract onchain
 4. The blockchain sees only encrypted data, never the actual value `5`
 
 ### The "Locked Box" Analogy
@@ -64,16 +64,16 @@ When a user wants to read their counter value, they use one of the SDK's two dec
 **For UI display (`decryptForView`):**
 
 1. The user reads the encrypted handle (`ctHash`) from the contract
-2. A permit authorizes decryption — created via `client.permits.getOrCreateSelfPermit()`
+2. A permit authorizes decryption. Created via `client.permits.getOrCreateSelfPermit()`
 3. The SDK requests re-encryption from the Threshold Network using the permit's sealing key
 4. The plaintext is returned locally for display
 
-**For on-chain use (`decryptForTx`):**
+**For onchain use (`decryptForTx`):**
 
 1. The user reads the encrypted handle (`ctHash`) from the contract
 2. The SDK requests decryption from the Threshold Network
 3. The plaintext and a verifiable signature are returned
-4. The signature can be verified on-chain via `FHE.verifyDecryptResult(...)`
+4. The signature can be verified onchain via `FHE.verifyDecryptResult(...)`
 
 ### The "Lock Exchange" Analogy
 
@@ -129,9 +129,9 @@ sequenceDiagram
 ## Key Takeaways
 
 1. **Encryption happens client-side**: The SDK encrypts data with ZK proofs before it reaches the blockchain
-2. **Computation happens on-chain**: Smart contracts perform operations on encrypted data via `FHE.sol`
+2. **Computation happens onchain**: Smart contracts perform operations on encrypted data via `FHE.sol`
 3. **FHE enables privacy-preserving computation**: The blockchain never sees plaintext values
 4. **Permits enable access control**: EIP-712 signed permits authorize who can decrypt specific data
-5. **Two decryption paths**: `decryptForView` for UI display, `decryptForTx` for on-chain verification
+5. **Two decryption paths**: `decryptForView` for UI display, `decryptForTx` for onchain verification
 
-This architecture ensures that sensitive data remains private throughout its entire lifecycle—from input to computation to output—while still enabling powerful decentralized applications.
+This architecture ensures that sensitive data remains private throughout its entire lifecycle, from input to computation to output, while still enabling decentralized applications.

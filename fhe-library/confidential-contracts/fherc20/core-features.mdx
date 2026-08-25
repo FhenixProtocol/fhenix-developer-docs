@@ -131,7 +131,7 @@ function confidentialTransfer(
 </CodeGroup>
 
 <Tip>
-Use the `InEuint64` overload when accepting user input from off-chain. Use the `euint64` overload for contract-to-contract transfers where the value is already encrypted. Note: the `euint64` overload requires the caller to be authorized via the FHE ACL for the given amount.
+Use the `InEuint64` overload when accepting user input from offchain. Use the `euint64` overload for contract-to-contract transfers where the value is already encrypted. Note: the `euint64` overload requires the caller to be authorized via the FHE ACL for the given amount.
 </Tip>
 
 ### Transfer Implementation
@@ -314,10 +314,10 @@ FHE.allowThis(_confidentialTotalSupply);
 ```
 
 This ensures:
-- ✅ Users can access their own balances
-- ✅ The contract can perform operations on balances
-- ✅ Transfer participants (sender, receiver, and caller) can see the transferred amount
-- ✅ Total supply is only accessible by the contract
+- Users can access their own balances
+- The contract can perform operations on balances
+- Transfer participants (sender, receiver, and caller) can see the transferred amount
+- Total supply is only accessible by the contract
 
 <Note>
 Learn more about FHE access control in the [Access Control](/fhe-library/core-concepts/access-control) guide.
@@ -395,7 +395,7 @@ Like transfers, burning uses the zero-replacement pattern. If you attempt to bur
 
 ## Amount Disclosure
 
-FHERC20 includes optional disclosure functions for transparency when needed. Accounts with access to an encrypted amount can voluntarily reveal it on-chain.
+FHERC20 includes optional disclosure functions for transparency when needed. Accounts with access to an encrypted amount can voluntarily reveal it onchain.
 
 ### Requesting Disclosure
 
@@ -557,7 +557,7 @@ event OperatorSet(address indexed holder, address indexed operator, uint48 until
 ```
 
 <Note>
-The `Transfer` event doesn't reveal the actual transfer amount—only that a transfer occurred. The `value` field always contains `indicatorTick` to maintain ERC20 compatibility while preserving privacy.
+The `Transfer` event doesn't reveal the actual transfer amount, only that a transfer occurred. The `value` field always contains `indicatorTick` to maintain ERC20 compatibility while preserving privacy.
 </Note>
 
 ---

@@ -5,7 +5,7 @@ description: "Reveal encrypted values locally for UI display using permits"
 
 Use `decryptForView` to reveal a confidential (encrypted) value locally in your app so you can display it in the UI.
 
-Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not** return an on-chain-verifiable signature, and it is **not** meant to be published on-chain.
+Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not** return an onchain-verifiable signature, and it is **not** meant to be published onchain.
 
 ## Flow
 
@@ -14,7 +14,7 @@ Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not*
 3. Call `decryptForView(ctHash, utype).execute()` to get the plaintext.
 
 <Note>
-`decryptForView` always decrypts using a permit (there is no `.withoutPermit()` mode). If your protocol intends for the plaintext to become publicly visible on-chain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
+`decryptForView` always decrypts using a permit (there is no `.withoutPermit()` mode). If your protocol intends for the plaintext to become publicly visible onchain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
 </Note>
 
 ## Prerequisites
@@ -31,9 +31,9 @@ Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not*
 **Providing `utype`**: `utype` must match the ciphertext's underlying FHE type. The SDK uses it to convert the decrypted `bigint` into a convenient JS type.
 
 Supported `utype`s:
-- `FheTypes.Bool` → returns a `boolean`
-- `FheTypes.Uint160` (address) → returns a checksummed `0x...` string
-- `FheTypes.Uint8 | Uint16 | Uint32 | Uint64 | Uint128` → returns a `bigint`
+- `FheTypes.Bool` to returns a `boolean`
+- `FheTypes.Uint160` (address) to returns a checksummed `0x...` string
+- `FheTypes.Uint8 | Uint16 | Uint32 | Uint64 | Uint128` to returns a `bigint`
 </Tip>
 
 ## Permit setup
@@ -90,29 +90,29 @@ Running `.execute()` resolves to a scalar JS value:
 
 ## Builder API
 
-### `.execute()` — required, call last
+### `.execute()` (required, call last)
 
 Runs the decryption and returns a UI-friendly scalar value.
 
-### `.withPermit(...)` — optional
+### `.withPermit(...)` (optional)
 
 Select which permit to use:
 
-- `.withPermit()` — uses the active permit
-- `.withPermit(permitHash)` — fetches a stored permit by hash
-- `.withPermit(permit)` — uses the provided permit object
+- `.withPermit()`: uses the active permit
+- `.withPermit(permitHash)`: fetches a stored permit by hash
+- `.withPermit(permit)`: uses the provided permit object
 
 If you don't call `.withPermit(...)`, the active permit is used by default.
 
-### `.setAccount(address)` — optional
+### `.setAccount(address)` (optional)
 
 Overrides the account used to resolve the active/stored permit.
 
-### `.setChainId(chainId)` — optional
+### `.setChainId(chainId)` (optional)
 
 Overrides the chain used to resolve the Threshold Network URL and permits.
 
-### `.onPoll(callback)` — optional
+### `.onPoll(callback)` (optional)
 
 Register a callback that fires once per poll attempt while `decryptForView` waits for the Threshold Network to return the sealed plaintext. Useful for surfacing decrypt progress in a UI.
 
@@ -130,13 +130,13 @@ The callback receives:
 | Field | Type | Description |
 | --- | --- | --- |
 | `operation` | `'decrypt' \| 'sealoutput'` | Which Threshold Network flow is polling. For `decryptForView` this is `'sealoutput'`. |
-| `requestId` | `string` | The Threshold Network request id. **May be the empty string** during submit-time retries — see `.set404RetryTimeout(...)` below. |
+| `requestId` | `string` | The Threshold Network request id. **May be the empty string** during submit-time retries, see `.set404RetryTimeout(...)` below. |
 | `attemptIndex` | `number` | Zero-based poll attempt counter. |
 | `elapsedMs` | `number` | Time since the first submit attempt. |
 | `intervalMs` | `number` | Delay until the next poll. |
 | `timeoutMs` | `number` | Overall budget shared by submit-retries and status-polling. |
 
-### `.set404RetryTimeout(timeoutMs)` — optional
+### `.set404RetryTimeout(timeoutMs)` (optional)
 
 Configures how long `decryptForView` keeps retrying when the Threshold Network's submit endpoint responds with `404 Not Found` before a `requestId` is available. This typically happens on slower backends where the ciphertext isn't visible yet at submit time. Defaults to `10_000` ms.
 

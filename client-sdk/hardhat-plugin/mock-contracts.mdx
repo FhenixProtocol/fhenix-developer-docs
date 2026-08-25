@@ -3,19 +3,19 @@ title: Mock Contracts
 description: "Interact with mock CoFHE contracts and read plaintext values in tests"
 ---
 
-The plugin deploys a suite of mock contracts that simulate the full CoFHE coprocessor stack on the Hardhat network. This lets you develop and test FHE contracts without running the off-chain FHE engine.
+The plugin deploys a suite of mock contracts that simulate the full CoFHE coprocessor stack on the Hardhat network. This lets you develop and test FHE contracts without running the offchain FHE engine.
 
 ## What the mocks simulate
 
 | Contract | Role |
 | --- | --- |
-| `MockTaskManager` | Manages FHE operations; stores plaintext values on-chain for testing |
+| `MockTaskManager` | Manages FHE operations; stores plaintext values onchain for testing |
 | `MockACL` | Access control for encrypted handles |
 | `MockZkVerifier` | Simulates ZK proof verification for encrypted inputs |
 | `MockThresholdNetwork` | Handles decryption requests |
-| `TestBed` | Helper contract for testing — exposes trivial value setters and a `numberHash` getter |
+| `TestBed` | Helper contract for testing. Exposes trivial value setters and a `numberHash` getter |
 
-The SDK automatically detects when it's running against the mock environment (by checking bytecode at the `MockZkVerifier` fixed address) and adapts its behavior accordingly — ZK proof generation is skipped and verification is handled by the mock contracts.
+The SDK automatically detects when it's running against the mock environment (by checking bytecode at the `MockZkVerifier` fixed address) and adapts its behavior accordingly. ZK proof generation is skipped and verification is handled by the mock contracts.
 
 ## Auto-deployment
 
@@ -63,7 +63,7 @@ const testBed = await hre.cofhe.mocks.getTestBed();
 
 ## Reading plaintext values
 
-Because `MockTaskManager` stores plaintext values on-chain, you can read the underlying plaintext of any encrypted handle directly in tests — no permit needed.
+Because `MockTaskManager` stores plaintext values onchain, you can read the underlying plaintext of any encrypted handle directly in tests, no permit needed.
 
 ### `getPlaintext(ctHash)`
 
@@ -84,7 +84,7 @@ expect(plaintext).to.equal(7n);
 
 ### `expectPlaintext(ctHash, expectedValue)`
 
-Assertion shorthand — wraps `getPlaintext` with a Chai `expect`:
+Assertion shorthand. Wraps `getPlaintext` with a Chai `expect`:
 
 ```typescript
 import hre from 'hardhat';

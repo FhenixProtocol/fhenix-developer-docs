@@ -77,12 +77,12 @@ User can now transfer the shielded tokens confidentially using all FHERC20 featu
 When ready to exit, user burns confidential tokens. The burned amount is marked as publicly decryptable via `FHE.allowPublic`, and a claim is created.
 </Step>
 
-<Step title="Decrypt Off-Chain">
-The user (or anyone) requests decryption of the burned amount off-chain via `decryptForTx`, receiving the plaintext and a decryption proof.
+<Step title="Decrypt Offchain">
+The user (or anyone) requests decryption of the burned amount offchain via `decryptForTx`, receiving the plaintext and a decryption proof.
 </Step>
 
 <Step title="Claim Tokens">
-The user submits the plaintext and proof on-chain via `claimUnshielded`. The contract verifies the proof and transfers the underlying ERC20 tokens (multiplied by the rate).
+The user submits the plaintext and proof onchain via `claimUnshielded`. The contract verifies the proof and transfers the underlying ERC20 tokens (multiplied by the rate).
 </Step>
 </Steps>
 
@@ -160,7 +160,7 @@ await nativeWrapper.shieldWrappedNative(recipientAddress, amount);
 
 ## Unshielding Tokens
 
-Unshielding is a three-step process shared by both wrapper types: burn on-chain, decrypt off-chain, then claim with proof.
+Unshielding is a three-step process shared by both wrapper types: burn onchain, decrypt offchain, then claim with proof.
 
 ### Step 1: Unshield (Burn and Create Claim)
 
@@ -190,7 +190,7 @@ await wrapper.unshield(myAddress, myAddress, 100);
 Due to the [zero-replacement behavior](/fhe-library/confidential-contracts/fherc20/core-features#the-update-function), if you attempt to unshield more than your balance, zero tokens will be burned and you'll have a claim for zero tokens.
 </Note>
 
-### Step 2: Decrypt Off-Chain
+### Step 2: Decrypt Offchain
 
 Retrieve the claim's `ctHash` using `getUserClaims`, then request decryption via `decryptForTx`. Since `FHE.allowPublic` was called, no permit is needed:
 
@@ -396,7 +396,7 @@ Always test with the specific token before deploying to production.
 </Accordion>
 
 <Accordion title="Claim Flow" icon="clock" defaultOpen>
-Claiming requires completing the off-chain decryption step first:
+Claiming requires completing the offchain decryption step first:
 
 ```typescript
 // 1. Unshield burns tokens and allows public decryption
