@@ -94,14 +94,6 @@ The [official migration guide](https://cofhesdk.fhenix.io/migrating-to-0-7-0) co
 ## Troubleshooting
 
 <AccordionGroup>
-<Accordion title="Install fails on @fhenixprotocol/fhenix-confidential-contracts" icon="circle-xmark">
-That package name does not exist. Install `fhenix-confidential-contracts` instead, without the scope.
-</Accordion>
-
-<Accordion title="Hardhat cannot find the eth-sepolia network" icon="network-wired">
-Both plugins register `eth-sepolia` only when your own config does not already define it. Confirm the plugin is imported in `hardhat.config.ts`, and that you are not shadowing the preset with an empty entry of the same name.
-</Accordion>
-
 <Accordion title="Encrypted inputs stop verifying after upgrading" icon="key">
 `0.7` signs one batch rather than one ciphertext, and the input types changed. A `0.6` client against `0.7` contracts fails verification. Upgrade both sides together.
 </Accordion>
