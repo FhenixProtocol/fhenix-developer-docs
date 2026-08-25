@@ -69,6 +69,7 @@
               "client-sdk/introduction/overview",
               "client-sdk/introduction/mental-model",
               "client-sdk/introduction/installation",
+              "client-sdk/introduction/migrating-to-0-7",
               "client-sdk/introduction/migrating-from-cofhejs"
             ]
           },
