@@ -25,9 +25,39 @@ This is one migration across three independently versioned packages. Bumping a s
 
 If you are coming from `cofhejs` rather than `@cofhe/sdk`, follow [migrating from cofhejs](/client-sdk/introduction/migrating-from-cofhejs) first. If you are on `0.5.x`, the Solidity work below is identical, because the `InEuintXX` structs did not change between `0.5` and `0.6`.
 
+## Let the skill do the mechanical work
+
+Most of this migration is mechanical, and the parts that are not deserve a conversation rather than a find and replace. Fhenix publishes an agent skill that drives the whole thing. It detects what your project uses, works in dependency order, shows you a diff before touching anything, and reports what it could not decide for you.
+
+The skill uses the open [Agent Skill](https://agentskills.io/) format, which Claude Code, Cursor, GitHub Copilot, VS Code, Codex, Gemini CLI, OpenCode, Roo, Kiro, and Goose all read. Drop the folder wherever your agent looks for skills, commonly `.claude/skills/` or `.cursor/skills/`:
+
+```bash
+mkdir -p .claude/skills
+curl -L https://github.com/FhenixProtocol/cofhesdk/archive/refs/heads/master.tar.gz \
+  | tar -xz --strip-components=2 -C .claude/skills \
+    '*/skills/cofhe-migrate-0-6-to-0-7'
+```
+
+You can also [browse the skill on GitHub](https://github.com/FhenixProtocol/cofhesdk/tree/master/skills/cofhe-migrate-0-6-to-0-7) and copy the directory by hand.
+
+Then ask your agent to run it:
+
+```text
+Migrate this project to @cofhe/sdk 0.7.1
+```
+
+It proposes each change as a diff and waits for your approval. Tell it to apply everything if you would rather review at the end.
+
+It stops and asks on the decisions that are genuinely yours:
+
+- A function taking two or more encrypted parameters.
+- Encrypted inputs produced in one place and consumed in another.
+- A contract you do not control on the other side of a handoff.
+- Persisted `EncryptedItemInput` records. They carry per-item signatures, which cannot be rebuilt from a batch signature.
+
 ## Work contract-first
 
-The order matters. The ABI you land on decides what every call site has to look like, so going backwards means rewriting the same call sites twice.
+If you are doing this by hand, the order matters. The ABI you land on decides what every call site has to look like, so going backwards means rewriting the same call sites twice.
 
 <Steps>
 <Step title="Bump the three packages">
@@ -65,7 +95,9 @@ function setValue(externalEuint32 inValue, bytes memory proof) public {
 }
 ```
 
-The signature moves out of the struct into a `bytes` parameter that immediately follows the handle it authenticates. This changes the ABI, so the contract needs a redeploy.
+The signature moves out of the struct into a `bytes` parameter that immediately follows the handle it authenticates. This changes the ABI, so a contract coming from `InEuintXX` needs a redeploy.
+
+A contract that already takes `(externalEuint32, bytes)` for a single encrypted value needs no change and no redeploy. `FHE.asEuint32(handle, proof)` verifies that input as a batch of one, so a `0.7` signature works against the ABI you already deployed.
 
 <Note>
 The proof does not have to be the last parameter. It has to follow the `external*` handle as a pair. Extra plain arguments can come after it, which is how ERC-7984's `confidentialTransferAndCall` is shaped.
@@ -73,7 +105,7 @@ The proof does not have to be the last parameter. It has to follow the `external
 
 ### More than one encrypted value
 
-One signature now covers all the hashes in the batch, computed over them together. You cannot keep two separate `(handle, proof)` pairs, because verifying one hash against a signature covering two reverts.
+One signature now covers all the handles in the batch, computed over them together. You cannot keep two separate `(handle, proof)` pairs, because verifying one handle against a signature covering two reverts.
 
 You can still keep the parameter names, which most projects prefer to an array:
 
@@ -92,13 +124,15 @@ function transfer(
 }
 ```
 
-The array form, `function transfer(address to, externalEuint32[] calldata values, bytes calldata signature)`, is shorter but collapses named parameters into indices. Either way the encrypted parameters must be adjacent, because they share one signature.
+The array form, `function transfer(address to, externalEuint32[] calldata values, bytes calldata signature)`, is shorter but collapses named parameters into indices. Either way the encrypted parameters must be adjacent, because they share one signature and there is no other way to tell which `bytes` belongs to them.
 
 For a batch mixing types, such as a `euint32` with an `ebool`, call `ITaskManager.batchVerifyInputs` directly.
 
 ### Values that cross a contract boundary
 
-`0.2.0` adds a `sharedEuintXX` type for encrypted values passed between contracts. This is the part of the migration the compiler cannot help with: the `0.6` spelling, an `FHE.allowTransient` grant plus a bare `euintXX` parameter, still compiles and still runs.
+`0.2.0` adds a `sharedEuintXX` type for encrypted values passed between contracts. Both directions count: a value handed over as an argument, and a value returned by a function that is not `view`. A `view` function returning an encrypted value is unaffected, because it never granted anything.
+
+This is the part of the migration the compiler cannot help with. The `0.6` spelling, an `FHE.allowTransient` grant plus a bare `euintXX` parameter, still compiles and still runs while both sides stay on it.
 
 It is also the part with a security consequence. A function taking a bare `euintXX` from outside can be turned into an oracle over every ciphertext the contract holds. FHE operations check the permission of the contract performing them, not of whoever called it. An attacker passes a handle the contract is allowed on, such as one read from its own storage, and gets back a value derived from it.
 
@@ -121,9 +155,29 @@ function pull(sharedEuint64 shared) external {
 }
 ```
 
+Both sides have to move in the same change. `pull(euint64)` and `pull(sharedEuint64)` are both `bytes32` on the wire, so an unmigrated caller compiles against a migrated callee and then reverts at runtime with `NotShared`.
+
 Pick the receive form by how the value reached you. `receiveEuint64Param` checks the sharer against `msg.sender` and suits a value that arrived as an argument. `receiveEuint64FromCall(shared, callee)` checks it against the contract you called, and `callee` must be the address called in that same expression.
 
-Sharing is single-use and transaction-scoped, so a share cannot be stored, replayed, or reconstructed from an event. To keep a received value past the transaction, call `FHE.allowThis` on the unwrapped `euintXX`.
+Returning an encrypted value works the same way in reverse. Share the result with `msg.sender`, and unwrap it with the `FromCall` form:
+
+```solidity
+// In Token
+function swap(sharedEuint64 shared) external returns (sharedEuint64) {
+  euint64 amountIn = FHE.receiveEuint64Param(shared);
+  return FHE.shareEuint64(FHE.div(amountIn, FHE.asEuint64(2)), msg.sender);
+}
+```
+
+```solidity
+// In Vault
+euint64 out = FHE.receiveEuint64FromCall(token.swap(shared), address(token));
+FHE.allowThis(out);
+```
+
+`FHE.shareEuint64` reverts with `SenderNotAllowed` unless your contract is itself allowed on the handle. You cannot share what you cannot use.
+
+Sharing is single-use and transaction-scoped, so a share cannot be stored, replayed, or reconstructed from an event. To keep a received value past the transaction, call `FHE.allowThis` on the unwrapped `euintXX`. Anything you derive from it produces a new handle that needs its own `FHE.allowThis` before you store it.
 
 ## Config keys
 
@@ -157,9 +211,11 @@ const acp = await client.acp.createSelf();
 
 Decrypt builders follow the same rename: `.withPermit()` becomes `.withACP()` and `.withoutPermit()` becomes `.withoutACP()`.
 
+React hooks rename the same way. `useCofhePermits` becomes `useCofheACPs`, `useCofheActivePermit` becomes `useCofheActiveACP`, and the rest of the family follows the pattern.
+
 Rename only identifiers that resolve to a `@cofhe/*` import. A blind replace of `Permit` corrupts unrelated code, and the English words `permitted` and `permitting` are not renames. `isPermittedCofheEnvironment` and `isAllowedWithPermission` keep their names.
 
-For the full type table, the new scope model, and what the client gained, see [ACPs](/client-sdk/guides/permits).
+For the full type table, the new scope model, and what the client gained, see [Access Control Permissions](/client-sdk/guides/acps).
 
 <Warning>
 Stored permits are dropped. They were signed with retired EIP-712 types and cannot verify against the upgraded ACL, so your users are prompted to sign again on first use. Nothing needs migrating, but it looks like data loss if you are not expecting it.
@@ -175,14 +231,14 @@ const [encA, encB] = await client.encryptInputs([a, b]).execute();
 await contract.f(encA, encB);
 
 // After
-const [hashA, hashB, signature] = await client
+const [handleA, handleB, signature] = await client
   .encryptInputs([a, b])
   .setConsumingContract(contractAddress)
   .execute();
-await contract.f([hashA, hashB], signature);
+await contract.f([handleA, handleB], signature);
 ```
 
-The result now holds one hash per input followed by a single signature, so it has `inputs.length + 1` elements. Code that assumed the result matched the input count is off by one.
+The result now holds one handle per input followed by a single signature, so it has `inputs.length + 1` elements. Code that assumed the result matched the input count is off by one.
 
 `setConsumingContract` is required because the verifier binds the target contract into the signed digest, which stops a batch signed for one contract being replayed into another. Omitting it is a compile error in TypeScript, since `encryptInputs()` returns a builder without an `execute()` method.
 
@@ -190,7 +246,7 @@ The result now holds one hash per input followed by a single signature, so it ha
 The consuming contract is the contract that runs `FHE.asEuint*`, which is not always the contract you call. If your app calls `vault.deposit(...)` and the vault is what converts the value, the consuming contract is the vault. Naming the wrong one compiles, typechecks, and reverts at runtime. Trace the value to the `FHE.asEuint*` call.
 </Warning>
 
-The per-item input types are gone: `EncryptedItemInput`, `EncryptedUint64Input`, and the rest of that family. A value that used to be one of them is now a hash. These also break on your own helpers, where a fixture typed `(encAmount: EncryptedUint64Input)` fails at its definition rather than at the call site. `asHashPlusProof()` is removed, because its output is what `execute()` always returns now.
+The per-item input types are gone: `EncryptedItemInput`, `EncryptedUint64Input`, and the rest of that family. A value that used to be one of them is now a handle. These also break on your own helpers, where a fixture typed `(encAmount: EncryptedUint64Input)` fails at its definition rather than at the call site. `asHashPlusProof()` is removed, because its output is what `execute()` always returns now.
 
 ## Silent changes {#silent-changes}
 
@@ -198,35 +254,19 @@ A clean build proves very little in this migration. Each of these compiles and t
 
 | Change | What happens |
 | --- | --- |
-| A bare `euintXX` parameter left unmigrated | Still compiles and runs. Can be a live disclosure path, not a style issue. |
+| A bare `euintXX` parameter left unmigrated | Compiles, and keeps running while both sides stay on it. Can be a live disclosure path, not a style issue. |
+| Only one side moved to `sharedEuintXX` | Both spellings are `bytes32` on the wire, so the call compiles and reverts with `NotShared`. |
 | `receiveEuintXXFromCall` naming a trusted address instead of the callee | Checks who created the share rather than who handed it over. Exploitable. |
 | A wrong-length destructure of the `execute()` result | Typechecks, then fails at runtime on the trailing signature. |
+| A reordered or partial batch | The signature covers the exact ordered set that `execute()` produced. Compiles, then fails verification. |
 | `ACPUtils.export()` on a self ACP | `0.6` serialized anything; `0.7` throws unless the ACP is a signed sharing ACP. |
 | A transient allowance relied on across transactions | Mock transient storage is now real EIP-1153, so it expires with its own transaction rather than the block. |
 | Overload selector strings and ERC-165 interface ids | `InEuint64` was a tuple; `externalEuint64` is a `bytes32`, so ids change. Recompute them. |
 
 Verify by exercising a round trip, not by compiling. For every bare-handle function you kept, ask whether an arbitrary caller can reach it with a handle the contract is allowed on. If they can, guard it with `FHE.isAllowed(value, msg.sender)`.
 
-## Let the skill do the mechanical work
-
-Fhenix publishes an agent skill that performs most of these edits and reports what it could not decide for you. It inventories the affected files first and waits for your approval before writing.
-
-```bash
-mkdir -p .claude/skills
-curl -L https://github.com/FhenixProtocol/cofhesdk/archive/refs/heads/main.tar.gz \
-  | tar -xz --strip-components=2 -C .claude/skills \
-    '*/skills/cofhe-migrate-0-6-to-0-7'
-```
-
-It stops and asks on the decisions that are genuinely yours:
-
-- A function taking two or more encrypted parameters, where the ordering is your call.
-- Encrypted inputs produced in one place and consumed in another.
-- A contract you do not control on the other side of a handoff.
-- Persisted `EncryptedItemInput` records. Those carry per-item signatures that cannot be rebuilt from a batch signature, so that is a data migration.
-
 ## Next steps
 
 - Check every version against the [compatibility page](/get-started/introduction/compatibility).
-- Read the [ACP guide](/client-sdk/guides/permits) for the permission model in full.
+- Read the [Access Control Permissions guide](/client-sdk/guides/acps) for the permission model in full.
 - Review [encrypting inputs](/client-sdk/guides/encrypting-inputs) for the current builder API.
