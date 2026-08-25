@@ -67,7 +67,7 @@ One name per thing, used consistently. Canonical names:
 | FheOS Server | The service that verifies and queues incoming work. It does not execute FHE operations. |
 | ZK Verifier | The input proof verification service. |
 | TaskManager, CommitmentRegistry, ACL | Contract names, written as in the source. |
-| ACP | Access Control Permission. Replaces "Permit" from `0.7` onward, so that it is not confused with an ERC-2612 permit. Never write "ACP permission". |
+| ACP | Access Control Permission. Replaces "Permit" from `0.7` onward, so that it is not confused with an ERC-2612 permit. Spell it out before the acronym: a page whose subject is ACPs carries the full term in its `title`, and every other page expands it on first use. Never write "ACP permission". |
 | `FHE.sol` | The Solidity library, in backticks when referring to the file or API. |
 | `@cofhe/sdk` | The client SDK package, in backticks. "the SDK" after first mention on a page. |
 | Threshold Network | The future MPC decryption network. Always framed as planned, never as current. |
