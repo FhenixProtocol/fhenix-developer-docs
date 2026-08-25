@@ -3,12 +3,12 @@ title: Encrypting Inputs
 description: "Encrypt plaintext values with ZK proofs for use in FHE-enabled smart contracts"
 ---
 
-`encryptInputs` encrypts plaintext values into FHE ciphertexts that can be passed as inputs to a confidential smart contract transaction. Values must be encrypted before being passed on-chain to preserve confidentiality.
+`encryptInputs` encrypts plaintext values into FHE ciphertexts that can be passed as inputs to a confidential smart contract transaction. Values must be encrypted before being passed onchain to preserve confidentiality.
 
 ## Prerequisites
 
 1. [Create and connect a client](/client-sdk/guides/client-setup).
-2. Know which encrypted type you want to encode each value as — the type must match the Solidity parameter type your contract expects (e.g. `InEuint32` vs `InEuint64`).
+2. Know which encrypted type you want to encode each value as, the type must match the Solidity parameter type your contract expects (e.g. `InEuint32` vs `InEuint64`).
 
 ## Basic usage
 
@@ -28,11 +28,11 @@ const encrypted = await cofheClient
 const [eUint32, eBool, eAddress] = encrypted;
 ```
 
-The return type is a typed tuple that mirrors the array you pass in — each element is the corresponding `EncryptedItemInput` type.
+The return type is a typed tuple that mirrors the array you pass in, each element is the corresponding `EncryptedItemInput` type.
 
 ## Using encrypted inputs in a transaction
 
-Pass the returned `EncryptedItemInput` objects directly into your contract call. The on-chain CoFHE library verifies the signature before using the ciphertext.
+Pass the returned `EncryptedItemInput` objects directly into your contract call. The onchain CoFHE library verifies the signature before using the ciphertext.
 
 <CodeGroup>
 
@@ -54,7 +54,7 @@ await contract.confidentialTransfer(recipient, encryptedAmount);
 
 ## Builder API
 
-### `.execute()` — required, call last
+### `.execute()` (required, call last)
 
 Runs the encryption pipeline and returns the `EncryptedItemInput[]` tuple.
 
@@ -64,9 +64,9 @@ const [encryptedAge, encryptedFlag] = await cofheClient
   .execute();
 ```
 
-### `.setAccount(address)` — optional
+### `.setAccount(address)` (optional)
 
-Override the address that "owns" the encrypted input. Only that address will be allowed to use the encrypted inputs on-chain. Defaults to the connected wallet account.
+Override the address that "owns" the encrypted input. Only that address will be allowed to use the encrypted inputs onchain. Defaults to the connected wallet account.
 
 ```typescript
 const encrypted = await cofheClient
@@ -75,7 +75,7 @@ const encrypted = await cofheClient
   .execute();
 ```
 
-### `.setChainId(chainId)` — optional
+### `.setChainId(chainId)` (optional)
 
 Override the chain the encrypted input will be used on. Defaults to the connected chain.
 
@@ -86,7 +86,7 @@ const encrypted = await cofheClient
   .execute();
 ```
 
-### `.setUseWorker(boolean)` — optional
+### `.setUseWorker(boolean)` (optional)
 
 Override the `useWorkers` flag for this specific call. When `true` (the default), ZK proof generation runs in a Web Worker to avoid blocking the main thread. No-op in Node.js.
 
@@ -97,7 +97,7 @@ const encrypted = await cofheClient
   .execute();
 ```
 
-### `.onStep(callback)` — optional
+### `.onStep(callback)` (optional)
 
 Register a callback that fires at the start and end of each encryption step. Useful for building progress indicators.
 
@@ -125,7 +125,7 @@ Calling `.execute()` runs five sequential steps:
 | `Prove` | Generates the ZK proof of knowledge (ZKPoK). Uses a Web Worker when available. |
 | `Verify` | Sends the proof to the CoFHE verifier. Returns signed `EncryptedItemInput` objects. |
 
-## Encryptable — creating inputs
+## Encryptable: creating inputs
 
 Use the `Encryptable` factory to create the items you want to encrypt. Each factory function accepts the plaintext value and an optional `securityZone`.
 
@@ -151,7 +151,7 @@ Encryptable.create('address', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
 **Bit limit:** A single `encryptInputs` call may encrypt at most **2048 bits** of plaintext in total. Exceeding this limit throws a `ZkPackFailed` error.
 </Warning>
 
-## EncryptedItemInput — the result type
+## EncryptedItemInput: the result type
 
 Each element of the returned array is an `EncryptedItemInput`:
 
@@ -164,7 +164,7 @@ type EncryptedItemInput = {
 };
 ```
 
-Pass these directly into a contract function that accepts `InEuint*` structs. The contract's CoFHE library validates the signature on-chain before operating on the ciphertext.
+Pass these directly into a contract function that accepts `InEuint*` structs. The contract's CoFHE library validates the signature onchain before operating on the ciphertext.
 
 ## Common pitfalls
 

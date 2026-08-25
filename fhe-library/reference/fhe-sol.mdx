@@ -1041,7 +1041,7 @@ if (valid) {
 
 ### publishDecryptResultBatch
 
-Publishes multiple decrypted results on-chain in a single call. Each element is verified independently.
+Publishes multiple decrypted results onchain in a single call. Each element is verified independently.
 
 <ParamField body="ctHashes" type="ebool[] | euint8[] | euint16[] | euint32[] | euint64[] | euint128[] | eaddress[]" required>
 Array of ciphertext handles
@@ -1112,7 +1112,7 @@ Array of Threshold Network signatures
 </ParamField>
 
 <ResponseField name="results" type="bool[]">
-Array of booleans — `true` for each valid signature, `false` for invalid
+Array of booleans. `true` for each valid signature, `false` for invalid
 </ResponseField>
 
 ```solidity
@@ -1161,7 +1161,7 @@ FHE.allowThis(counter);  // Required for future access
 
 ### allowPublic
 
-Grants public permission to access the encrypted value. Once called, anyone can request decryption of this value off-chain via `decryptForTx` without needing a permit.
+Grants public permission to access the encrypted value. Once called, anyone can request decryption of this value offchain via `decryptForTx` without needing a permit.
 
 <ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
 Encrypted value to grant public access to
@@ -1383,7 +1383,7 @@ Always consider security implications when working with encrypted data.
 
 1. **Initialization**: All FHE functions check if their inputs are initialized and set them to 0 if not.
 
-2. **Decryption**: Decryption is a two-phase process — mark values with `allowPublic` on-chain, decrypt off-chain via the Client SDK, then publish/verify the result with `publishDecryptResult` or `verifyDecryptResult`. Only reveal values when absolutely necessary.
+2. **Decryption**: Decryption is a two-phase process. Mark values with `allowPublic` onchain, decrypt offchain via the Client SDK, then publish/verify the result with `publishDecryptResult` or `verifyDecryptResult`. Only reveal values when absolutely necessary.
 
 3. **Security Zones**: Some functions accept a `securityZone` parameter to isolate different encrypted computations. FHE operations can only be performed between ciphertexts that share the same security zone.
 

@@ -15,7 +15,7 @@ In this example, you'll see practical implementations of:
 - **Encrypted comparisons** - Finding the highest bid without revealing values
 - **Conditional logic with `select`** - Updating the highest bidder based on encrypted conditions
 - **Access control management** - Properly managing permissions for encrypted data
-- **Decrypt-with-proof pattern** - Using `decryptForTx` off-chain and `publishDecryptResult` on-chain to reveal the winner
+- **Decrypt-with-proof pattern** - Using `decryptForTx` offchain and `publishDecryptResult` onchain to reveal the winner
 
 ---
 
@@ -36,12 +36,12 @@ Participants submit bids by sending plaintext amounts that are immediately encry
 The auctioneer closes the auction and calls `FHE.allowPublic` on the highest bid and bidder, making them eligible for public decryption.
 </Step>
 
-<Step title="Decrypt Off-Chain">
-Anyone can call `decryptForTx` off-chain to obtain the plaintext values and Threshold Network signatures for the winning bid and bidder.
+<Step title="Decrypt Offchain">
+Anyone can call `decryptForTx` offchain to obtain the plaintext values and Threshold Network signatures for the winning bid and bidder.
 </Step>
 
 <Step title="Reveal Winner">
-The decrypted values and signatures are submitted on-chain via `revealWinner`, which calls `FHE.publishDecryptResult` to verify the proofs and store the results.
+The decrypted values and signatures are submitted onchain via `revealWinner`, which calls `FHE.publishDecryptResult` to verify the proofs and store the results.
 </Step>
 </Steps>
 
@@ -75,19 +75,19 @@ highestBidder = FHE.select(isHigher, newBidder, currentBidder);  // Update bidde
 
 The contract demonstrates the new decryption flow:
 
-**Step 1:** Close auction and allow public decryption (on-chain)
+**Step 1:** Close auction and allow public decryption (onchain)
 ```solidity
 FHE.allowPublic(highestBid);
 FHE.allowPublic(highestBidder);
 ```
 
-**Step 2:** Request decryption off-chain (client-side)
+**Step 2:** Request decryption offchain (client-side)
 ```typescript
 const bidResult = await client.decryptForTx(bidCtHash).withoutPermit().execute();
 const bidderResult = await client.decryptForTx(bidderCtHash).withoutPermit().execute();
 ```
 
-**Step 3:** Publish results on-chain with proof
+**Step 3:** Publish results onchain with proof
 ```solidity
 FHE.publishDecryptResult(highestBid, plaintext, signature);
 FHE.publishDecryptResult(highestBidder, plaintextAddress, bidderSignature);
@@ -265,11 +265,11 @@ function closeBidding() external onlyAuctioneer {
 }
 ```
 
-Since `FHE.allowPublic` is used, anyone can request decryption off-chain without needing a permit. The values are not revealed until someone submits the proof on-chain.
+Since `FHE.allowPublic` is used, anyone can request decryption offchain without needing a permit. The values are not revealed until someone submits the proof onchain.
 
 ### Revealing the Winner
 
-The `revealWinner` function accepts the decrypted values and their Threshold Network signatures, then publishes them on-chain:
+The `revealWinner` function accepts the decrypted values and their Threshold Network signatures, then publishes them onchain:
 
 ```solidity
 function revealWinner(
@@ -321,7 +321,7 @@ await auction.connect(bidder3).bid(1200);
 await auction.connect(auctioneer).closeBidding();
 ```
 
-### 4. Decrypt Off-Chain and Reveal the Winner
+### 4. Decrypt Offchain and Reveal the Winner
 
 ```typescript
 // Read the encrypted handles from the contract
@@ -373,7 +373,7 @@ Every encrypted value created must have permissions granted via `FHE.allowThis()
 </Card>
 
 <Card title="Decrypt-with-Proof" icon="shield-check">
-Decryption happens off-chain via `decryptForTx`, and results are verified on-chain via `FHE.publishDecryptResult` with a Threshold Network signature.
+Decryption happens offchain via `decryptForTx`, and results are verified onchain via `FHE.publishDecryptResult` with a Threshold Network signature.
 </Card>
 </CardGroup>
 

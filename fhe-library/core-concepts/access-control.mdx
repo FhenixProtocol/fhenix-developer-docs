@@ -45,19 +45,19 @@ By default, newly created ciphertext handles are accessible to the contract that
 
 ### What the ACL Does *Not* Gate
 
-The ACL governs **operation creation** — computing on a handle, and requesting its decryption. It does not gate the on-chain publication of a decrypt result:
+The ACL governs **operation creation**. Computing on a handle, and requesting its decryption. It does not gate the onchain publication of a decrypt result:
 
 ```solidity
 // Anyone can call this — it is signature-gated, not ACL-gated
 FHE.publishDecryptResult(seenHandle, plaintext, signature);
 ```
 
-`publishDecryptResult` (and `verifyDecryptResult`) only check that `signature` is a valid ECDSA signature from the Threshold Network over that exact `(ctHash, result, chainId, encType)` tuple. Publication is deliberately permissionless so clients and relayers can settle results on-chain.
+`publishDecryptResult` (and `verifyDecryptResult`) only check that `signature` is a valid ECDSA signature from the Threshold Network over that exact `(ctHash, result, chainId, encType)` tuple. Publication is deliberately permissionless so clients and relayers can settle results onchain.
 
-What protects the value is that an attacker cannot *obtain* that signature. The signature is only issued by the Threshold Network in response to a decryption request, and that request is ACL-gated: the requester must either hold permission on the handle (with a valid permit) or the handle must have been marked with `FHE.allowPublic()`. Without permission, the request is denied and no signature is ever produced — so there is nothing valid to publish.
+What protects the value is that an attacker cannot *obtain* that signature. The signature is only issued by the Threshold Network in response to a decryption request, and that request is ACL-gated: the requester must either hold permission on the handle (with a valid permit) or the handle must have been marked with `FHE.allowPublic()`. Without permission, the request is denied and no signature is ever produced, so there is nothing valid to publish.
 
 <Warning>
-Treat `FHE.allowPublic()` as the real decision point. Once a handle is marked public, anyone can request its decryption and publish the plaintext on-chain, permanently.
+Treat `FHE.allowPublic()` as the real decision point. Once a handle is marked public, anyone can request its decryption and publish the plaintext onchain, permanently.
 </Warning>
 
 ---
@@ -114,9 +114,9 @@ FHE.allowTransient(secretValue, otherContract); // Temporary access for this tx
 <Accordion title="FHE.allowPublic()" icon="lock-open" defaultOpen>
 **`FHE.allowPublic(CIPHERTEXT_HANDLE)`**
 
-Marks a ciphertext handle as eligible for public decryption. Anyone can then request decryption of this value off-chain via `decryptForTx` and publish or verify the result on-chain.
+Marks a ciphertext handle as eligible for public decryption. Anyone can then request decryption of this value offchain via `decryptForTx` and publish or verify the result onchain.
 
-Use this when a value is intended to become public — for example, the amount being unshielded in an FHERC20 unwrap flow.
+Use this when a value is intended to become public, for example, the amount being unshielded in an FHERC20 unwrap flow.
 
 ```solidity
 euint32 burnedAmount = FHE.asEuint32(input);
@@ -124,7 +124,7 @@ FHE.allowPublic(burnedAmount); // Anyone can decrypt and publish this value
 ```
 
 <Note>
-`allowPublic` does not reveal the value immediately. It only grants permission for anyone to request decryption. The value is revealed only when someone submits the plaintext and signature on-chain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`.
+`allowPublic` does not reveal the value immediately. It only grants permission for anyone to request decryption. The value is revealed only when someone submits the plaintext and signature onchain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`.
 </Note>
 </Accordion>
 </AccordionGroup>
@@ -133,7 +133,7 @@ FHE.allowPublic(burnedAmount); // Anyone can decrypt and publish this value
 
 ## Decryption and Access Control
 
-Decryption is a multi-step process: a client requests the plaintext and a threshold signature off-chain via `decryptForTx`, then publishes or verifies the result on-chain.
+Decryption is a multi-step process: a client requests the plaintext and a threshold signature offchain via `decryptForTx`, then publishes or verifies the result onchain.
 
 Access control governs who can request decryption:
 
@@ -141,7 +141,7 @@ Access control governs who can request decryption:
 - Otherwise, only addresses with explicit permission on the handle can request decryption, and must provide a valid permit (`.withPermit()`).
 
 <Note>
-If the requester does not have permission on the ciphertext handle, the decryption request will be denied by the access control system. Grant appropriate permissions before attempting to decrypt — use `FHE.allowPublic()` for values intended to become public, or `FHE.allow()` / `FHE.allowSender()` for restricted access.
+If the requester does not have permission on the ciphertext handle, the decryption request will be denied by the access control system. Grant appropriate permissions before attempting to decrypt, use `FHE.allowPublic()` for values intended to become public, or `FHE.allow()` / `FHE.allowSender()` for restricted access.
 </Note>
 
 ---

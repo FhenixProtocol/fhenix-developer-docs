@@ -21,7 +21,7 @@ euint16 encrypted_number = FHE.asEuint16(number);
 This is a crucial concept to understand when developing confidential contracts. Any value that is trivially encrypted (e.g. `encrypted_number`) should be treated as public information, even though it uses the same data type as truly encrypted values.
 
 <Warning>
-`euints` are only confidential when they are formed from encrypted `inEuint` inputs, which are encrypted off-chain. Learn more in the [Data Evaluation](/fhe-library/core-concepts/data-evaluation) guide.
+`euints` are only confidential when they are formed from encrypted `inEuint` inputs, which are encrypted offchain. Learn more in the [Data Evaluation](/fhe-library/core-concepts/data-evaluation) guide.
 </Warning>
 
 When two trivially-encrypted numbers are combined in an FHE operation, the result is still not confidential, because an observer can keep track of the calculations.

@@ -1,9 +1,9 @@
 ---
 title: "Quick Start: Hardhat"
-description: "Set up a Hardhat project with @cofhe/sdk, write a contract, and test the encrypt → store → decrypt flow"
+description: "Set up a Hardhat project with @cofhe/sdk, write a contract, and test the encrypt to store to decrypt flow"
 ---
 
-Set up a Hardhat project with `@cofhe/hardhat-plugin`, write a contract that stores an encrypted `uint32`, and test the encrypt → store → decrypt flow.
+Set up a Hardhat project with `@cofhe/hardhat-plugin`, write a contract that stores an encrypted `uint32`, and test the encrypt to store to decrypt flow.
 
 <Tip>
 Want to skip the setup? Clone the [cofhe-hardhat-starter](https://github.com/FhenixProtocol/cofhe-hardhat-starter) template to get a pre-configured project with everything ready to go.
@@ -60,7 +60,7 @@ Without `evmVersion: 'cancun'`, compilation will fail with errors from `@fhenixp
 
 ## 3. Write a contract
 
-Create a minimal contract that accepts an encrypted input and stores it on-chain.
+Create a minimal contract that accepts an encrypted input and stores it onchain.
 
 ```solidity contracts/MyContract.sol
 // SPDX-License-Identifier: UNLICENSED
@@ -79,13 +79,13 @@ contract MyContract {
 }
 ```
 
-- `euint32` — an encrypted `uint32` stored on-chain as a ciphertext handle.
-- `InEuint32` — the encrypted input struct produced by the SDK.
-- `FHE.allowThis` / `FHE.allowSender` — grant the contract and caller permission to read the encrypted value (required by the ACL).
+- `euint32`: an encrypted `uint32` stored onchain as a ciphertext handle.
+- `InEuint32`: the encrypted input struct produced by the SDK.
+- `FHE.allowThis` / `FHE.allowSender`: grant the contract and caller permission to read the encrypted value (required by the ACL).
 
 ## 4. Write a test
 
-Use `hre.cofhe.createClientWithBatteries` to get a fully configured SDK client with a self-permit, then encrypt → send → decrypt.
+Use `hre.cofhe.createClientWithBatteries` to get a fully configured SDK client with a self-permit, then encrypt to send to decrypt.
 
 ```typescript test/MyContract.test.ts
 import hre from 'hardhat';
@@ -131,9 +131,9 @@ describe('MyContract', () => {
 npx hardhat test
 ```
 
-The plugin deploys mock contracts automatically — no extra setup needed.
+The plugin deploys mock contracts automatically, no extra setup needed.
 
-```
+```text
   MyContract
     ✓ stores and decrypts an encrypted value
 
@@ -145,11 +145,11 @@ The plugin deploys mock contracts automatically — no extra setup needed.
 1. The **Hardhat plugin** deployed mock versions of the CoFHE coprocessor contracts (TaskManager, ACL, ZK verifier, threshold network) before the test ran.
 2. `createClientWithBatteries` created an SDK client connected to the Hardhat network, with a self-permit ready to go.
 3. `encryptInputs` encrypted the plaintext `42` into an FHE ciphertext with a ZK proof (simulated by the mock verifier).
-4. The contract stored the ciphertext handle on-chain and set ACL permissions.
+4. The contract stored the ciphertext handle onchain and set ACL permissions.
 5. `decryptForView` used the permit to decrypt the handle back to `42n` locally.
 
 ## Next steps
 
-- [Hardhat Plugin](/client-sdk/hardhat-plugin/getting-started) — full plugin configuration and features.
-- [Mock Contracts](/client-sdk/hardhat-plugin/mock-contracts) — read plaintext directly and assert encrypted state in tests.
-- [Logging](/client-sdk/hardhat-plugin/logging) — inspect every FHE operation your contracts perform.
+- [Hardhat Plugin](/client-sdk/hardhat-plugin/getting-started): full plugin configuration and features.
+- [Mock Contracts](/client-sdk/hardhat-plugin/mock-contracts): read plaintext directly and assert encrypted state in tests.
+- [Logging](/client-sdk/hardhat-plugin/logging): inspect every FHE operation your contracts perform.

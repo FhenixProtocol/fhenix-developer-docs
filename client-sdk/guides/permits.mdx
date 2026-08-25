@@ -3,7 +3,7 @@ title: Permits
 description: "Create and manage EIP-712 permits for decryption authorization"
 ---
 
-Permits are EIP-712 signatures that authorize decryption of confidential data. The `issuer` field identifies who is accessing the data — the issuer must have been granted access on-chain via `FHE.allow(handle, address)`. When a permit is used, CoFHE validates it against the ACL contract to confirm that the issuer has access to the requested encrypted handle.
+Permits are EIP-712 signatures that authorize decryption of confidential data. The `issuer` field identifies who is accessing the data, the issuer must have been granted access onchain via `FHE.allow(handle, address)`. When a permit is used, CoFHE validates it against the ACL contract to confirm that the issuer has access to the requested encrypted handle.
 
 Each permit includes a sealing keypair. The public key is sent to CoFHE so it can re-encrypt the data for the permit holder. The private key stays client-side and is used to unseal the returned data.
 
@@ -21,7 +21,7 @@ Each permit includes a sealing keypair. The public key is sent to CoFHE so it ca
 ## Quick start
 
 <Info>
-The examples below show two approaches. The `client.permits` API is the recommended approach — it automatically signs permits with the connected wallet and manages the permit store. The `PermitUtils` API is a lower-level alternative that gives you direct control over signing and storage.
+The examples below show two approaches. The `client.permits` API is the recommended approach, it automatically signs permits with the connected wallet and manages the permit store. The `PermitUtils` API is a lower-level alternative that gives you direct control over signing and storage.
 </Info>
 
 <CodeGroup>
@@ -177,7 +177,7 @@ The exported JSON does not contain any sensitive data and can be shared via any 
 </Info>
 
 <Warning>
-Do not share `serialize(permit)` output — serialization is meant for local persistence and includes the sealing private key.
+Do not share `serialize(permit)` output. Serialization is meant for local persistence and includes the sealing private key.
 </Warning>
 
 </Step>
@@ -251,9 +251,9 @@ client.permits.removeActivePermit();
 
 ## Validating permits
 
-Since `@cofhe/sdk@0.5.0`, `PermitUtils.validate` enforces the **full** check: schema + signed + not-expired. The decrypt flows (`decryptForView`, `decryptForTx` with `.withPermit(...)`) call this for you and surface failures as typed errors — you only need to validate manually when you want to inspect or filter permits before using them.
+Since `@cofhe/sdk@0.5.0`, `PermitUtils.validate` enforces the **full** check: schema + signed + not-expired. The decrypt flows (`decryptForView`, `decryptForTx` with `.withPermit(...)`) call this for you and surface failures as typed errors, you only need to validate manually when you want to inspect or filter permits before using them.
 
-### Throwing helpers — `PermitUtils.*`
+### Throwing helpers: `PermitUtils.*`
 
 | Function | What it checks | Behavior on failure |
 | --- | --- | --- |
@@ -273,7 +273,7 @@ try {
 }
 ```
 
-### Non-throwing helpers — `ValidationUtils.*`
+### Non-throwing helpers: `ValidationUtils.*`
 
 For inspection without exception handling, use the `ValidationUtils` helpers. They return a typed `ValidationResult`:
 

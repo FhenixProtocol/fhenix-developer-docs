@@ -1,9 +1,9 @@
 ---
 title: "Quick Start: Foundry"
-description: "Set up a Foundry project with @cofhe/foundry-plugin, write a contract, and test the encrypt → store → decrypt flow"
+description: "Set up a Foundry project with @cofhe/foundry-plugin, write a contract, and test the encrypt to store to decrypt flow"
 ---
 
-Set up a Foundry project with `@cofhe/foundry-plugin`, write a contract that stores an encrypted `uint32`, and test the encrypt → store → decrypt flow under `forge test`.
+Set up a Foundry project with `@cofhe/foundry-plugin`, write a contract that stores an encrypted `uint32`, and test the encrypt to store to decrypt flow under `forge test`.
 
 <Tip>
 Want to skip the setup? Clone the [cofhe-foundry-starter](https://github.com/FhenixProtocol/cofhe-foundry-starter) template to get a pre-configured project with everything ready to go.
@@ -52,11 +52,11 @@ code_size_limit = 100000
 ```
 
 <Warning>
-`code_size_limit = 100000` is required — the mock contracts exceed the EIP-170 24 KB limit.
+`code_size_limit = 100000` is required, the mock contracts exceed the EIP-170 24 KB limit.
 </Warning>
 
 <Note>
-`evm_version = "cancun"` is no longer required as of `@cofhe/mock-contracts@0.5.0` — `MockACL` was migrated off transient storage to block-number-based storage. Set it only if your own contracts need cancun-specific opcodes.
+`evm_version = "cancun"` is no longer required as of `@cofhe/mock-contracts@0.5.0`. `MockACL` was migrated off transient storage to block-number-based storage. Set it only if your own contracts need cancun-specific opcodes.
 </Note>
 
 ## 3. Configure `remappings.txt`
@@ -70,7 +70,7 @@ hardhat/=node_modules/forge-std/src/
 @cofhe/foundry-plugin/=node_modules/@cofhe/foundry-plugin/
 ```
 
-The `hardhat/=node_modules/forge-std/src/` line is **load-bearing** — `MockCoFHE.sol` imports `hardhat/console.sol`, and this alias resolves it to forge-std's compatible `console.sol`.
+The `hardhat/=node_modules/forge-std/src/` line is **load-bearing**. `MockCoFHE.sol` imports `hardhat/console.sol`, and this alias resolves it to forge-std's compatible `console.sol`.
 
 ## 4. Write a contract
 
@@ -91,9 +91,9 @@ contract MyContract {
 }
 ```
 
-- `euint32` — an encrypted `uint32` stored on-chain as a ciphertext handle.
-- `InEuint32` — the encrypted input struct produced by `CofheClient`.
-- `FHE.allowThis` / `FHE.allowSender` — grant the contract and caller permission to read the encrypted value (required by the ACL).
+- `euint32`: an encrypted `uint32` stored onchain as a ciphertext handle.
+- `InEuint32`: the encrypted input struct produced by `CofheClient`.
+- `FHE.allowThis` / `FHE.allowSender`: grant the contract and caller permission to read the encrypted value (required by the ACL).
 
 ## 5. Write a test
 
@@ -142,7 +142,7 @@ contract MyContractTest is CofheTest {
 forge test -vvv
 ```
 
-```
+```text
 [PASS] test_StoresAndDecryptsAnEncryptedValue() (gas: …)
 
 Test result: ok. 1 passed; 0 failed; 0 skipped; finished in …
@@ -152,13 +152,13 @@ Test result: ok. 1 passed; 0 failed; 0 skipped; finished in …
 
 1. **`deployMocks()`** deployed the full CoFHE coprocessor mock stack (TaskManager, ACL, ZK verifier, threshold network) to the in-process EVM.
 2. **`createCofheClient()` + `bob.connect(BOB_PKEY)`** spun up an in-Solidity SDK shim bound to `vm.addr(BOB_PKEY)`.
-3. **`bob.createInEuint32(42)`** produced a signed `InEuint32` — the same shape your contract receives on testnet, signed by `MockZkVerifierSigner`.
+3. **`bob.createInEuint32(42)`** produced a signed `InEuint32`, the same shape your contract receives on testnet, signed by `MockZkVerifierSigner`.
 4. **`vm.prank(bob.account())` + `setValue(...)`** called the contract as Bob. The contract stored the ciphertext handle and granted ACL access to itself and Bob.
-5. **`expectPlaintext(myContract.storedValue(), 42)`** read the on-chain plaintext directly from `MockTaskManager.mockStorage` — no permit, no SDK round-trip.
+5. **`expectPlaintext(myContract.storedValue(), 42)`** read the onchain plaintext directly from `MockTaskManager.mockStorage`, no permit, no SDK round-trip.
 
 ## Next steps
 
-- [Foundry Plugin → Getting Started](/client-sdk/foundry-plugin/getting-started) — full plugin configuration and features.
-- [CofheTest](/client-sdk/foundry-plugin/cofhe-test) — `deployMocks`, `expectPlaintext`, log toggles.
-- [CofheClient](/client-sdk/foundry-plugin/cofhe-client) — encrypt inputs, decrypt for view / tx, permits.
-- [Testing](/client-sdk/foundry-plugin/testing) — canonical test patterns for ACL, public-decrypt, and fuzzing.
+- [Foundry Plugin to Getting Started](/client-sdk/foundry-plugin/getting-started): full plugin configuration and features.
+- [CofheTest](/client-sdk/foundry-plugin/cofhe-test): `deployMocks`, `expectPlaintext`, log toggles.
+- [CofheClient](/client-sdk/foundry-plugin/cofhe-client): encrypt inputs, decrypt for view / tx, permits.
+- [Testing](/client-sdk/foundry-plugin/testing): canonical test patterns for ACL, public-decrypt, and fuzzing.

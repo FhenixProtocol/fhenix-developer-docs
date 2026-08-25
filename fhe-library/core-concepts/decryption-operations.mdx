@@ -7,10 +7,10 @@ description: "Understanding how to decrypt encrypted data in FHE smart contracts
 
 Decryption is the process of converting encrypted data back into its original form. In the context of Fully Homomorphic Encryption (FHE), decryption allows for the retrieval of results after performing computations on encrypted data.
 
-Decryption in CoFHE is a multi-step process that involves both off-chain and on-chain components:
+Decryption in CoFHE is a multi-step process that involves both offchain and onchain components:
 
-1. A client requests decryption off-chain and receives the plaintext along with a Threshold Network signature.
-2. The plaintext and signature are submitted on-chain, where the contract publishes or verifies the result.
+1. A client requests decryption offchain and receives the plaintext along with a Threshold Network signature.
+2. The plaintext and signature are submitted onchain, where the contract publishes or verifies the result.
 
 <Tip>
 Learn more about our unique MPC decryption threshold network in the [Threshold Network](/deep-dive/cofhe-components/threshold-network) guide.
@@ -24,7 +24,7 @@ CoFHE provides two primary ways to perform decryption, each suited for different
 
 ### 1. Decrypt for Transaction (`decryptForTx`)
 
-The client calls `decryptForTx(ctHash)` off-chain to obtain the plaintext and a Threshold Network signature. These are then submitted on-chain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`, making the result verifiable by the contract.
+The client calls `decryptForTx(ctHash)` offchain to obtain the plaintext and a Threshold Network signature. These are then submitted onchain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`, making the result verifiable by the contract.
 
 **Common examples:**
 - **Unshield a confidential token**: reveal the encrypted amount so the contract can finalize the public transfer.
@@ -32,11 +32,11 @@ The client calls `decryptForTx(ctHash)` off-chain to obtain the plaintext and a 
 
 ### 2. Decrypt for View (`decryptForView`)
 
-The client calls `decryptForView` off-chain to obtain the plaintext for display in a UI. No on-chain transaction or signature is needed.
+The client calls `decryptForView` offchain to obtain the plaintext for display in a UI. No onchain transaction or signature is needed.
 
 **Common examples:**
 - Displaying a user's confidential balance in a wallet UI.
-- Showing the current state of an encrypted value without revealing it on-chain.
+- Showing the current state of an encrypted value without revealing it onchain.
 
 <Note>
 Use `decryptForTx` when you need to act on the decrypted value in a smart contract. Use `decryptForView` when you only need to display the value in a UI.
@@ -44,33 +44,33 @@ Use `decryptForTx` when you need to act on the decrypted value in a smart contra
 
 ### 3. Client-Published Decryption (Signature-Verified)
 
-The client decrypts off-chain via `decryptForTx`, receives the plaintext result along with an **ECDSA signature** from the Threshold Network's Dispatcher, and then publishes the result on-chain by calling `FHE.publishDecryptResult()`. The TaskManager verifies the signature on-chain before storing the result.
+The client decrypts offchain via `decryptForTx`, receives the plaintext result along with an **ECDSA signature** from the Threshold Network's Dispatcher, and then publishes the result onchain by calling `FHE.publishDecryptResult()`. The TaskManager verifies the signature onchain before storing the result.
 
-This combines the best of both worlds: the client controls when the result lands on-chain, while the contract can still use the decrypted value.
+This combines the best of both worlds: the client controls when the result lands onchain, while the contract can still use the decrypted value.
 
 <Note>
-The signature cryptographically proves the result came from the authorized Threshold Network. No trust in the publisher is required — anyone holding a valid signature can submit it.
+The signature cryptographically proves the result came from the authorized Threshold Network. No trust in the publisher is required. Anyone holding a valid signature can submit it.
 </Note>
 
 ### Comparison Table
 
 | Method | Visibility | Gas Cost | Smart Contract Usable | Best For |
 |--------|-----------|----------|----------------------|----------|
-| **`decryptForTx`** | Public (once published on-chain) | Gas for the publish/verify tx | Yes | Public results, contract logic |
-| **`decryptForView`** | Private (off-chain only) | None | No | UI display, confidential data |
-| **Client-Published (signature)** | Public (on-chain) | Medium | Yes | Client-driven settlement, permissionless delivery |
+| **`decryptForTx`** | Public (once published onchain) | Gas for the publish/verify tx | Yes | Public results, contract logic |
+| **`decryptForView`** | Private (offchain only) | None | No | UI display, confidential data |
+| **Client-Published (signature)** | Public (onchain) | Medium | Yes | Client-driven settlement, permissionless delivery |
 
 ---
 
 ## The Decryption Flow
 
-### Step 1: Grant decryption permissions (on-chain)
+### Step 1: Grant decryption permissions (onchain)
 
 Before anyone can request decryption, the ciphertext handle must have the appropriate ACL permissions. Use one of the following in your contract:
 
-- `FHE.allowPublic(ctHash)` — anyone can request decryption (common for unshield flows)
-- `FHE.allow(ctHash, address)` — only a specific address can request decryption
-- `FHE.allowSender(ctHash)` — only `msg.sender` can request decryption
+- `FHE.allowPublic(ctHash)`: anyone can request decryption (common for unshield flows)
+- `FHE.allow(ctHash, address)`: only a specific address can request decryption
+- `FHE.allowSender(ctHash)`: only `msg.sender` can request decryption
 
 ```solidity
 // Example: allow anyone to decrypt when the auction closes
@@ -84,7 +84,7 @@ function closeBidding() external onlyAuctioneer {
 See [Access Control](/fhe-library/core-concepts/access-control) for the full list of permission methods, including `FHE.allowPublic()`.
 </Note>
 
-### Step 2: Request decryption off-chain (client-side)
+### Step 2: Request decryption offchain (client-side)
 
 The client calls `decryptForTx(ctHash)` to obtain the plaintext and a Threshold Network signature. Choose the permit mode that matches the contract's ACL policy:
 
@@ -112,13 +112,13 @@ const decryptResult = await client
 `decryptForTx` always returns the plaintext as a `bigint`. Your contract determines whether that value is interpreted as `uint32`, `uint64`, etc.
 </Note>
 
-### Step 3: Publish or verify on-chain
+### Step 3: Publish or verify onchain
 
 Submit the plaintext and signature to your contract. You have two options:
 
 #### Option A: `FHE.publishDecryptResult`
 
-Publishes the decrypted value on-chain, making it available for any contract to read.
+Publishes the decrypted value onchain, making it available for any contract to read.
 
 <CodeGroup>
 ```solidity Solidity
@@ -286,12 +286,12 @@ When a value is intended to become public (e.g. unshielding, auction reveals), u
 Ensure only authorized parties can request decryption. Use `FHE.allow()` or `FHE.allowSender()` for restricted access. See [Access Control](/fhe-library/core-concepts/access-control).
 </Card>
 
-<Card title="Choose the right on-chain method" icon="shield">
-Use `FHE.publishDecryptResult` when you want the result stored publicly on-chain. Use `FHE.verifyDecryptResult` when you only need to confirm the plaintext is authentic without publishing it.
+<Card title="Choose the right onchain method" icon="shield">
+Use `FHE.publishDecryptResult` when you want the result stored publicly onchain. Use `FHE.verifyDecryptResult` when you only need to confirm the plaintext is authentic without publishing it.
 </Card>
 
 <Card title="Use decryptForView for UI-only reads" icon="eye">
-If you only need to display a value in your UI and don't need an on-chain-verifiable signature, use `decryptForView` instead of `decryptForTx` to avoid unnecessary on-chain transactions.
+If you only need to display a value in your UI and don't need an onchain-verifiable signature, use `decryptForView` instead of `decryptForTx` to avoid unnecessary onchain transactions.
 </Card>
 </CardGroup>
 
