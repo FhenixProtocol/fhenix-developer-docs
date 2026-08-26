@@ -196,7 +196,7 @@ client.acp.removeACP(acpHash);
 client.acp.removeActiveACP();
 ```
 
-## Validating {#validating-permits}
+## Validating
 
 `ACPUtils.validate` enforces the full check: schema, signed, and not expired. The decrypt flows call it for you and surface failures as typed errors, so validate manually only when you want to inspect or filter ACPs first.
 
