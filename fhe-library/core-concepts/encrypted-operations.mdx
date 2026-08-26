@@ -5,7 +5,7 @@ description: "Complete guide to FHE types and operations for confidential smart 
 
 ## Overview
 
-The library exposes utility functions for FHE operations. The goal of the library is to provide a seamless developer experience for writing smart contracts that can operate on confidential data.
+The library exposes utility functions for FHE operations. The goal of the library is to let you write smart contracts that operate on confidential data.
 
 ## Types
 
@@ -38,16 +38,32 @@ In the back-end, encrypted integers are FHE ciphertexts. The library abstracts a
 
 | Name         | Bit Size | Usage |
 |--------------|----------|-------|
-| `InEuint8`   | 8        | Input |
-| `InEuint16`  | 16       | Input |
-| `InEuint32`  | 32       | Input |
-| `InEuint64`  | 64       | Input |
-| `InEuint128` | 128      | Input |
-| `InEbool`    | 8        | Input |
-| `InEaddress` | 160      | Input |
+| `externalEuint8`   | 8        | Input |
+| `externalEuint16`  | 16       | Input |
+| `externalEuint32`  | 32       | Input |
+| `externalEuint64`  | 64       | Input |
+| `externalEuint128` | 128      | Input |
+| `externalEbool`    | 8        | Input |
+| `externalEaddress` | 160      | Input |
+
+</Card>
+
+<Card title="Shared Types">
+
+| Name               | Bit Size | Usage                |
+|--------------------|----------|----------------------|
+| `sharedEuint8`     | 8        | Contract to contract |
+| `sharedEuint16`    | 16       | Contract to contract |
+| `sharedEuint32`    | 32       | Contract to contract |
+| `sharedEuint64`    | 64       | Contract to contract |
+| `sharedEuint128`   | 128      | Contract to contract |
+| `sharedEbool`      | 8        | Contract to contract |
+| `sharedEaddress`   | 160      | Contract to contract |
 
 </Card>
 </CardGroup>
+
+Each family records where a value came from. A **compute** type is yours, held in storage or produced by an operation. An **input** type arrived from a user offchain and travels with a `bytes` proof that authenticates it. A **shared** type was handed over by another contract during this transaction. See [inputs](/fhe-library/core-concepts/inputs) for how to convert between them.
 
 <Note>
 The `ebool` type is not a real boolean type. It is implemented as a `euint8` for compatibility with FHE operations.

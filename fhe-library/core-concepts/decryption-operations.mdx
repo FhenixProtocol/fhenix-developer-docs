@@ -86,24 +86,24 @@ See [Access Control](/fhe-library/core-concepts/access-control) for the full lis
 
 ### Step 2: Request decryption offchain (client-side)
 
-The client calls `decryptForTx(ctHash)` to obtain the plaintext and a Threshold Network signature. Choose the permit mode that matches the contract's ACL policy:
+The client calls `decryptForTx(ctHash)` to obtain the plaintext and a Threshold Network signature. Choose the ACP mode that matches the contract's ACL policy:
 
 <CodeGroup>
-```typescript No permit (allowPublic)
+```typescript No ACP (allowPublic)
 const decryptResult = await client
    .decryptForTx(ctHash)
-   .withoutPermit()
+   .withoutACP()
    .execute();
 
-// decryptResult.ctHash        — the ciphertext handle
-// decryptResult.decryptedValue — the plaintext (bigint)
-// decryptResult.signature      — the Threshold Network signature
+// decryptResult.ctHash         is the ciphertext handle
+// decryptResult.decryptedValue is the plaintext (bigint)
+// decryptResult.signature      is the Threshold Network signature
 ```
 
-```typescript With permit (restricted access)
+```typescript With ACP (restricted access)
 const decryptResult = await client
    .decryptForTx(ctHash)
-   .withPermit()
+   .withACP()
    .execute();
 ```
 </CodeGroup>
@@ -187,10 +187,10 @@ contract EncryptedAuction {
     }
 
     // Place an encrypted bid
-    function placeBid(InEuint64 memory encryptedBid) external {
+    function placeBid(externalEuint64 encryptedBid, bytes calldata inputProof) external {
         require(!auctionClosed, "Auction is closed");
 
-        euint64 bid = FHE.asEuint64(encryptedBid);
+        euint64 bid = FHE.asEuint64(encryptedBid, inputProof);
         ebool isHigher = bid.gt(highestBid);
 
         // Update highest bid if this bid is higher
@@ -231,10 +231,10 @@ The client-side flow to reveal the winner:
 // 1. Read the encrypted highest bid from the contract
 const ctHash = await auctionContract.highestBid();
 
-// 2. Request decryption off-chain (no permit needed since allowPublic was used)
+// 2. Request decryption offchain (no ACP needed since allowPublic was used)
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 // 3. Submit the result on-chain
@@ -279,7 +279,7 @@ Both functions accept type-specific overloads for `ebool`, `euint8`, `euint16`, 
 
 <CardGroup cols={2}>
 <Card title="Use allowPublic for values meant to be revealed" icon="lock-open">
-When a value is intended to become public (e.g. unshielding, auction reveals), use `FHE.allowPublic()` so anyone can trigger the decryption without needing a permit.
+When a value is intended to become public (e.g. unshielding, auction reveals), use `FHE.allowPublic()` so anyone can trigger the decryption without needing an ACP.
 </Card>
 
 <Card title="Check Access Control Before Decrypting" icon="lock">
@@ -300,8 +300,8 @@ If you only need to display a value in your UI and don't need an onchain-verifia
 ## Common Pitfalls
 
 - **Missing ACL permissions**: If no `allow*` was called for the ciphertext handle, decryption requests will be denied. Make sure to grant permissions before the client requests decryption.
-- **Permit mode must be selected**: When using `decryptForTx`, you must call exactly one of `.withPermit(...)` or `.withoutPermit()` before `.execute()`.
-- **Wrong chain/account**: Permits are scoped to `chainId + account`. If you get an ACL/permit error, double-check you're connected to the expected chain and account.
+- **ACP mode must be selected**: When using `decryptForTx`, you must call exactly one of `.withACP(...)` or `.withoutACP()` before `.execute()`.
+- **Wrong chain/account**: ACPs are scoped to `chainId + account`. If you get an ACL or ACP error, double-check you're connected to the expected chain and account.
 - **Type mismatch**: `decryptedValue` is always a `bigint`. If your Solidity function expects a smaller integer type (e.g. `uint32`), make sure the value is within range.
 
 ---

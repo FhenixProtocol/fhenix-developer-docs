@@ -3,7 +3,7 @@ title: "Bindings (Dot Notation)"
 description: "Use encrypted types with dot notation instead of FHE.* prefix"
 ---
 
-The FHE library provides binding libraries that enable dot notation for all operations. Import them alongside FHE.sol — no extra setup required.
+The FHE library provides binding libraries that enable dot notation for all operations. Import them alongside FHE.sol, with no extra setup required.
 
 ```solidity
 // Without bindings
@@ -16,11 +16,16 @@ euint8 sum = a.add(b);
 ## Full Example
 
 ```solidity
-InEuint8 encryptedInputA;
-InEuint8 encryptedInputB;
+// Two inputs share one batch signature, so convert them together.
+// Calling asEuint8(hash, signature) per value would verify each hash
+// against a signature that covers both, and revert.
+externalEuint8[] memory inputs = new externalEuint8[](2);
+inputs[0] = encryptedInputA;
+inputs[1] = encryptedInputB;
 
-euint8 a = FHE.asEuint8(encryptedInputA);
-euint8 b = FHE.asEuint8(encryptedInputB);
+euint8[] memory values = FHE.asEuint8s(inputs, inputProof);
+euint8 a = values[0];
+euint8 b = values[1];
 
 // Arithmetic
 euint8 sum = a.add(b);

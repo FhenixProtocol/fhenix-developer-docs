@@ -161,7 +161,7 @@ it('Full Client SDK flow', async function () {
     // Decrypt the value (view decryption)
     const result = await client
         .decryptForView(encryptedValue, FheTypes.Uint32)
-        .withPermit()
+        .withACP()
         .execute()
 
     // Check the decrypted result

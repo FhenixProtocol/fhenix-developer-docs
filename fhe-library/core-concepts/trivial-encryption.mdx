@@ -29,7 +29,7 @@ When two trivially-encrypted numbers are combined in an FHE operation, the resul
 ## Example
 
 ```solidity
-function doSomeCalculations(InEuint16 calldata input) {
+function doSomeCalculations(externalEuint16 input, bytes calldata inputProof) {
     // public
     euint16 number2 = FHE.asEuint16(2);
     euint16 number3 = FHE.asEuint16(3);

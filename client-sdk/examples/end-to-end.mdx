@@ -18,8 +18,8 @@ import '@fhenixprotocol/cofhe-contracts/FHE.sol';
 contract ConfidentialVault {
     mapping(address => euint64) private _balances;
 
-    function deposit(InEuint64 calldata encryptedAmount) external {
-        euint64 amount = FHE.asEuint64(encryptedAmount);
+    function deposit(externalEuint64 encryptedAmount, bytes calldata inputProof) external {
+        euint64 amount = FHE.asEuint64(encryptedAmount, inputProof);
         _balances[msg.sender] = FHE.add(_balances[msg.sender], amount);
         FHE.allowThis(_balances[msg.sender]);
         FHE.allowSender(_balances[msg.sender]);
@@ -67,18 +67,19 @@ const walletClient = createWalletClient({
 
 await client.connect(publicClient, walletClient);
 
-// 2. Create a permit
-await client.permits.getOrCreateSelfPermit();
+// 2. Create an ACP
+await client.acp.getOrCreateSelfACP();
 
 // 3. Encrypt and deposit
-const [encryptedAmount] = await client
+const [amountHash, signature] = await client
   .encryptInputs([Encryptable.uint64(100n)])
+  .setConsumingContract(contract.address)
   .onStep((step, ctx) => {
     if (ctx?.isStart) console.log(`Encrypting: ${step}...`);
   })
   .execute();
 
-await contract.deposit(encryptedAmount);
+await contract.deposit(amountHash, signature);
 
 // 4. Decrypt for UI display
 const ctHash = await contract.getBalance();
@@ -91,7 +92,7 @@ console.log('Balance:', balance); // 100n
 // 5. Decrypt for on-chain verification
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 
 await contract.publishBalance(ctHash, decryptedValue, signature);
@@ -116,15 +117,16 @@ const client = createCofheClient(config);
 const { publicClient, walletClient } = await Ethers6Adapter(provider, wallet);
 await client.connect(publicClient, walletClient);
 
-// 2. Create a permit
-await client.permits.getOrCreateSelfPermit();
+// 2. Create an ACP
+await client.acp.getOrCreateSelfACP();
 
 // 3. Encrypt and deposit
-const [encryptedAmount] = await client
+const [amountHash, signature] = await client
   .encryptInputs([Encryptable.uint64(100n)])
+  .setConsumingContract(contract.address)
   .execute();
 
-await contract.deposit(encryptedAmount);
+await contract.deposit(amountHash, signature);
 
 // 4. Decrypt for UI display
 const ctHash = await contract.getBalance();
@@ -137,7 +139,7 @@ console.log('Balance:', balance); // 100n
 // 5. Decrypt for on-chain verification
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 
 await contract.publishBalance(ctHash, decryptedValue, signature);
@@ -161,10 +163,11 @@ describe('ConfidentialVault', () => {
     const vault = await Factory.deploy();
 
     // Encrypt and deposit
-    const [encrypted] = await cofheClient
+    const [amountHash, proof] = await cofheClient
       .encryptInputs([Encryptable.uint64(100n)])
+      .setConsumingContract(await vault.getAddress())
       .execute();
-    await (await vault.deposit(encrypted)).wait();
+    await (await vault.deposit(amountHash, proof)).wait();
 
     // Decrypt and verify
     const ctHash = await vault.getBalance();
@@ -180,16 +183,17 @@ describe('ConfidentialVault', () => {
     const vault = await Factory.deploy();
 
     // Encrypt and deposit
-    const [encrypted] = await cofheClient
+    const [amountHash, proof] = await cofheClient
       .encryptInputs([Encryptable.uint64(42n)])
+      .setConsumingContract(await vault.getAddress())
       .execute();
-    await (await vault.deposit(encrypted)).wait();
+    await (await vault.deposit(amountHash, proof)).wait();
 
     // Decrypt for on-chain verification
     const ctHash = await vault.getBalance();
     const { decryptedValue, signature } = await cofheClient
       .decryptForTx(ctHash)
-      .withPermit()
+      .withACP()
       .execute();
 
     // Publish on-chain with Threshold Network proof

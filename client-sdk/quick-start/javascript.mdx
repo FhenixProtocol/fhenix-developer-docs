@@ -16,15 +16,15 @@ Connect to an FHE-enabled contract, encrypt a value, send it onchain, and decryp
 <CodeGroup>
 
 ```bash npm
-npm install @cofhe/sdk@^0.5.2 viem
+npm install @cofhe/sdk@^0.7.1 viem
 ```
 
 ```bash pnpm
-pnpm add @cofhe/sdk@^0.5.2 viem
+pnpm add @cofhe/sdk@^0.7.1 viem
 ```
 
 ```bash yarn
-yarn add @cofhe/sdk@^0.5.2 viem
+yarn add @cofhe/sdk@^0.7.1 viem
 ```
 
 </CodeGroup>
@@ -101,13 +101,14 @@ If you use Ethers.js instead of viem, see the [Client Setup](/client-sdk/guides/
 ```typescript
 import { Encryptable } from '@cofhe/sdk';
 
-// Encrypt a uint32 value
-const [encrypted] = await client
+// Encrypt a uint32 value, naming the contract that will consume it
+const [valueHash, signature] = await client
   .encryptInputs([Encryptable.uint32(42n)])
+  .setConsumingContract(contract.address)
   .execute();
 
-// Pass it to your contract
-await contract.setValue(encrypted);
+// Pass the handle and its proof to your contract
+await contract.setValue(valueHash, signature);
 ```
 
 ## 4. Decrypt for display
@@ -115,8 +116,8 @@ await contract.setValue(encrypted);
 ```typescript
 import { FheTypes } from '@cofhe/sdk';
 
-// Create a permit (one-time per account + chain)
-await client.permits.getOrCreateSelfPermit();
+// Create an ACP (one-time per account + chain)
+await client.acp.getOrCreateSelfACP();
 
 // Read the encrypted handle from your contract
 const ctHash = await contract.storedValue();
@@ -133,6 +134,6 @@ console.log(plaintext); // 42n
 
 - [Client Setup](/client-sdk/guides/client-setup): adapters, connection management, and config options.
 - [Encrypting Inputs](/client-sdk/guides/encrypting-inputs): supported types, builder API, and progress callbacks.
-- [Permits](/client-sdk/guides/permits): create, share, and manage decryption authorization.
+- [Access Control Permissions](/client-sdk/guides/acps): create, share, and manage decryption authorization.
 - [Decrypt to View](/client-sdk/guides/decrypt-to-view): reveal encrypted state in your UI.
 - [Decrypt to Transact](/client-sdk/guides/decrypt-to-tx): decrypt with a verifiable signature for onchain use.
