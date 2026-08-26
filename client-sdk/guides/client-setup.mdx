@@ -27,7 +27,7 @@ const config = createCofheConfig({
   supportedChains: [chains.sepolia],
 
   // Optional knobs
-  // defaultPermitExpiration: 60 * 60 * 24 * 30,
+  // defaultACPExpiration: 60 * 60 * 24 * 30,
   // useWorkers: true,
 });
 ```
@@ -170,7 +170,7 @@ cofheClient.connection.account; // Alice's address
 
 To manually disconnect, call `cofheClient.disconnect()`. This clears the in-memory connection state (clients/account/chainId) and marks the client as disconnected.
 
-It does **not** delete persisted permits or stored FHE keys.
+It does **not** delete persisted ACPs or stored FHE keys.
 
 ```typescript
 cofheClient.disconnect();
