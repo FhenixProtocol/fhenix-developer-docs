@@ -1,14 +1,17 @@
 ---
 title: Encrypting Inputs
-description: "Encrypt plaintext values with ZK proofs for use in FHE-enabled smart contracts"
+description: "Encrypt plaintext values with a batch ZK proof for use in FHE-enabled smart contracts"
 ---
 
-`encryptInputs` encrypts plaintext values into FHE ciphertexts that can be passed as inputs to a confidential smart contract transaction. Values must be encrypted before being passed onchain to preserve confidentiality.
+`encryptInputs` encrypts plaintext values into FHE ciphertexts you can pass into a confidential contract call. Values must be encrypted before they go onchain, or there is nothing confidential about them.
+
+One call produces one batch: a ciphertext handle for each value, plus a single signature covering the whole batch.
 
 ## Prerequisites
 
 1. [Create and connect a client](/client-sdk/guides/client-setup).
-2. Know which encrypted type you want to encode each value as, the type must match the Solidity parameter type your contract expects (e.g. `InEuint32` vs `InEuint64`).
+2. Know which encrypted type each value needs. It must match the Solidity parameter your contract declares, for example `externalEuint32` against `externalEuint64`.
+3. Know the address of the contract that will consume the inputs. You have to declare it before signing.
 
 ## Basic usage
 
@@ -17,95 +20,113 @@ import { Encryptable } from '@cofhe/sdk';
 
 await cofheClient.connect(publicClient, walletClient);
 
-const encrypted = await cofheClient
+const [ageHash, flagHash, addressHash, signature] = await cofheClient
   .encryptInputs([
     Encryptable.uint32(42n),
     Encryptable.bool(true),
     Encryptable.address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
   ])
+  .setConsumingContract(contractAddress)
   .execute();
-
-const [eUint32, eBool, eAddress] = encrypted;
 ```
 
-The return type is a typed tuple that mirrors the array you pass in, each element is the corresponding `EncryptedItemInput` type.
+The result holds one handle per input, in the order you passed them, followed by the batch signature. It has `inputs.length + 1` elements, so code that assumes the result matches the input count is off by one.
 
-## Using encrypted inputs in a transaction
+## Declaring the consuming contract
 
-Pass the returned `EncryptedItemInput` objects directly into your contract call. The onchain CoFHE library verifies the signature before using the ciphertext.
+`setConsumingContract` is required. The verifier binds the target contract into the signed digest, so a batch signed for one contract cannot be replayed into another.
+
+Omitting it is a compile error in TypeScript: `encryptInputs()` returns a builder with no `execute()` method, and you get `Property 'execute' does not exist on type 'EncryptInputsBuilderUnset'`. JavaScript callers get no type check and hit a `ConsumingContractUninitialized` throw instead.
+
+<Warning>
+The consuming contract is the contract that runs `FHE.asEuint*`, which is not always the contract you call. If your app calls `vault.deposit(...)` and the vault is what converts the value, the consuming contract is the vault. Naming the wrong one compiles, typechecks, and reverts at runtime when the digest is recomputed onchain. Trace the value to the `FHE.asEuint*` call and use that address.
+</Warning>
+
+## Using the result in a transaction
+
+The handle and its proof are a pair. In Solidity the proof parameter follows the handle it authenticates:
 
 <CodeGroup>
 
 ```solidity Solidity
-function confidentialTransfer(address to, InEuint64 amount) external {
+function confidentialTransfer(
+  address to,
+  externalEuint64 amount,
+  bytes calldata inputProof
+) external {
+  euint64 value = FHE.asEuint64(amount, inputProof);
   // ...
 }
 ```
 
 ```typescript TypeScript
-const [encryptedAmount] = await cofheClient
+const [amountHash, signature] = await cofheClient
   .encryptInputs([Encryptable.uint64(amount)])
+  .setConsumingContract(tokenAddress)
   .execute();
 
-await contract.confidentialTransfer(recipient, encryptedAmount);
+await contract.confidentialTransfer(recipient, amountHash, signature);
 ```
 
 </CodeGroup>
 
+For more than one encrypted value, the handles stay adjacent and share the one signature:
+
+```typescript
+const [amountHash, feeHash, signature] = await cofheClient
+  .encryptInputs([Encryptable.uint32(amount), Encryptable.uint32(fee)])
+  .setConsumingContract(tokenAddress)
+  .execute();
+
+await contract.transfer(recipient, [amountHash, feeHash], signature);
+```
+
+<Note>
+The signature does not have to be the last parameter, and encrypted parameters must be adjacent to each other because they share one signature. See [migrating to 0.7](/client-sdk/introduction/migrating-to-0-7) for the Solidity side.
+</Note>
+
 ## Builder API
+
+### `.setConsumingContract(address)` (required)
+
+The contract that will pass these values into `FHE.asEuint*`. Returns the builder that has `execute()`.
 
 ### `.execute()` (required, call last)
 
-Runs the encryption pipeline and returns the `EncryptedItemInput[]` tuple.
-
-```typescript
-const [encryptedAge, encryptedFlag] = await cofheClient
-  .encryptInputs([Encryptable.uint8(25n), Encryptable.bool(true)])
-  .execute();
-```
+Runs the encryption pipeline and returns the handles followed by the batch signature.
 
 ### `.setAccount(address)` (optional)
 
-Override the address that "owns" the encrypted input. Only that address will be allowed to use the encrypted inputs onchain. Defaults to the connected wallet account.
+Override the address that owns the encrypted inputs. Only that address can use them onchain. Defaults to the connected wallet account.
 
 ```typescript
-const encrypted = await cofheClient
+const result = await cofheClient
   .encryptInputs([Encryptable.uint64(10n)])
   .setAccount('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
+  .setConsumingContract(contractAddress)
   .execute();
 ```
 
 ### `.setChainId(chainId)` (optional)
 
-Override the chain the encrypted input will be used on. Defaults to the connected chain.
+Override the chain the inputs will be used on. Defaults to the connected chain.
 
-```typescript
-const encrypted = await cofheClient
-  .encryptInputs([Encryptable.uint64(10n)])
-  .setChainId(11155111)
-  .execute();
-```
+### `.setSecurityZone(zone)` (optional)
+
+Override the security zone the batch is encrypted under. Defaults to zone `0`.
 
 ### `.setUseWorker(boolean)` (optional)
 
-Override the `useWorkers` flag for this specific call. When `true` (the default), ZK proof generation runs in a Web Worker to avoid blocking the main thread. No-op in Node.js.
-
-```typescript
-const encrypted = await cofheClient
-  .encryptInputs([Encryptable.uint32(7n)])
-  .setUseWorker(false)
-  .execute();
-```
+When `true`, the default, ZK proof generation runs in a Web Worker so it does not block the main thread. No effect in Node.js.
 
 ### `.onStep(callback)` (optional)
 
-Register a callback that fires at the start and end of each encryption step. Useful for building progress indicators.
+Fires at the start and end of each encryption step, which is useful for a progress indicator.
 
 ```typescript
-import { EncryptStep } from '@cofhe/sdk';
-
-const encrypted = await cofheClient
+const result = await cofheClient
   .encryptInputs([Encryptable.uint64(10n)])
+  .setConsumingContract(contractAddress)
   .onStep((step, ctx) => {
     if (ctx?.isStart) console.log(`Starting: ${step}`);
     if (ctx?.isEnd) console.log(`Done: ${step} (${ctx.duration}ms)`);
@@ -113,33 +134,35 @@ const encrypted = await cofheClient
   .execute();
 ```
 
+Setters can be called in any order, as long as they come before `.execute()`.
+
 #### The encryption flow
 
-Calling `.execute()` runs five sequential steps:
+`.execute()` runs five sequential steps:
 
 | Step | Description |
 | --- | --- |
-| `InitTfhe` | Lazy-initializes the TFHE WASM module. A no-op after the first call. |
-| `FetchKeys` | Fetches (or loads from cache) the FHE public key and CRS for the target chain. |
+| `InitTfhe` | Lazy-initializes the TFHE WASM module. Does nothing after the first call. |
+| `FetchKeys` | Fetches, or loads from cache, the FHE public key and CRS for the target chain. |
 | `Pack` | Packs the plaintext values into a ZK list ready for proving. |
-| `Prove` | Generates the ZK proof of knowledge (ZKPoK). Uses a Web Worker when available. |
-| `Verify` | Sends the proof to the CoFHE verifier. Returns signed `EncryptedItemInput` objects. |
+| `Prove` | Generates the ZK proof of knowledge. Uses a Web Worker when available. |
+| `Verify` | Sends the proof to the CoFHE verifier and returns the batch. |
 
-## Encryptable: creating inputs
+## Creating the inputs
 
-Use the `Encryptable` factory to create the items you want to encrypt. Each factory function accepts the plaintext value and an optional `securityZone`.
+Use the `Encryptable` factory to build the items. Each function takes the plaintext value and an optional security zone.
 
-| Factory | Data type | Solidity input param |
+| Factory | Data type | Solidity parameter |
 | --- | --- | --- |
-| `Encryptable.bool(value)` | `boolean` | `InEbool` |
-| `Encryptable.uint8(value)` | `bigint \| string` | `InEuint8` |
-| `Encryptable.uint16(value)` | `bigint \| string` | `InEuint16` |
-| `Encryptable.uint32(value)` | `bigint \| string` | `InEuint32` |
-| `Encryptable.uint64(value)` | `bigint \| string` | `InEuint64` |
-| `Encryptable.uint128(value)` | `bigint \| string` | `InEuint128` |
-| `Encryptable.address(value)` | `bigint \| string` | `InEaddress` |
+| `Encryptable.bool(value)` | `boolean` | `externalEbool` |
+| `Encryptable.uint8(value)` | `bigint \| string` | `externalEuint8` |
+| `Encryptable.uint16(value)` | `bigint \| string` | `externalEuint16` |
+| `Encryptable.uint32(value)` | `bigint \| string` | `externalEuint32` |
+| `Encryptable.uint64(value)` | `bigint \| string` | `externalEuint64` |
+| `Encryptable.uint128(value)` | `bigint \| string` | `externalEuint128` |
+| `Encryptable.address(value)` | `bigint \| string` | `externalEaddress` |
 
-You can also use the generic form:
+There is also a generic form:
 
 ```typescript
 Encryptable.create('uint32', 42n);
@@ -148,26 +171,24 @@ Encryptable.create('address', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
 ```
 
 <Warning>
-**Bit limit:** A single `encryptInputs` call may encrypt at most **2048 bits** of plaintext in total. Exceeding this limit throws a `ZkPackFailed` error.
+A single `encryptInputs` call may encrypt at most **2048 bits** of plaintext in total. Going over throws `ZkPackFailed`.
 </Warning>
 
-## EncryptedItemInput: the result type
+## What replaced the per-item types
 
-Each element of the returned array is an `EncryptedItemInput`:
+`0.7` removed the per-item input structs. `EncryptedItemInput`, `EncryptedUint64Input`, and the rest of that family no longer exist, and neither does `asHashPlusProof()`, because its output is what `execute()` always returns now.
 
-```typescript
-type EncryptedItemInput = {
-  ctHash: bigint;        // The ciphertext hash registered with CoFHE
-  securityZone: number;  // The security zone the input was encrypted under
-  utype: FheTypes;       // The FHE type (Bool, Uint8, …, Uint160)
-  signature: string;     // CoFHE verifier signature authorizing this input
-};
-```
+A value that used to be one of those types is now a plain hash, typed `` `0x${string}` ``. The whole result is ``readonly `0x${string}`[]``.
 
-Pass these directly into a contract function that accepts `InEuint*` structs. The contract's CoFHE library validates the signature onchain before operating on the ciphertext.
+<Note>
+These also break on your own helpers. A fixture typed `(encAmount: EncryptedUint64Input)` fails at its own definition, not at the call site. Spread the pair instead, or infer it with `Awaited<ReturnType<typeof encryptAmount>>`.
+</Note>
 
 ## Common pitfalls
 
-- **Wrong `Encryptable` type**: `Encryptable.uint32(...)` must match what your Solidity function expects (e.g. `InEuint32`).
-- **Wrong account / chain**: encrypted inputs are authorized for a specific `account + chainId`. If you override these, your inputs may not be usable for the intended transaction.
-- **Bit limit exceeded**: a single call can encrypt at most **2048 bits** of plaintext. Exceeding this throws `ZkPackFailed`.
+- **Forgetting the consuming contract**, or naming the contract you call rather than the one that converts the value. The second one fails at runtime, not at compile time.
+- **Destructuring the wrong length.** The result carries a trailing signature, so a wrong-length destructure typechecks and then fails at runtime.
+- **Wrong `Encryptable` type.** `Encryptable.uint32(...)` has to match the `externalEuint32` your function declares.
+- **Wrong account or chain.** Inputs are authorized for one account and chain. Overriding either can make them unusable for the transaction you intended.
+- **Reusing one encryption against two contracts.** Not possible with a single batch, because the signature binds to one consuming contract. Encrypt once per target.
+- **Bit limit exceeded.** At most 2048 bits per call, otherwise `ZkPackFailed`.
