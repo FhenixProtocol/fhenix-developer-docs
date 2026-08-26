@@ -3,7 +3,7 @@ title: Decrypt to Transact
 description: "Decrypt with a verifiable Threshold Network signature for onchain use"
 ---
 
-Use `decryptForTx` to reveal a confidential (encrypted) value onchain: it returns the plaintext together with a Threshold Network signature, so a contract can verify the reveal when you publish it in a transaction.
+Use `decryptForTx` to reveal a confidential (encrypted) value onchain. It returns the plaintext together with a Threshold Network signature, so a contract can verify the reveal when you publish it in a transaction.
 
 Common use cases:
 
@@ -18,21 +18,21 @@ If you only need to show plaintext in your UI (and you do **not** need an onchai
 
 1. [Create and connect a client](/client-sdk/guides/client-setup).
 2. Know the onchain encrypted handle (`ctHash`) you want to decrypt.
-3. Determine whether the contract's ACL policy for this `ctHash` requires a [permit](/client-sdk/guides/permits).
+3. Determine whether the contract's ACL policy for this `ctHash` requires a [ACP](/client-sdk/guides/acps).
 
 <Note>
 `decryptForTx` does not take a `utype`. It always returns the plaintext as a `bigint` because the result is intended to be passed into a transaction. If you need UI-friendly decoding, use [`decryptForView`](/client-sdk/guides/decrypt-to-view).
 </Note>
 
-## Permit: when is it needed?
+## ACP: when is it needed?
 
-Often, `decryptForTx` is used to reveal a value that the protocol already considers OK to make public. In those cases, the contract's ACL policy can allow anyone to decrypt, and you can use `.withoutPermit()`.
+Often, `decryptForTx` is used to reveal a value that the protocol already considers OK to make public. In those cases, the contract's ACL policy can allow anyone to decrypt, and you can use `.withoutACP()`.
 
-Examples where a permit is **not** needed:
+Examples where an ACP is **not** needed:
 - **Unshielding**: the amount being unshielded is no longer meant to stay secret.
 - **Auction/game reveal**: it doesn't matter who submits the reveal, only that the result is verified.
 
-If the ACL policy restricts decryption, you must use `.withPermit(...)`.
+If the ACL policy restricts decryption, you must use `.withACP(...)`.
 
 ## What `decryptForTx` returns
 
@@ -42,33 +42,33 @@ If the ACL policy restricts decryption, you must use `.withPermit(...)`.
 - `decryptedValue: bigint`: the plaintext value (always a `bigint`)
 - `signature: 0x${string}`: the Threshold Network signature as a hex string
 
-## Decrypt (choose permit mode)
+## Decrypt (choose ACP mode)
 
 <CodeGroup>
 
-```typescript No permit
+```typescript No ACP
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 decryptResult.decryptedValue;
 decryptResult.signature;
 ```
 
-```typescript Active permit
+```typescript Active ACP
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 ```
 
-```typescript Explicit permit
-const permit = await client.permits.getOrCreateSelfPermit();
+```typescript Explicit ACP
+const acp = await client.acp.getOrCreateSelfACP();
 
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withPermit(permit)
+  .withACP(acp)
   .execute();
 ```
 
@@ -82,23 +82,23 @@ After decrypting, see [Writing Decrypt Result to Contract](/client-sdk/guides/wr
 
 Runs the decryption and returns `{ ctHash, decryptedValue, signature }`.
 
-### `.withPermit(...)` (required unless using `.withoutPermit()`)
+### `.withACP(...)` (required unless using `.withoutACP()`)
 
-- `.withPermit()`: uses the active permit
-- `.withPermit(permitHash)`: fetches a stored permit by hash
-- `.withPermit(permit)`: uses the provided permit object
+- `.withACP()`: uses the active ACP
+- `.withACP(acpHash)`: fetches a stored ACP by hash
+- `.withACP(acp)`: uses the provided ACP object
 
-### `.withoutPermit()` (required unless using `.withPermit(...)`)
+### `.withoutACP()` (required unless using `.withACP(...)`)
 
-Decrypt via global allowance (no permit). Only works if the contract's ACL policy allows anyone to decrypt that `ctHash`.
+Decrypt via global allowance (no ACP). Only works if the contract's ACL policy allows anyone to decrypt that `ctHash`.
 
 ### `.setAccount(address)` (optional)
 
-Overrides the account used to resolve the active/stored permit.
+Overrides the account used to resolve the active/stored ACP.
 
 ### `.setChainId(chainId)` (optional)
 
-Overrides the chain used to resolve the Threshold Network URL and permits.
+Overrides the chain used to resolve the Threshold Network URL and ACPs.
 
 ### `.onPoll(callback)` (optional)
 
@@ -107,7 +107,7 @@ Register a callback that fires once per poll attempt while `decryptForTx` waits 
 ```typescript
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .onPoll(({ operation, requestId, attemptIndex, elapsedMs, intervalMs, timeoutMs }) => {
     console.log(`[${operation}] attempt ${attemptIndex} after ${elapsedMs}ms (next in ${intervalMs}ms, budget ${timeoutMs}ms)`);
   })
@@ -132,7 +132,7 @@ Configures how long `decryptForTx` keeps retrying when the Threshold Network's s
 ```typescript
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .set404RetryTimeout(20_000) // give a slower backend more time
   .execute();
 ```
@@ -141,5 +141,5 @@ Pass `0` to disable submit-time retries (`404` becomes a hard failure). Submit r
 
 ## Common pitfalls
 
-- **Permit mode must be selected**: you must call exactly one of `.withPermit(...)` or `.withoutPermit()` before `.execute()`.
-- **Wrong chain/account**: permits are scoped to `chainId + account`. If you get an ACL/permit error, double-check the connected chain and account.
+- **ACP mode must be selected**: you must call exactly one of `.withACP(...)` or `.withoutACP()` before `.execute()`.
+- **Wrong chain/account**: ACPs are scoped to `chainId + account`. If you get an ACL/ACP error, double-check the connected chain and account.

@@ -1,6 +1,6 @@
 ---
 title: Decrypt to View
-description: "Reveal encrypted values locally for UI display using permits"
+description: "Reveal encrypted values locally for UI display using ACPs"
 ---
 
 Use `decryptForView` to reveal a confidential (encrypted) value locally in your app so you can display it in the UI.
@@ -10,18 +10,18 @@ Unlike [`decryptForTx`](/client-sdk/guides/decrypt-to-tx), this flow does **not*
 ## Flow
 
 1. Read the encrypted handle (`ctHash`) from your contract.
-2. Ensure you have a permit that authorizes decryption of that value.
+2. Ensure you have an ACP that authorizes decryption of that value.
 3. Call `decryptForView(ctHash, utype).execute()` to get the plaintext.
 
 <Note>
-`decryptForView` always decrypts using a permit (there is no `.withoutPermit()` mode). If your protocol intends for the plaintext to become publicly visible onchain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
+`decryptForView` always decrypts using an ACP (there is no `.withoutACP()` mode). If your protocol intends for the plaintext to become publicly visible onchain, use [`decryptForTx`](/client-sdk/guides/decrypt-to-tx) instead.
 </Note>
 
 ## Prerequisites
 
 1. [Create and connect a client](/client-sdk/guides/client-setup).
 2. Know the encrypted handle (`ctHash`) and the encrypted type (`utype`).
-3. Have a [permit](/client-sdk/guides/permits) available for the connected `chainId + account`.
+3. Have a [ACP](/client-sdk/guides/acps) available for the connected `chainId + account`.
 
 <Tip>
 **Getting `ctHash`**: In most apps, `ctHash` comes from reading a stored encrypted value, an event arg, or a return value from a `view` call.
@@ -36,45 +36,45 @@ Supported `utype`s:
 - `FheTypes.Uint8 | Uint16 | Uint32 | Uint64 | Uint128` to returns a `bigint`
 </Tip>
 
-## Permit setup
+## ACP setup
 
-If you don't have a permit yet, create one once after connecting:
+If you don't have an ACP yet, create one once after connecting:
 
 ```typescript
 await client.connect(publicClient, walletClient);
 
-// Creates a permit if needed, stores it, and selects it as the active permit.
-await client.permits.getOrCreateSelfPermit();
+// Creates an ACP if needed, stores it, and selects it as the active ACP.
+await client.acp.getOrCreateSelfACP();
 ```
 
 ## Decrypt for UI
 
-Choose the pattern that matches how your app manages permits:
+Choose the pattern that matches how your app manages ACPs:
 
 <CodeGroup>
 
-```typescript Active permit
+```typescript Active ACP
 await client.connect(publicClient, walletClient);
-await client.permits.getOrCreateSelfPermit();
+await client.acp.getOrCreateSelfACP();
 
 const plaintext = await client
   .decryptForView(ctHash, FheTypes.Uint32)
   .execute();
 ```
 
-```typescript Permit object
-const permit = await client.permits.getOrCreateSelfPermit();
+```typescript ACP object
+const acp = await client.acp.getOrCreateSelfACP();
 
 const plaintext = await client
   .decryptForView(ctHash, FheTypes.Uint64)
-  .withPermit(permit)
+  .withACP(acp)
   .execute();
 ```
 
-```typescript Permit hash
+```typescript ACP hash
 const plaintext = await client
   .decryptForView(ctHash, FheTypes.Uint8)
-  .withPermit(permitHash)
+  .withACP(acpHash)
   .execute();
 ```
 
@@ -94,23 +94,23 @@ Running `.execute()` resolves to a scalar JS value:
 
 Runs the decryption and returns a UI-friendly scalar value.
 
-### `.withPermit(...)` (optional)
+### `.withACP(...)` (optional)
 
-Select which permit to use:
+Select which ACP to use:
 
-- `.withPermit()`: uses the active permit
-- `.withPermit(permitHash)`: fetches a stored permit by hash
-- `.withPermit(permit)`: uses the provided permit object
+- `.withACP()`: uses the active ACP
+- `.withACP(acpHash)`: fetches a stored ACP by hash
+- `.withACP(acp)`: uses the provided ACP object
 
-If you don't call `.withPermit(...)`, the active permit is used by default.
+If you don't call `.withACP(...)`, the active ACP is used by default.
 
 ### `.setAccount(address)` (optional)
 
-Overrides the account used to resolve the active/stored permit.
+Overrides the account used to resolve the active/stored ACP.
 
 ### `.setChainId(chainId)` (optional)
 
-Overrides the chain used to resolve the Threshold Network URL and permits.
+Overrides the chain used to resolve the Threshold Network URL and ACPs.
 
 ### `.onPoll(callback)` (optional)
 
@@ -174,6 +174,6 @@ const shortOwner = `${decryptedOwner.slice(0, 6)}…${decryptedOwner.slice(-4)}`
 
 ## Common pitfalls
 
-- **Missing permit**: `decryptForView` will fail if there is no active permit for the current `chainId + account`.
+- **Missing ACP**: `decryptForView` will fail if there is no active ACP for the current `chainId + account`.
 - **Wrong `utype`**: you must pass the correct FHE type for the ciphertext.
-- **Wrong chain/account**: permits are scoped to `chainId + account`. If the user switches wallets or networks, create/select the correct permit.
+- **Wrong chain/account**: ACPs are scoped to `chainId + account`. If the user switches wallets or networks, create/select the correct ACP.
