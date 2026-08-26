@@ -170,118 +170,148 @@ Converts a plaintext address value to an encrypted address.
 eaddress encrypted = FHE.asEaddress(0x1234567890123456789012345678901234567890);
 ```
 
-### From Encrypted Input Structures
+### From encrypted inputs
 
-#### asEbool (from InEbool)
+Each of these takes the input handle and the `bytes` proof that authenticates it. One signature covers every encrypted input in a call, so if a function receives more than one, convert them together with the plural form (`asEuint8s`, `asEuint32s`, and so on) rather than calling the single form per value.
 
-<ParamField body="value" type="InEbool" required>
-Encrypted input structure containing boolean data
+#### asEbool (from externalEbool)
+
+<ParamField body="hash" type="externalEbool" required>
+Encrypted input handle containing boolean data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="ebool">
 Encrypted boolean value
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted boolean.
+Converts an encrypted input into an encrypted boolean.
 
 ```solidity
-ebool encrypted = FHE.asEbool(encryptedInput);
+ebool encrypted = FHE.asEbool(encryptedInput, inputProof);
 ```
 
-#### asEuint8 (from InEuint8)
+#### asEuint8 (from externalEuint8)
 
-<ParamField body="value" type="InEuint8" required>
-Encrypted input structure containing 8-bit integer data
+<ParamField body="hash" type="externalEuint8" required>
+Encrypted input handle containing 8-bit integer data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="euint8">
 Encrypted 8-bit unsigned integer
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted 8-bit unsigned integer.
+Converts an encrypted input into an encrypted 8-bit unsigned integer.
 
 ```solidity
-euint8 encrypted = FHE.asEuint8(encryptedInput);
+euint8 encrypted = FHE.asEuint8(encryptedInput, inputProof);
 ```
 
-#### asEuint16 (from InEuint16)
+#### asEuint16 (from externalEuint16)
 
-<ParamField body="value" type="InEuint16" required>
-Encrypted input structure containing 16-bit integer data
+<ParamField body="hash" type="externalEuint16" required>
+Encrypted input handle containing 16-bit integer data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="euint16">
 Encrypted 16-bit unsigned integer
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted 16-bit unsigned integer.
+Converts an encrypted input into an encrypted 16-bit unsigned integer.
 
 ```solidity
-euint16 encrypted = FHE.asEuint16(encryptedInput);
+euint16 encrypted = FHE.asEuint16(encryptedInput, inputProof);
 ```
 
-#### asEuint32 (from InEuint32)
+#### asEuint32 (from externalEuint32)
 
-<ParamField body="value" type="InEuint32" required>
-Encrypted input structure containing 32-bit integer data
+<ParamField body="hash" type="externalEuint32" required>
+Encrypted input handle containing 32-bit integer data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="euint32">
 Encrypted 32-bit unsigned integer
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted 32-bit unsigned integer.
+Converts an encrypted input into an encrypted 32-bit unsigned integer.
 
 ```solidity
-euint32 encrypted = FHE.asEuint32(encryptedInput);
+euint32 encrypted = FHE.asEuint32(encryptedInput, inputProof);
 ```
 
-#### asEuint64 (from InEuint64)
+#### asEuint64 (from externalEuint64)
 
-<ParamField body="value" type="InEuint64" required>
-Encrypted input structure containing 64-bit integer data
+<ParamField body="hash" type="externalEuint64" required>
+Encrypted input handle containing 64-bit integer data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="euint64">
 Encrypted 64-bit unsigned integer
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted 64-bit unsigned integer.
+Converts an encrypted input into an encrypted 64-bit unsigned integer.
 
 ```solidity
-euint64 encrypted = FHE.asEuint64(encryptedInput);
+euint64 encrypted = FHE.asEuint64(encryptedInput, inputProof);
 ```
 
-#### asEuint128 (from InEuint128)
+#### asEuint128 (from externalEuint128)
 
-<ParamField body="value" type="InEuint128" required>
-Encrypted input structure containing 128-bit integer data
+<ParamField body="hash" type="externalEuint128" required>
+Encrypted input handle containing 128-bit integer data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="euint128">
 Encrypted 128-bit unsigned integer
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted 128-bit unsigned integer.
+Converts an encrypted input into an encrypted 128-bit unsigned integer.
 
 ```solidity
-euint128 encrypted = FHE.asEuint128(encryptedInput);
+euint128 encrypted = FHE.asEuint128(encryptedInput, inputProof);
 ```
 
-#### asEaddress (from InEaddress)
+#### asEaddress (from externalEaddress)
 
-<ParamField body="value" type="InEaddress" required>
-Encrypted input structure containing address data
+<ParamField body="hash" type="externalEaddress" required>
+Encrypted input handle containing address data
+</ParamField>
+
+<ParamField body="proof" type="bytes" required>
+Signature authenticating the input batch
 </ParamField>
 
 <ResponseField name="result" type="eaddress">
 Encrypted Ethereum address
 </ResponseField>
 
-Converts an encrypted input structure to an encrypted address.
+Converts an encrypted input into an encrypted address.
 
 ```solidity
-eaddress encrypted = FHE.asEaddress(encryptedInput);
+eaddress encrypted = FHE.asEaddress(encryptedInput, inputProof);
 ```
 
 ### Type Conversion Between Encrypted Types
@@ -1161,7 +1191,7 @@ FHE.allowThis(counter);  // Required for future access
 
 ### allowPublic
 
-Grants public permission to access the encrypted value. Once called, anyone can request decryption of this value offchain via `decryptForTx` without needing a permit.
+Grants public permission to access the encrypted value. Once called, anyone can request decryption of this value offchain via `decryptForTx` without needing an ACP.
 
 <ParamField body="value" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
 Encrypted value to grant public access to
@@ -1176,7 +1206,7 @@ Once `allowPublic` is called, the value can be decrypted by anyone. Only use thi
 FHE.allowPublic(highestBid);
 FHE.allowPublic(highestBidder);
 
-// Now anyone can call decryptForTx off-chain without a permit
+// Now anyone can call decryptForTx offchain without an ACP
 ```
 
 ### allowSender
@@ -1318,12 +1348,14 @@ Each encrypted type has a corresponding binding library that includes all the op
 ### Example with Bindings
 
 ```solidity
-// Use secure encrypted input
-InEuint8 encryptedInputA;  // Provided by client-side encryption
-InEuint8 encryptedInputB;    // Provided by client-side encryption
+// Two inputs share one batch signature, so convert them together
+externalEuint8[] memory inputs = new externalEuint8[](2);
+inputs[0] = encryptedInputA;   // Provided by client-side encryption
+inputs[1] = encryptedInputB;   // Provided by client-side encryption
 
-euint8 a = FHE.asEuint8(encryptedInputA);
-euint8 b = FHE.asEuint8(encryptedInputB);
+euint8[] memory values = FHE.asEuint8s(inputs, inputProof);
+euint8 a = values[0];
+euint8 b = values[1];
 
 // Arithmetic operations
 euint8 sum = a.add(b);        // Addition
@@ -1398,12 +1430,14 @@ Always consider security implications when working with encrypted data.
 This example shows how to perform private computations while keeping all intermediate values encrypted:
 
 ```solidity
-// Use secure encrypted input
-InEuint8 encryptedInputA;  // Provided by client-side encryption
-InEuint8 encryptedInputB;  // Provided by client-side encryption
+// Two inputs share one batch signature, so convert them together
+externalEuint8[] memory inputs = new externalEuint8[](2);
+inputs[0] = encryptedInputA;   // Provided by client-side encryption
+inputs[1] = encryptedInputB;   // Provided by client-side encryption
 
-euint8 a = FHE.asEuint8(encryptedInputA);
-euint8 b = FHE.asEuint8(encryptedInputB);
+euint8[] memory values = FHE.asEuint8s(inputs, inputProof);
+euint8 a = values[0];
+euint8 b = values[1];
 
 // Perform operations
 euint8 sum = FHE.add(a, b);           // Encrypted addition
@@ -1425,12 +1459,14 @@ FHE.allowPublic(result);
 ### Example with Bindings
 
 ```solidity
-// Use secure encrypted input
-InEuint8 encryptedInputA;  // Provided by client-side encryption
-InEuint8 encryptedInputB;  // Provided by client-side encryption
+// Two inputs share one batch signature, so convert them together
+externalEuint8[] memory inputs = new externalEuint8[](2);
+inputs[0] = encryptedInputA;   // Provided by client-side encryption
+inputs[1] = encryptedInputB;   // Provided by client-side encryption
 
-euint8 a = FHE.asEuint8(encryptedInputA);
-euint8 b = FHE.asEuint8(encryptedInputB);
+euint8[] memory values = FHE.asEuint8s(inputs, inputProof);
+euint8 a = values[0];
+euint8 b = values[1];
 
 // Perform operations using dot notation
 euint8 sum = a.add(b);               // Encrypted addition

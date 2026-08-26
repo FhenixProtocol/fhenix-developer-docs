@@ -205,8 +205,8 @@ contract EncryptedAuction {
     euint32 public highestBid;
     address public highestBidder;
 
-    function placeBid(InEuint32 memory encryptedBid) public {
-        euint32 bid = FHE.asEuint32(encryptedBid);
+    function placeBid(externalEuint32 encryptedBid, bytes calldata inputProof) public {
+        euint32 bid = FHE.asEuint32(encryptedBid, inputProof);
 
         // Compare new bid with current highest (encrypted comparison)
         ebool isHigher = bid.gt(highestBid);

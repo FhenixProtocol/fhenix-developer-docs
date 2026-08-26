@@ -37,10 +37,16 @@ The library supports multiple encrypted data types, each representing an encrypt
   - Type indicator: Specifies the data type of the encrypted value (e.g. euint8, euint16) to ensure correct handling.
   - Cryptographic signature: A signature proving that the data and its metadata were generated and verified by an authorized entity.
 
-- **Type-specific input structures:**
-  - `InEuint8`, `InEuint16`, `InEuint32`
-  - `InEuint64`, `InEuint128`
-  - `InEbool`, `InEaddress`
+- **`UnsignedEncryptedInput`**: The same shape without the signature, used when a batch of inputs is verified together under one signature.
+
+- **Type-specific input types:**
+  - `externalEuint8`, `externalEuint16`, `externalEuint32`
+  - `externalEuint64`, `externalEuint128`
+  - `externalEbool`, `externalEaddress`
+
+  Each is a `bytes32` handle rather than a struct. It arrives with a separate `bytes` proof, and `FHE.asEuintXX(handle, proof)` converts the pair.
+
+- **Type-specific shared types:** `sharedEuint8` through `sharedEaddress`, for encrypted values handed from one contract to another. See [inputs](/fhe-library/core-concepts/inputs).
 
 ---
 
@@ -61,7 +67,7 @@ Performs encrypted comparisons (eq, gt, lt, etc.) that return an eboolan encryp
 Includes conditionals like `select` to allowing encrypted branching without revealing decision paths.
 
 #### 5. Data and Access Management
-Provides functions for sealing outputs, decrypting values securely, and managing user access via permits, ensuring only authorized parties can access decrypted data.
+Provides functions for sealing outputs, decrypting values securely, and managing user access via ACPs, ensuring only authorized parties can access decrypted data.
 
 ---
 
