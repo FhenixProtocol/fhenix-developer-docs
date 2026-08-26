@@ -83,8 +83,8 @@ FHE.allowPublic(highestBidder);
 
 **Step 2:** Request decryption offchain (client-side)
 ```typescript
-const bidResult = await client.decryptForTx(bidCtHash).withoutPermit().execute();
-const bidderResult = await client.decryptForTx(bidderCtHash).withoutPermit().execute();
+const bidResult = await client.decryptForTx(bidCtHash).withoutACP().execute();
+const bidderResult = await client.decryptForTx(bidderCtHash).withoutACP().execute();
 ```
 
 **Step 3:** Publish results onchain with proof
@@ -265,7 +265,7 @@ function closeBidding() external onlyAuctioneer {
 }
 ```
 
-Since `FHE.allowPublic` is used, anyone can request decryption offchain without needing a permit. The values are not revealed until someone submits the proof onchain.
+Since `FHE.allowPublic` is used, anyone can request decryption offchain without needing an ACP. The values are not revealed until someone submits the proof onchain.
 
 ### Revealing the Winner
 
@@ -328,15 +328,15 @@ await auction.connect(auctioneer).closeBidding();
 const bidCtHash = await auction.highestBid();
 const bidderCtHash = await auction.highestBidder();
 
-// Request decryption off-chain (no permit needed since allowPublic was used)
+// Request decryption offchain (no ACP needed since allowPublic was used)
 const bidResult = await client
   .decryptForTx(bidCtHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 const bidderResult = await client
   .decryptForTx(bidderCtHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 // Submit the proofs on-chain to reveal the winner

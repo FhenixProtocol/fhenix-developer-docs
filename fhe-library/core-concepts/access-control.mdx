@@ -9,8 +9,8 @@ Consider the following scenario: Your contract receives an encrypted input that 
 
 ```solidity
 // Contract A
-function submitSecretBid(InEuint32 bid) public {
-    euint32 handle = FHE.asEuint32(bid);
+function submitSecretBid(externalEuint32 bid, bytes calldata inputProof) public {
+    euint32 handle = FHE.asEuint32(bid, inputProof);
     // Perform some operations on the encrypted input
 }
 ```
@@ -54,7 +54,7 @@ FHE.publishDecryptResult(seenHandle, plaintext, signature);
 
 `publishDecryptResult` (and `verifyDecryptResult`) only check that `signature` is a valid ECDSA signature from the Threshold Network over that exact `(ctHash, result, chainId, encType)` tuple. Publication is deliberately permissionless so clients and relayers can settle results onchain.
 
-What protects the value is that an attacker cannot *obtain* that signature. The signature is only issued by the Threshold Network in response to a decryption request, and that request is ACL-gated: the requester must either hold permission on the handle (with a valid permit) or the handle must have been marked with `FHE.allowPublic()`. Without permission, the request is denied and no signature is ever produced, so there is nothing valid to publish.
+What protects the value is that an attacker cannot *obtain* that signature. The signature is only issued by the Threshold Network in response to a decryption request, and that request is ACL-gated: the requester must either hold permission on the handle (with a valid ACP) or the handle must have been marked with `FHE.allowPublic()`. Without permission, the request is denied and no signature is ever produced, so there is nothing valid to publish.
 
 <Warning>
 Treat `FHE.allowPublic()` as the real decision point. Once a handle is marked public, anyone can request its decryption and publish the plaintext onchain, permanently.
@@ -137,8 +137,8 @@ Decryption is a multi-step process: a client requests the plaintext and a thresh
 
 Access control governs who can request decryption:
 
-- If the ciphertext was marked with `FHE.allowPublic()`, anyone can request decryption without a permit (`.withoutPermit()`).
-- Otherwise, only addresses with explicit permission on the handle can request decryption, and must provide a valid permit (`.withPermit()`).
+- If the ciphertext was marked with `FHE.allowPublic()`, anyone can request decryption without an ACP (`.withoutACP()`).
+- Otherwise, only addresses with explicit permission on the handle can request decryption, and must provide a valid ACP (`.withACP()`).
 
 <Note>
 If the requester does not have permission on the ciphertext handle, the decryption request will be denied by the access control system. Grant appropriate permissions before attempting to decrypt, use `FHE.allowPublic()` for values intended to become public, or `FHE.allow()` / `FHE.allowSender()` for restricted access.
@@ -191,8 +191,8 @@ For detailed examples on how to explicitly manage ciphertext allowances in contr
 ### Quick Example: Token Transfer
 
 ```solidity
-function transfer(address to, InEuint32 memory inAmount) public {
-    euint32 amount = FHE.asEuint32(inAmount);
+function transfer(address to, externalEuint32 inAmount, bytes calldata inputProof) public {
+    euint32 amount = FHE.asEuint32(inAmount, inputProof);
 
     euint32 fromBalance = _balances[msg.sender];
     euint32 toBalance = _balances[to];

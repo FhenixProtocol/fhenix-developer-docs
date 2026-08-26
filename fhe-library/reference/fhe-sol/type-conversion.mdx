@@ -40,8 +40,8 @@ eaddress encrypted = FHE.asEaddress(0x1234567890123456789012345678901234567890);
 Convert client-side encrypted inputs (received as function parameters) into encrypted types.
 
 ```solidity
-function deposit(InEuint64 calldata encryptedAmount) external {
-    euint64 amount = FHE.asEuint64(encryptedAmount);
+function deposit(externalEuint64 encryptedAmount, bytes calldata inputProof) external {
+    euint64 amount = FHE.asEuint64(encryptedAmount, inputProof);
 }
 ```
 
