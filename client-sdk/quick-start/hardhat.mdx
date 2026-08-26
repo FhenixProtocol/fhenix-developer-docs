@@ -71,8 +71,8 @@ import '@fhenixprotocol/cofhe-contracts/FHE.sol';
 contract MyContract {
   euint32 public storedValue;
 
-  function setValue(InEuint32 memory inValue) external {
-    storedValue = FHE.asEuint32(inValue);
+  function setValue(externalEuint32 inValue, bytes calldata inputProof) external {
+    storedValue = FHE.asEuint32(inValue, inputProof);
     FHE.allowThis(storedValue);
     FHE.allowSender(storedValue);
   }
@@ -80,12 +80,12 @@ contract MyContract {
 ```
 
 - `euint32`: an encrypted `uint32` stored onchain as a ciphertext handle.
-- `InEuint32`: the encrypted input struct produced by the SDK.
+- `externalEuint32`: the encrypted input handle produced by the SDK, paired with a `bytes` proof.
 - `FHE.allowThis` / `FHE.allowSender`: grant the contract and caller permission to read the encrypted value (required by the ACL).
 
 ## 4. Write a test
 
-Use `hre.cofhe.createClientWithBatteries` to get a fully configured SDK client with a self-permit, then encrypt to send to decrypt.
+Use `hre.cofhe.createClientWithBatteries` to get a fully configured SDK client with a self-ACP, then encrypt to send to decrypt.
 
 ```typescript test/MyContract.test.ts
 import hre from 'hardhat';
@@ -106,13 +106,14 @@ describe('MyContract', () => {
     const Factory = await hre.ethers.getContractFactory('MyContract');
     const contract = await Factory.deploy();
 
-    // 1. Encrypt the input
-    const [encrypted] = await cofheClient
+    // 1. Encrypt the input, bound to the contract that will consume it
+    const [valueHash, signature] = await cofheClient
       .encryptInputs([Encryptable.uint32(42n)])
+      .setConsumingContract(await contract.getAddress())
       .execute();
 
     // 2. Send to contract
-    await (await contract.setValue(encrypted)).wait();
+    await (await contract.setValue(valueHash, signature)).wait();
 
     // 3. Read the stored handle and decrypt
     const ctHash = await contract.storedValue();
@@ -143,10 +144,10 @@ The plugin deploys mock contracts automatically, no extra setup needed.
 ## What just happened?
 
 1. The **Hardhat plugin** deployed mock versions of the CoFHE coprocessor contracts (TaskManager, ACL, ZK verifier, threshold network) before the test ran.
-2. `createClientWithBatteries` created an SDK client connected to the Hardhat network, with a self-permit ready to go.
+2. `createClientWithBatteries` created an SDK client connected to the Hardhat network, with a self-ACP ready to go.
 3. `encryptInputs` encrypted the plaintext `42` into an FHE ciphertext with a ZK proof (simulated by the mock verifier).
 4. The contract stored the ciphertext handle onchain and set ACL permissions.
-5. `decryptForView` used the permit to decrypt the handle back to `42n` locally.
+5. `decryptForView` used the ACP to decrypt the handle back to `42n` locally.
 
 ## Next steps
 

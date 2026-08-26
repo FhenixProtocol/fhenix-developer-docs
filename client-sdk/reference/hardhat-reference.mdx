@@ -15,7 +15,7 @@ The plugin extends the Hardhat Runtime Environment with a `cofhe` namespace.
 
 | Method | Description |
 | --- | --- |
-| `hre.cofhe.createClientWithBatteries(signer?)` | Creates a fully configured `CofheClient` with a self-permit. Uses the first signer if none provided. |
+| `hre.cofhe.createClientWithBatteries(signer?)` | Creates a fully configured `CofheClient` with a self-ACP. Uses the first signer if none provided. |
 | `hre.cofhe.createConfig(options)` | Wraps `createCofheConfig` with Hardhat defaults (`environment: 'hardhat'`, `encryptDelay: 0`). |
 | `hre.cofhe.createClient(config)` | Creates a `CofheClient` from a config object. |
 | `hre.cofhe.connectWithHardhatSigner(client, signer)` | Connects a client using a `HardhatEthersSigner`. |
@@ -62,6 +62,6 @@ export default {
 
 | Network | URL | Chain ID |
 | --- | --- | --- |
-| `localcofhe` | `http://127.0.0.1:42069` | — |
+| `localcofhe` | `http://127.0.0.1:42069` | `420105` |
 | `eth-sepolia` | Ethereum Sepolia public RPC | `11155111` |
 | `arb-sepolia` | Arbitrum Sepolia public RPC | `421614` |

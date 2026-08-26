@@ -83,8 +83,8 @@ import "@fhenixprotocol/cofhe-contracts/FHE.sol";
 contract MyContract {
     euint32 public storedValue;
 
-    function setValue(InEuint32 memory inValue) external {
-        storedValue = FHE.asEuint32(inValue);
+    function setValue(externalEuint32 inValue, bytes calldata inputProof) external {
+        storedValue = FHE.asEuint32(inValue, inputProof);
         FHE.allowThis(storedValue);
         FHE.allowSender(storedValue);
     }
@@ -92,7 +92,7 @@ contract MyContract {
 ```
 
 - `euint32`: an encrypted `uint32` stored onchain as a ciphertext handle.
-- `InEuint32`: the encrypted input struct produced by `CofheClient`.
+- `externalEuint32`: the encrypted input handle produced by `CofheClient`, paired with a `bytes` proof.
 - `FHE.allowThis` / `FHE.allowSender`: grant the contract and caller permission to read the encrypted value (required by the ACL).
 
 ## 5. Write a test
@@ -103,7 +103,7 @@ pragma solidity ^0.8.25;
 
 import { CofheTest } from "@cofhe/foundry-plugin/contracts/CofheTest.sol";
 import { CofheClient } from "@cofhe/foundry-plugin/contracts/CofheClient.sol";
-import { InEuint32 } from "@fhenixprotocol/cofhe-contracts/FHE.sol";
+import { externalEuint32 } from "@fhenixprotocol/cofhe-contracts/FHE.sol";
 import { MyContract } from "../src/MyContract.sol";
 
 contract MyContractTest is CofheTest {
@@ -123,14 +123,14 @@ contract MyContractTest is CofheTest {
     }
 
     function test_StoresAndDecryptsAnEncryptedValue() public {
-        // 1. Encrypt the input
-        InEuint32 memory encrypted = bob.createInEuint32(42);
+        // 1. Encrypt the input, bound to the contract that will consume it
+        (externalEuint32 hash, bytes memory proof) = bob.createExternalEuint32(42, address(myContract));
 
         // 2. Send to contract
         vm.prank(bob.account());
-        myContract.setValue(encrypted);
+        myContract.setValue(hash, proof);
 
-        // 3. Assert the stored plaintext directly (mock-only, no permit needed)
+        // 3. Assert the stored plaintext directly (mock-only, no ACP needed)
         expectPlaintext(myContract.storedValue(), uint32(42));
     }
 }
@@ -152,13 +152,13 @@ Test result: ok. 1 passed; 0 failed; 0 skipped; finished in …
 
 1. **`deployMocks()`** deployed the full CoFHE coprocessor mock stack (TaskManager, ACL, ZK verifier, threshold network) to the in-process EVM.
 2. **`createCofheClient()` + `bob.connect(BOB_PKEY)`** spun up an in-Solidity SDK shim bound to `vm.addr(BOB_PKEY)`.
-3. **`bob.createInEuint32(42)`** produced a signed `InEuint32`, the same shape your contract receives on testnet, signed by `MockZkVerifierSigner`.
+3. **`bob.createExternalEuint32(42, address(myContract))`** produced a signed `externalEuint32` and its proof, the same shape your contract receives on testnet, signed by `MockZkVerifierSigner`.
 4. **`vm.prank(bob.account())` + `setValue(...)`** called the contract as Bob. The contract stored the ciphertext handle and granted ACL access to itself and Bob.
-5. **`expectPlaintext(myContract.storedValue(), 42)`** read the onchain plaintext directly from `MockTaskManager.mockStorage`, no permit, no SDK round-trip.
+5. **`expectPlaintext(myContract.storedValue(), 42)`** read the onchain plaintext directly from `MockTaskManager.mockStorage`, no ACP, no SDK round-trip.
 
 ## Next steps
 
 - [Foundry Plugin to Getting Started](/client-sdk/foundry-plugin/getting-started): full plugin configuration and features.
 - [CofheTest](/client-sdk/foundry-plugin/cofhe-test): `deployMocks`, `expectPlaintext`, log toggles.
-- [CofheClient](/client-sdk/foundry-plugin/cofhe-client): encrypt inputs, decrypt for view / tx, permits.
+- [CofheClient](/client-sdk/foundry-plugin/cofhe-client): encrypt inputs, decrypt for view or tx, and ACPs.
 - [Testing](/client-sdk/foundry-plugin/testing): canonical test patterns for ACL, public-decrypt, and fuzzing.

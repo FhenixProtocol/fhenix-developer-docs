@@ -11,10 +11,10 @@ This page is under construction. A full API reference documenting all functions,
 
 | Entrypoint | Contents |
 | --- | --- |
-| `@cofhe/sdk` | Core types: `Encryptable`, `FheTypes`, `EncryptStep`, `CofheError`, `CofheErrorCode`, `isCofheError`, `assertCorrectEncryptedItemInput` |
+| `@cofhe/sdk` | Core types: `Encryptable`, `FheTypes`, `EncryptStep`, `CofheError`, `CofheErrorCode`, `isCofheError` |
 | `@cofhe/sdk/web` | `createCofheConfig`, `createCofheClient` (browser defaults) |
 | `@cofhe/sdk/node` | `createCofheConfig`, `createCofheClient` (Node.js defaults) |
-| `@cofhe/sdk/permits` | `PermitUtils`, `setPermit`, `setActivePermitHash`, `getPermit`, `getActivePermitHash` |
+| `@cofhe/sdk/acps` | `ACPUtils`, `setACP`, `setActiveACPHash`, `getACP`, `getActiveACPHash` |
 | `@cofhe/sdk/adapters` | `Ethers5Adapter`, `Ethers6Adapter`, `WagmiAdapter`, `HardhatSignerAdapter` |
 | `@cofhe/sdk/chains` | `chains`, `getChainById`, `getChainByName`, `hardhat` |
 
@@ -26,13 +26,13 @@ Factory for creating encryptable input items.
 
 | Method | Input type | Solidity param |
 | --- | --- | --- |
-| `Encryptable.bool(value)` | `boolean` | `InEbool` |
-| `Encryptable.uint8(value)` | `bigint \| string` | `InEuint8` |
-| `Encryptable.uint16(value)` | `bigint \| string` | `InEuint16` |
-| `Encryptable.uint32(value)` | `bigint \| string` | `InEuint32` |
-| `Encryptable.uint64(value)` | `bigint \| string` | `InEuint64` |
-| `Encryptable.uint128(value)` | `bigint \| string` | `InEuint128` |
-| `Encryptable.address(value)` | `bigint \| string` | `InEaddress` |
+| `Encryptable.bool(value)` | `boolean` | `externalEbool` |
+| `Encryptable.uint8(value)` | `bigint \| string` | `externalEuint8` |
+| `Encryptable.uint16(value)` | `bigint \| string` | `externalEuint16` |
+| `Encryptable.uint32(value)` | `bigint \| string` | `externalEuint32` |
+| `Encryptable.uint64(value)` | `bigint \| string` | `externalEuint64` |
+| `Encryptable.uint128(value)` | `bigint \| string` | `externalEuint128` |
+| `Encryptable.address(value)` | `bigint \| string` | `externalEaddress` |
 | `Encryptable.create(type, value)` | varies | varies |
 
 ### `FheTypes`
@@ -49,16 +49,16 @@ Enum of supported FHE types used with `decryptForView`.
 | `FheTypes.Uint128` | `bigint` |
 | `FheTypes.Uint160` | `string` (checksummed address) |
 
-### `EncryptedItemInput`
+### The `encryptInputs` result
+
+`execute()` returns one ciphertext handle per input, in order, followed by a single signature covering the whole batch:
 
 ```typescript
-type EncryptedItemInput = {
-  ctHash: bigint;
-  securityZone: number;
-  utype: FheTypes;
-  signature: string;
-};
+type EncryptInputsResult = readonly `0x${string}`[];
+// [ ...hashes, signature ]  -> inputs.length + 1 elements
 ```
+
+The per-item `EncryptedItemInput` struct and its typed variants were removed in `0.7`, along with `asHashPlusProof()`.
 
 ### `EncryptStep`
 
