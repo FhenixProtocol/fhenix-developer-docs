@@ -55,7 +55,7 @@ One client per scenario address. Connecting with a deterministic plaintext priva
 
 ## Reading plaintext values
 
-Because `MockTaskManager` stores plaintext values onchain, you can read the underlying plaintext of any encrypted handle directly, with no permit needed.
+Because `MockTaskManager` stores plaintext values onchain, you can read the underlying plaintext of any encrypted handle directly, with no ACP needed.
 
 ### `getPlaintext(handle)`
 
@@ -76,7 +76,7 @@ Reverts if the handle isn't in mock storage.
 
 ### `expectPlaintext(handle, value)` and `(handle, value, "msg")`
 
-Assertion variant, with typed overloads for the same type set. Faster than `decryptForView` (no SDK round-trip, no permit needed). Use it whenever you only care about the value, not the SDK code path.
+Assertion variant, with typed overloads for the same type set. Faster than `decryptForView` (no SDK round-trip, no ACP needed). Use it whenever you only care about the value, not the SDK code path.
 
 ```solidity
 expectPlaintext(counter.count(), uint32(42));
@@ -138,5 +138,5 @@ The remappings are relative to the foundry package's root. Running `forge test` 
 
 ## Next steps
 
-- [CofheClient](/client-sdk/foundry-plugin/cofhe-client): per-user encrypt / decrypt / permit shim.
+- [CofheClient](/client-sdk/foundry-plugin/cofhe-client): per-user encrypt, decrypt, and ACP shim.
 - [Testing](/client-sdk/foundry-plugin/testing): canonical test-writing patterns and migration mapping.
