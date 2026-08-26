@@ -21,17 +21,17 @@ The plugin and its CoFHE dependencies are distributed via npm. Install them as d
 <CodeGroup>
 
 ```bash npm
-npm install -D @cofhe/foundry-plugin@^0.5.2 @cofhe/mock-contracts@^0.5.2 @fhenixprotocol/cofhe-contracts@^0.1.3 @openzeppelin/contracts
+npm install -D @cofhe/foundry-plugin@^0.7.1 @cofhe/mock-contracts@^0.7.1 @fhenixprotocol/cofhe-contracts@^0.2.0 @openzeppelin/contracts
 forge install foundry-rs/forge-std
 ```
 
 ```bash pnpm
-pnpm add -D @cofhe/foundry-plugin@^0.5.2 @cofhe/mock-contracts@^0.5.2 @fhenixprotocol/cofhe-contracts@^0.1.3 @openzeppelin/contracts
+pnpm add -D @cofhe/foundry-plugin@^0.7.1 @cofhe/mock-contracts@^0.7.1 @fhenixprotocol/cofhe-contracts@^0.2.0 @openzeppelin/contracts
 forge install foundry-rs/forge-std
 ```
 
 ```bash yarn
-yarn add -D @cofhe/foundry-plugin@^0.5.2 @cofhe/mock-contracts@^0.5.2 @fhenixprotocol/cofhe-contracts@^0.1.3 @openzeppelin/contracts
+yarn add -D @cofhe/foundry-plugin@^0.7.1 @cofhe/mock-contracts@^0.7.1 @fhenixprotocol/cofhe-contracts@^0.2.0 @openzeppelin/contracts
 forge install foundry-rs/forge-std
 ```
 
@@ -56,7 +56,7 @@ code_size_limit = 100000
 </Warning>
 
 <Note>
-`evm_version = "cancun"` is no longer required as of `@cofhe/mock-contracts@0.5.0`. `MockACL` was migrated off transient storage to block-number-based storage. Set it only if your own contracts need cancun-specific opcodes.
+`evm_version = "cancun"` is no longer required as of `@cofhe/mock-contracts@0.7.1`. `MockACL` was migrated off transient storage to block-number-based storage. Set it only if your own contracts need cancun-specific opcodes.
 </Note>
 
 ## 3. Configure `remappings.txt`
