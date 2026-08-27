@@ -13,10 +13,7 @@ This page follows a single FHE operation from the contract call that requests it
 | **Your contract** | Requests FHE operations through the FHE.sol library |
 | **FHE.sol** | The Solidity library providing FHE operation functions |
 | **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Validates requests, checks the [ACL](/deep-dive/cofhe-components/acl), and emits task events |
-| **[Slim Listener](/deep-dive/cofhe-components/slim-listener)** | Watches TaskManager events on each host chain and enqueues them |
-| **[FheOS Server](/deep-dive/cofhe-components/fheos-server)** | Ingests task events, validates them, and routes work to the FHE Engine |
-| **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)** | Executes the FHE operation and stores the result ciphertext |
-| **Blockchain Poster** | Batches result commitments and posts them onchain |
+| **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)** | Picks up task events, validates and orders the work, executes it, and commits the result |
 | **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Records a hash commitment for every result ciphertext |
 
 ## Flow diagram
@@ -26,21 +23,16 @@ This page follows a single FHE operation from the contract call that requests it
 sequenceDiagram
     participant Contract as Your contract (FHE.sol)
     participant TM as TaskManager
-    participant SL as Slim Listener
-    participant FheOS as FheOS Server
     participant Engine as FHE Engine
-    participant BP as Blockchain Poster
     participant CR as CommitmentRegistry
 
     Contract->>TM: FHE.add(lhs, rhs) calls createTask
     TM->>TM: validate inputs, check ACL
     TM-->>Contract: result handle (synchronous)
-    TM->>SL: TaskCreated event
-    SL->>FheOS: blockchain-events queue
-    FheOS->>Engine: engine-requests queue
+    TM->>Engine: TaskCreated event
+    Engine->>Engine: validate and order the task
     Engine->>Engine: execute op, store ciphertext under the handle
-    Engine->>BP: commitment-requests queue
-    BP->>CR: postCommitments (batched)
+    Engine->>CR: postCommitments (batched)
 ```
 
 ## Step-by-step flow
@@ -87,25 +79,20 @@ The TaskManager is the gateway for all FHE operation requests. It:
 5. Emits a `TaskCreated` event with the operation details for the offchain services.
 </Step>
 
-<Step title="Slim Listener pickup">
-One Slim Listener instance runs per host chain per flow. This flow's listener watches for `TaskCreated` events and publishes them to the coprocessor's `blockchain-events` queue.
+<Step title="FHE Engine pickup">
+The [FHE Engine](/deep-dive/cofhe-components/fhe-engine) subscribes to TaskManager events on every host chain and picks up the `TaskCreated` event. It checks that the operation is well formed and that the inputs it references exist. An operation that arrives before its inputs finish computing is deferred and released once they land.
 </Step>
 
-<Step title="FheOS Server routing">
-The FheOS Server consumes `blockchain-events`, validates the task, and routes FHE operations to the `engine-requests` queue. It does not execute operations itself.
-</Step>
-
-<Step title="FHE Engine execution">
-The FHE Engine consumes `engine-requests` and:
+<Step title="Execution">
+The engine then:
 
 1. Executes the requested operation on the encrypted data.
 2. Stores the result ciphertext in the ciphertext database, keyed by the handle.
 3. Releases any dependent operations that were deferred while waiting for this result.
-4. Publishes a commitment for the result (the hash of the stored ciphertext bytes) to the `commitment-requests` queue.
 </Step>
 
 <Step title="Commitment posting">
-The Blockchain Poster batches commitments and posts them to the CommitmentRegistry on the registry chain. The commitment anchors the result. Teecryptor will only decrypt ciphertext bytes that hash to a registered commitment.
+The engine produces a commitment for the result, the hash of the stored ciphertext bytes, and posts it in a batch to the CommitmentRegistry on the registry chain. The commitment anchors the result. Teecryptor will only decrypt ciphertext bytes that hash to a registered commitment.
 
 At this point the operation cycle is complete, and the confidentiality of every encrypted value is preserved.
 </Step>
