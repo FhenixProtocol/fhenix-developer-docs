@@ -23,7 +23,7 @@ The contract that creates the value for the first time will automatically get ow
 
 ```solidity
 // Contract A
-function doAdd(InEuint32 input1, InEuint32 input2) {
+function doAdd(InEuint32 memory input1, InEuint32 memory input2) public {
     euint32 handle1 = FHE.asEuint32(input1); // Contract A gets temporary ownership of handle1
     euint32 handle2 = FHE.asEuint32(input2); // Contract A gets temporary ownership of handle2
     
@@ -41,10 +41,10 @@ To use the results in other transactions, explicit ownership must be granted wit
 
 ```solidity
 contract A {
-    private euint32 result;
-    private euint32 handle1;
+    euint32 private result;
+    euint32 private handle1;
 
-    function doAdd(InEuint32 input1, InEuint32 input2) {
+    function doAdd(InEuint32 memory input1, InEuint32 memory input2) public {
         handle1 = FHE.asEuint32(input1);         // Contract A gets temporary ownership of handle1
         euint32 handle2 = FHE.asEuint32(input2); // Contract A gets temporary ownership of handle2
 
@@ -52,7 +52,7 @@ contract A {
         FHE.allowThis(result);                   // result is allowed for future transactions
     }
 
-    function doSomethingWithResult() {
+    function doSomethingWithResult() public {
         FHE.allowPublic(result);  // Allowed — marks result as publicly decryptable
         FHE.add(handle1, result); // ACLNotAllowed (handle1 is not owned persistently)
     }
@@ -69,9 +69,9 @@ To decrypt a ciphertext offchain via the decryption network, the issuer must be 
 
 ```solidity
 contract A {
-    private mapping(address => euint32) balances;
+    mapping(address => euint32) private balances;
 
-    function transfer(InEuint32 _amount, address to) {
+    function transfer(InEuint32 memory _amount, address to) public {
         euint32 amount = FHE.asEuint32(_amount);
 
         balances[msg.sender] = FHE.sub(balances[msg.sender], amount);
@@ -97,7 +97,7 @@ You can also allow other contracts to use your ciphertexts, either persistently 
 
 ```solidity
 contract A {
-    function doAdd(InEuint32 input1) {
+    function doAdd(InEuint32 memory input1) public {
         euint32 handle1 = FHE.asEuint32(input1);       // Contract A gets temporary ownership of handle1
 
         FHE.allowTransient(handle1, addressB); // Contract B is allowed to use handle1 in this transaction alone
@@ -120,7 +120,7 @@ Use `FHE.allowTransient()` when you only need to grant access for a single trans
 When modifying encrypted values that users need to access:
 
 ```solidity
-function updateBalance(address user, InEuint32 amount) public {
+function updateBalance(address user, InEuint32 memory amount) public {
     euint32 encryptedAmount = FHE.asEuint32(amount);
     balances[user] = FHE.add(balances[user], encryptedAmount);
     
@@ -137,7 +137,7 @@ function updateBalance(address user, InEuint32 amount) public {
 A common pattern is to allow the message sender:
 
 ```solidity
-function submitEncryptedData(InEuint32 data) public {
+function submitEncryptedData(InEuint32 memory data) public {
     euint32 encryptedData = FHE.asEuint32(data);
     storedData[msg.sender] = encryptedData;
     
@@ -151,7 +151,7 @@ function submitEncryptedData(InEuint32 data) public {
 For values that should be accessible to everyone:
 
 ```solidity
-function setPublicValue(InEuint32 value) public onlyOwner {
+function setPublicValue(InEuint32 memory value) public onlyOwner {
     publicValue = FHE.asEuint32(value);
     FHE.allowPublic(publicValue); // Everyone can now access this value
 }
