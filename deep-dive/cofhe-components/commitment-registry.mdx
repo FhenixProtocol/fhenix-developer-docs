@@ -12,7 +12,7 @@ description: "Registry-chain contract that records FHE computation commitments. 
 
 ## What a commitment is
 
-A commitment is the `keccak256` hash of a ciphertext's canonical stored bytes. The [FHE Engine](/deep-dive/cofhe-components/fhe-engine) produces one for every result it computes, and the coprocessor anchors one for every encrypted input it verifies. The Blockchain Poster batches them and writes them to this registry.
+A commitment is the `keccak256` hash of a ciphertext's canonical stored bytes. The [FHE Engine](/deep-dive/cofhe-components/fhe-engine) produces one for every result it computes, and the coprocessor anchors one for every encrypted input it verifies. The engine batches them and writes them to this registry.
 
 ## Why commitments?
 
@@ -56,7 +56,7 @@ The admin-only `setVersionStatus(version, newStatus)` enforces these transitions
 
 ## Write surface
 
-Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the Blockchain Poster service's relayer signer (OpenZeppelin Relayer).
+Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the coprocessor's relayer signer (OpenZeppelin Relayer).
 
 ## Writing commitments
 
