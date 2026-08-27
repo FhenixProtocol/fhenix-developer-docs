@@ -35,7 +35,7 @@ The process of sending inputs to a smart contract:
 
 1. The user encrypts the inputs and generates a ZK proof of knowledge for them.
 2. The user sends the ciphertexts and proofs to the ZK Verifier, as one batch.
-3. The ZK Verifier verifies each proof. If all are valid, it signs one message approving the whole batch.
+3. The ZK Verifier verifies each proof. If all are valid, it stores the encrypted values in the ciphertext database and signs one message approving the whole batch.
 4. The ZK Verifier returns the handles and the batch approval to the user.
 5. The user sends the handles and the approval as inputs to a contract call.
 6. The contract verifies the batch signature, approving the inputs and emitting `InputVerified` per input, which anchors a commitment so each input becomes decryptable later.
