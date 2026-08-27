@@ -238,11 +238,9 @@
               "deep-dive/cofhe-components/overview",
               "deep-dive/cofhe-components/task-manager",
               "deep-dive/cofhe-components/acl",
-              "deep-dive/cofhe-components/slim-listener",
               "deep-dive/cofhe-components/plaintext-storage",
               "deep-dive/cofhe-components/commitment-registry",
               "deep-dive/cofhe-components/zk-verifier",
-              "deep-dive/cofhe-components/fheos-server",
               "deep-dive/cofhe-components/fhe-engine",
               "deep-dive/cofhe-components/teecryptor",
               "deep-dive/cofhe-components/key-management"
@@ -312,6 +310,14 @@
     {
       "source": "/deep-dive/cofhe-components/threshold-network",
       "destination": "/deep-dive/cofhe-components/teecryptor"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/slim-listener",
+      "destination": "/deep-dive/cofhe-components/fhe-engine"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/fheos-server",
+      "destination": "/deep-dive/cofhe-components/fhe-engine"
     },
     {
       "source": "/deep-dive/cofhe-components/result-processor",
