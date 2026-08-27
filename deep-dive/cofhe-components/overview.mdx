@@ -63,10 +63,10 @@ flowchart TB
 - **[PlaintextsStorage](/deep-dive/cofhe-components/plaintext-storage)**: stores decrypted results after they are published onchain with a verified Teecryptor signature.
 - **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)**: lives on a dedicated registry chain and records a hash commitment for every ciphertext the coprocessor produces or verifies. Teecryptor checks it before decrypting anything.
 
-## The offchain services
+## The offchain components
 
 - **[Client SDK](/client-sdk/introduction/overview)** (`@cofhe/sdk`): the TypeScript library applications use to encrypt inputs, manage [permits](/client-sdk/guides/permits), and decrypt outputs.
-- **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)**: verifies the zero-knowledge proof attached to every encrypted input, signs it, and stores the ciphertext bytes.
+- **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)**: a standalone service that verifies encrypted inputs in batches. It checks each zero-knowledge proof, stores the ciphertexts, and signs one approval for the whole batch.
 - **[Slim Listener](/deep-dive/cofhe-components/slim-listener)**: watches TaskManager events on each host chain and forwards them into the coprocessor's queues.
 - **[FheOS Server](/deep-dive/cofhe-components/fheos-server)**: ingests task events, verifies inputs, creates result placeholders, and routes work to the FHE Engine. It does not execute FHE operations itself.
 - **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)**: executes every FHE operation on encrypted data, persists the resulting ciphertexts, and emits a commitment for each result.
@@ -80,7 +80,7 @@ Services communicate through message queues rather than direct calls, so each st
 ## Data flows
 
 1. **[Encryption request](/deep-dive/data-flows/encryption-request-flow)**: an input is encrypted client-side and proven valid with a zero-knowledge proof before it enters the chain.
-2. **[FHE operation flow](/deep-dive/data-flows/fhe-operation-request-flow)**: a contract requests a computation; the coprocessor executes it and commits to the result.
+2. **[FHE operation](/deep-dive/data-flows/fhe-operation-request-flow)**: a contract requests a computation; the coprocessor executes it and commits to the result.
 3. **[Decryption](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor to decrypt a handle, either as a signed plaintext for onchain publication or sealed to a permit for offchain reads.
 
 ## Future plans
