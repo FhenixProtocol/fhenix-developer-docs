@@ -100,6 +100,7 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 
 - Internal links use root-relative paths: `/fhe-library/core-concepts/access-control`, not `../core-concepts/access-control` and not the full `https://cofhe-docs.fhenix.zone/...` URL. Relative paths break when a page moves; absolute URLs break preview deployments.
 - Link text describes the destination. "See [access control](/fhe-library/core-concepts/access-control)", never `"click [here](/...)"` or a bare URL.
+- Never link to a private repository; readers get a 404. Of the FhenixProtocol repos, only `cofhe-contracts` and `cofhesdk` are public. Name a component or path in prose instead, and add the link when the repo goes public.
 - Every image is wrapped in `<Frame>` and carries alt text that says what the image shows, not what it is called. "Sealed output flowing from the FHE Engine to the client", not "diagram".
 - Pick the component that matches the content, and use each one for one job:
 
