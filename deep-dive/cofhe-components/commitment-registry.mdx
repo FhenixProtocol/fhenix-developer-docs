@@ -10,6 +10,10 @@ description: "Registry-chain contract that records FHE computation commitments. 
 | **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
 | **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. |
 
+## What a commitment is
+
+A commitment is the `keccak256` hash of a ciphertext's canonical stored bytes. The [FHE Engine](/deep-dive/cofhe-components/fhe-engine) produces one for every result it computes, and the coprocessor anchors one for every encrypted input it verifies. The Blockchain Poster batches them and writes them to this registry.
+
 ## Why commitments?
 
 The commitment is a safety check in the decryption flow. Before decrypting anything, [Teecryptor](/deep-dive/cofhe-components/teecryptor) confirms that the ciphertext bytes it fetched hash to the commitment anchored onchain. It only ever decrypts a ciphertext the coprocessor actually produced, never a tampered or substituted one.
@@ -29,7 +33,7 @@ mapping(address => bool)                                                  poster
 
 ## Version lifecycle
 
-`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change, currently the ASCII tag `"2"` (see [the `COMMITMENT_VERSION` changelog notes](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05)). Every version moves through a small state machine:
+`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change, currently the ASCII tag `"2"`. Every version moves through a small state machine:
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
@@ -52,7 +56,7 @@ The admin-only `setVersionStatus(version, newStatus)` enforces these transitions
 
 ## Write surface
 
-Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/tree/master/src/services/blockchain-poster) service's relayer signer (OpenZeppelin Relayer).
+Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the Blockchain Poster service's relayer signer (OpenZeppelin Relayer).
 
 ## Writing commitments
 
@@ -112,5 +116,3 @@ The paginated `getHandles` is the recommended way to enumerate a version: `getSi
 ## Source
 
 - Solidity: [`contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol`](https://github.com/FhenixProtocol/cofhe-contracts/blob/master/contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol).
-- Offchain poster service: [`src/services/blockchain-poster/`](https://github.com/FhenixProtocol/cofhe/tree/master/src/services/blockchain-poster), introduced in [cofhe `0.6.0`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05).
-- FHE Engine commitment-version bumping: [`fhe-engine/src/rabbitmq/handlers.rs`](https://github.com/FhenixProtocol/cofhe/blob/master/fhe-engine/src/rabbitmq/handlers.rs).
