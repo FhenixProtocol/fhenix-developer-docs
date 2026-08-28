@@ -146,6 +146,7 @@
             "group": "Core Concepts",
             "pages": [
               "fhe-library/core-concepts/inputs",
+              "fhe-library/core-concepts/handles",
               "fhe-library/core-concepts/trivial-encryption",
               "fhe-library/core-concepts/data-evaluation",
               "fhe-library/core-concepts/encrypted-operations",
