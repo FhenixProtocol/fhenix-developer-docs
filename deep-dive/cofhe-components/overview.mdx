@@ -22,12 +22,8 @@ flowchart TB
     end
 
     subgraph CoFHE["CoFHE"]
-        subgraph TEEBOX["TEE enclave"]
-            TEE["Teecryptor<br/>key shares"]
-        end
-        subgraph ZKBOX["TEE enclave"]
-            ZK["ZK Verifier<br/>signing key"]
-        end
+        TEE["Teecryptor<br/>TEE enclave, key shares"]
+        ZK["ZK Verifier<br/>TEE enclave, signing key"]
         PRT["Partners<br/>key custodians"]
         CTS[("Ciphertext store")]
         subgraph ENG["FHE Engine"]
@@ -40,24 +36,20 @@ flowchart TB
         CR["CommitmentRegistry<br/>op commitments"]
     end
 
-    SDK -- "encrypt inputs" --> ZK
+    FHEC --> TM
+    SDK -- "encrypt" --> ZK
     SDK -- "decrypt" --> TEE
     SDK -- "publish result" --> TM
-    FHEC --> TM
     TM --> PS
-    TEE -- "ACL check" --> TM
-    TEE -- "fetch ciphertext" --> CTS
-    TEE -- "verify commitment" --> CR
-    ZK -- "store ciphertext" --> CTS
-    ENG <-- "ciphertexts" --> CTS
     TM --> L
+    TEE -- "ACL check" --> TM
+    TEE --> CTS
+    TEE -- "verify commitment" --> CR
+    ZK --> CTS
+    ENG <--> CTS
     P --> CR
-    PRT -- "key shares (attested)" --> TEE
-    PRT -- "signing key (attested)" --> ZK
-
-    linkStyle 2,10 stroke:#7FDB8F
-    linkStyle 3,4,7,8,9 stroke:#0AD9DC
-    linkStyle 14,15 stroke:#E0C36A
+    PRT --> TEE
+    PRT --> ZK
 
     style Yours stroke-dasharray: 6 4
     style PRT stroke-dasharray: 6 4
