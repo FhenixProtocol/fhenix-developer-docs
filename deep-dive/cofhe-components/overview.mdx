@@ -9,31 +9,35 @@ CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts comput
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 flowchart TB
     subgraph Yours["Your code (outside CoFHE)"]
-        FHEC["Your contract, uses FHE.sol"]
+        FHEC["Your contract<br/>uses FHE.sol"]
     end
 
     subgraph App["Application"]
-        SDK["Client SDK"]
-    end
-
-    subgraph CoFHE["CoFHE (offchain)"]
-        TEE["Teecryptor (TEE)"]
-        ZK["ZK Verifier (TEE)"]
-        PRT["Partners (key custodians)"]
-        CTS[("Ciphertext store")]
-        subgraph ENG["FHE Engine"]
-            direction TB
-            L["subscribe to task events"] --> X["process FHE computation"] --> P["post commitments"]
-        end
+        SDK["Client SDK<br/>client-side library"]
     end
 
     subgraph Host["Host chain"]
-        TM["TaskManager + ACL"]
-        PS["PlaintextsStorage"]
+        TM["TaskManager + ACL<br/>tasks, permissions"]
+        PS["PlaintextsStorage<br/>decrypted results"]
+    end
+
+    subgraph CoFHE["CoFHE"]
+        subgraph TEEBOX["TEE enclave"]
+            TEE["Teecryptor<br/>key shares"]
+        end
+        subgraph ZKBOX["TEE enclave"]
+            ZK["ZK Verifier<br/>signing key"]
+        end
+        PRT["Partners<br/>key custodians"]
+        CTS[("Ciphertext store")]
+        subgraph ENG["FHE Engine"]
+            direction TB
+            L["subscribe to task events"] --> X["process FHE computation"] --> P["post commitments to registry"]
+        end
     end
 
     subgraph Registry["Registry chain"]
-        CR["CommitmentRegistry"]
+        CR["CommitmentRegistry<br/>op commitments"]
     end
 
     SDK -- "encrypt inputs" --> ZK
@@ -46,8 +50,8 @@ flowchart TB
     TEE -- "verify commitment" --> CR
     ZK -- "store ciphertext" --> CTS
     ENG <-- "ciphertexts" --> CTS
-    TM -- "task events" --> ENG
-    ENG -- "post commitments" --> CR
+    TM --> L
+    P --> CR
     PRT -- "key shares (attested)" --> TEE
     PRT -- "signing key (attested)" --> ZK
 
