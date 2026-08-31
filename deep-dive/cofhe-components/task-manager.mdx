@@ -5,7 +5,7 @@ description: "Onchain entry point for CoFHE integration that initiates FHE opera
 
 | Aspect | Description |
 |---------|-------------|
-| **Type** | Contract deployed on the host chain, UUPS-upgradeable behind a proxy. |
+| **Type** | Contract deployed on every host chain, UUPS-upgradeable behind a proxy. |
 | **Function** | Acts as the onchain entry point for CoFHE integration. |
 | **Responsibilities** | • Initiates FHE operations requested through the `FHE.sol` library. <br/>• Generates the unique handles that reference future FHE results. <br/>• Emits structured task events for the offchain services. <br/>• Verifies the signatures on encrypted inputs and published decrypt results. |
 | **Deployment** | A separate TaskManager contract is deployed on each supported host chain, enabling chain-specific integrations. |
