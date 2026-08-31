@@ -52,6 +52,11 @@ npm install @cofhe/sdk
 ```javascript
 const { Encryptable, FheTypes } = require("@cofhe/sdk");
 const { createCofheConfig, createCofheClient } = require("@cofhe/sdk/node");
+const { chains } = require("@cofhe/sdk/chains");
+
+const config = createCofheConfig({ supportedChains: [chains.sepolia] });
+const cofheClient = createCofheClient(config);
+await cofheClient.connect(publicClient, walletClient);
 ```
 </Step>
 
