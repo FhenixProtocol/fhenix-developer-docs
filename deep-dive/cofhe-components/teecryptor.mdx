@@ -30,7 +30,7 @@ The ciphertext is fetched from the CT Server exactly as the FHE Engine stored it
 </Step>
 
 <Step title="Decryption">
-The stored ciphertext is decrypted directly with the FHE secret key, inside the enclave, without re-expanding it first. Decrypting the committed bytes as-is keeps the integrity check meaningful, because the exact bytes that were hashed are the bytes that get decrypted.
+The enclave decrypts the stored bytes with the FHE secret key, exactly as they were committed. The bytes that were hashed are the bytes that get decrypted, so the integrity check stays meaningful.
 </Step>
 
 <Step title="Signing or sealing">
