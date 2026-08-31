@@ -5,7 +5,7 @@ description: "Onchain contract that manages and enforces access control for ciph
 
 | Aspect | Description |
 |--------|-------------|
-| **Type** | Contract deployed on the host chain, UUPS-upgradeable behind a proxy. |
+| **Type** | Contract deployed on every host chain, UUPS-upgradeable behind a proxy. |
 | **Function** | Manages and enforces access control for ciphertexts, for both contracts and user accounts. |
 | **Responsibilities** | • Records who may use each handle in FHE operations. <br/>• Records which handles may be decrypted, and by whom. <br/>• Answers the access queries of the [TaskManager](/deep-dive/cofhe-components/task-manager) and the decryption service. |
 
