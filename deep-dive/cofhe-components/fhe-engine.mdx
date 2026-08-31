@@ -36,5 +36,3 @@ For every stored result, the engine produces a commitment, the `keccak256` hash 
 ## Key material
 
 The engine computes with the FHE public key material only. Production builds load no decryption key, so a compromised engine can corrupt results (which commitment verification would catch) but cannot read them. Decryption capability exists solely inside [Teecryptor](/deep-dive/cofhe-components/teecryptor)'s attested enclave.
-
-The engine also serves the public encryption parameters that clients need: the network public key and the CRS (common reference string) used to build encryption proofs.
