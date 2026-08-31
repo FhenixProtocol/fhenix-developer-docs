@@ -16,12 +16,10 @@ Outlined here is a non-exhaustive list of trust points, centralized components, 
 | Teecryptor | Trust in the TEE hardware vendor and its attestation chain | Multi-party computation removes the hardware trust anchor | Planned |
 | ZK Verifier | Input proofs are checked by a single TEE service operated by Fhenix | Move to multi-party computation, with each partner verifying inputs on its own side | Planned |
 | Key custody | The FHE key is reconstructed inside one attested enclave at runtime | Threshold decryption, where no party ever holds the full key | Planned |
-| CoFHE | Trust in CoFHE to perform correct FHE computations | External verification | Planned |
+| CoFHE | Trust in CoFHE to perform correct FHE computations | External verification through an AVS (actively validated service) | Planned |
 | CoFHE | User inputs stored in a centralized manner | Use a decentralized DA | Planned |
 | All | Codebase is unaudited | Perform a security audit | Planned |
 | All | Codebase is not fully open source | Open-source the codebase | Planned |
-
-One training wheel has already been narrowed: the ZK Verifier now runs inside a hardware-attested TEE, with its signing key released only to the attested code image. The enclave itself stays a trust point until the move described below.
 
 ## The path to multi-party computation
 
