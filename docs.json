@@ -12,20 +12,20 @@
     "tabs": [
       {
         "tab": "Get Started",
-            "global": {
-              "anchors": [
-                {
-                  "anchor": "Website",
-                  "href": "https://www.fhenix.io/",
-                  "icon": "globe"
-                },
-                {
-                  "anchor": "Blog",
-                  "href": "https://www.fhenix.io/blog",
-                  "icon": "newspaper"
-                }
-              ]
+        "global": {
+          "anchors": [
+            {
+              "anchor": "Website",
+              "href": "https://www.fhenix.io/",
+              "icon": "globe"
             },
+            {
+              "anchor": "Blog",
+              "href": "https://www.fhenix.io/blog",
+              "icon": "newspaper"
+            }
+          ]
+        },
         "groups": [
           {
             "group": "Introduction",
@@ -184,7 +184,6 @@
               }
             ]
           },
-
           {
             "group": "Examples",
             "pages": [
@@ -231,7 +230,7 @@
       },
       {
         "tab": "Deep Dive",
-        "groups":[
+        "groups": [
           {
             "group": "CoFHE Components",
             "pages": [
@@ -241,7 +240,7 @@
               "deep-dive/cofhe-components/plaintext-storage",
               "deep-dive/cofhe-components/commitment-registry",
               "deep-dive/cofhe-components/zk-verifier",
-              "deep-dive/cofhe-components/fhe-engine",
+              "deep-dive/cofhe-components/compute-pipeline",
               "deep-dive/cofhe-components/teecryptor",
               "deep-dive/cofhe-components/key-management"
             ]
@@ -254,7 +253,7 @@
               "deep-dive/data-flows/decryption-request-flow"
             ]
           },
-          { 
+          {
             "group": "Research",
             "pages": [
               "deep-dive/research/future-plans",
@@ -285,11 +284,11 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "chatgpt",
-     "claude",
-     "cursor"
-   ]
+      "copy",
+      "chatgpt",
+      "claude",
+      "cursor"
+    ]
   },
   "footer": {
     "socials": {
@@ -313,15 +312,15 @@
     },
     {
       "source": "/deep-dive/cofhe-components/slim-listener",
-      "destination": "/deep-dive/cofhe-components/fhe-engine"
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
     },
     {
       "source": "/deep-dive/cofhe-components/fheos-server",
-      "destination": "/deep-dive/cofhe-components/fhe-engine"
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
     },
     {
       "source": "/deep-dive/cofhe-components/result-processor",
-      "destination": "/deep-dive/cofhe-components/fhe-engine"
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
     },
     {
       "source": "/deep-dive/cofhe-components/ct-registry",
@@ -330,11 +329,15 @@
     {
       "source": "/deep-dive/data-flows/off-chain-decryption-flow",
       "destination": "/deep-dive/data-flows/decryption-request-flow"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/fhe-engine",
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
     }
   ],
   "integrations": {
     "ga4": {
-        "measurementId": "G-NKHXME4286"
+      "measurementId": "G-NKHXME4286"
     }
-}
+  }
 }

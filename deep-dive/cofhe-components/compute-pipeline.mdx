@@ -1,0 +1,55 @@
+---
+title: Compute Pipeline
+description: "The offchain components that carry an FHE task from onchain event to committed result"
+---
+
+| Aspect | Description |
+|---------|-------------|
+| **Type** | Offchain execution pipeline, built from four components. |
+| **Function** | Carries every FHE task from onchain event to committed result. |
+| **Responsibilities** | • Listens to TaskManager events on each host chain<br/>• Validates and orders operations<br/>• Executes them with the TFHE library<br/>• Posts a commitment for every result |
+
+The compute pipeline is the computation side of CoFHE. Contracts never call it. It subscribes to what happens onchain, does the encrypted math, and anchors the results.
+
+Four components make up the pipeline. Each one owns a single step, and work moves in one direction.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
+flowchart LR
+    TM["TaskManager<br/>host chain"] --> SL["Slim listener<br/>reads chain events"]
+    SL --> FO["FheOS<br/>validates and orders"]
+    FO --> FE["FHE Engine<br/>computes on ciphertexts"]
+    FE --> BP["Blockchain poster<br/>batches commitments"]
+    BP --> CR["CommitmentRegistry<br/>registry chain"]
+    FE <--> CTS[("Ciphertext store")]
+```
+
+## Slim listener
+
+The slim listener watches TaskManager events on every host chain the pipeline serves. `TaskCreated` events bring FHE operations in for execution. `InputVerified` events bring verified encrypted inputs in, so a commitment gets anchored for each.
+
+Delivery is reliable by construction. The listener tracks the last processed block, so a crash or a missed range is re-scanned rather than skipped.
+
+## FheOS
+
+FheOS checks that each operation is well formed and that the inputs it references exist. It holds the operation state for the pipeline.
+
+Operations can arrive before the inputs they depend on have finished computing. FheOS defers such operations and releases them once the missing results land, so out-of-order arrival never produces a wrong answer. Work that is malformed, or that references inputs that never materialize, is set aside for inspection instead of being silently dropped.
+
+## FHE Engine
+
+The FHE Engine runs validated operations against the TFHE library: arithmetic, comparison, select, cast, and random generation on encrypted operands. It reads its operands from the ciphertext store and writes the result back.
+
+The result ciphertext is stored under the handle the TaskManager issued. Any deferred operations waiting on that handle are released as soon as it lands.
+
+Note the name. The FHE Engine is one component inside the compute pipeline, not the pipeline itself.
+
+## Blockchain poster
+
+For every stored result, the pipeline produces a commitment, the `keccak256` hash of the stored ciphertext bytes. The blockchain poster batches those commitments and posts them to the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry) on the registry chain.
+
+This is the anchor [Teecryptor](/deep-dive/cofhe-components/teecryptor) verifies before decrypting anything. Only bytes that hash to a registered commitment ever reach the decryption key.
+
+## Key material
+
+The pipeline computes with the FHE public key material only. Production builds load no decryption key, so a compromised pipeline can corrupt results (which commitment verification would catch) but cannot read them. Decryption capability exists solely inside [Teecryptor](/deep-dive/cofhe-components/teecryptor)'s attested enclave.
