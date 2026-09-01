@@ -1,45 +1,49 @@
 ---
 title: "Arithmetic Operations"
-description: "add, sub, mul, div, rem, square — encrypted math operations"
+description: "add, sub, mul, div, rem, and square: encrypted math operations"
 ---
 
 All arithmetic operations work on `euint8 | euint16 | euint32 | euint64 | euint128`. Both operands must be the same type.
 
-### add
+## add
 
 ```solidity
 euint32 sum = FHE.add(a, b);
 ```
 
-### sub
+## sub
 
 ```solidity
 euint32 diff = FHE.sub(a, b);
 ```
 
-### mul
+## mul
 
 ```solidity
 euint32 product = FHE.mul(a, b);
 ```
 
-### div
+## div
 
 <Warning>
-Division by zero will cause the operation to revert.
+Division by zero does not revert. The FHE Engine cannot inspect the encrypted divisor, so `div` returns the maximum value of the operand type instead (255 for `euint8`). If that result is wrong for your contract, test the divisor with `eq` and pick a fallback with `select`.
 </Warning>
 
 ```solidity
 euint32 quotient = FHE.div(a, b);
 ```
 
-### rem
+## rem
+
+<Note>
+Remainder by zero does not revert. `rem` returns the dividend unchanged, so `63 % 0` yields `63`. The mock contracts behind the Hardhat and Foundry plugins differ here: they revert with a Solidity division panic. A local test of `rem` by zero therefore fails while the same call succeeds on a live network.
+</Note>
 
 ```solidity
 euint32 remainder = FHE.rem(a, b);
 ```
 
-### square
+## square
 
 ```solidity
 euint32 squared = FHE.square(a);

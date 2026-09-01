@@ -394,14 +394,6 @@ euint128 result = FHE.asEuint128(euint64Value);
 euint128 result = FHE.asEuint128(eaddressValue);
 ```
 
-#### asEaddress (from euint128)
-
-Converts an encrypted 128-bit unsigned integer to an encrypted address.
-
-```solidity
-eaddress result = FHE.asEaddress(euint128Value);
-```
-
 ## Arithmetic Operations
 
 ### add
@@ -484,7 +476,7 @@ Quotient of the division
 </ResponseField>
 
 <Warning>
-Division by zero will cause the operation to revert. Ensure the divisor is non-zero.
+Division by zero does not revert. The FHE Engine cannot inspect the encrypted divisor, so `div` returns the maximum value of the operand type instead (255 for `euint8`). If that result is wrong for your contract, test the divisor with `eq` and pick a fallback with `select`.
 </Warning>
 
 ```solidity
@@ -507,6 +499,10 @@ Right-hand side encrypted value (divisor, must match lhs type)
 <ResponseField name="result" type="euint8 | euint16 | euint32 | euint64 | euint128">
 Remainder of the division
 </ResponseField>
+
+<Note>
+Remainder by zero does not revert. `rem` returns the dividend unchanged, so `63 % 0` yields `63`. The mock contracts behind the Hardhat and Foundry plugins differ here: they revert with a Solidity division panic. A local test of `rem` by zero therefore fails while the same call succeeds on a live network.
+</Note>
 
 ```solidity
 euint8 remainder = FHE.rem(a, b);
