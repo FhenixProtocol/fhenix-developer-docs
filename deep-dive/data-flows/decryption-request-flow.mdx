@@ -4,8 +4,6 @@ sidebar_position: 3
 description: "Complete flow of a decryption request in the CoFHE ecosystem through smart contracts"
 ---
 
-# Decryption Request Flow
-
 The process of requesting decryption through Smart Contracts starts the same as every other [FHE Operation Request](/deep-dive/data-flows/fhe-operation-request-flow) 📌steps 1-4
 
 Here we'll continue from FheOS server handling such request as follows:
@@ -15,7 +13,7 @@ Here we'll continue from FheOS server handling such request as follows:
 The following diagram illustrates the complete flow of an FHE Decryption request in the CoFHE ecosystem:
 
 <Frame>
-<img src="/images/Decryption Transactions.svg" alt="End-to-end flow of an FHE Decryption request through the CoFHE system components" />
+<img src="/images/decryption-transactions.svg" alt="End-to-end flow of an FHE Decryption request through the CoFHE system components" />
 </Frame>
 
 *Figure 1: End-to-end flow of an FHE Decryption request through the CoFHE system components*
@@ -59,11 +57,11 @@ The Threshold Network performs secure decryption:
 After decryption is complete: 7️⃣
 
 - The Threshold Network returns the plaintext along with an **ECDSA signature** to the client (via the Client SDK)
-- The client (or any relayer) calls `FHE.publishDecryptResult(ctHash, result, signature)` or `FHE.verifyDecryptResult(ctHash, result, signature)` on-chain
-- The on-chain contract verifies the signature before accepting the result
+- The client (or any relayer) calls `FHE.publishDecryptResult(ctHash, result, signature)` or `FHE.verifyDecryptResult(ctHash, result, signature)` onchain
+- The onchain contract verifies the signature before accepting the result
 
 <Note>
-This enables permissionless result delivery — anyone holding a valid signature can publish. This is useful for client-driven settlement or relayer patterns.
+This enables permissionless result delivery: anyone holding a valid signature can publish. This is useful for client-driven settlement or relayer patterns.
 </Note>
 </Step>
 </Steps>
