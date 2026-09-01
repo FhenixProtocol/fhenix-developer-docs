@@ -7,11 +7,11 @@ description: "Step-by-step tutorial for building your first FHE-enabled smart co
 
 Let's take a look at a simple contract that uses FHE to encrypt a counter, and break it down into its components.
 
-## Complete Contract Example
+## Complete contract example
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.25;
 
 import {FHE, euint64, externalEuint64} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
 
@@ -73,9 +73,9 @@ contract SimpleCounter {
 }
 ```
 
-## Breaking Down the Contract
+## Breaking down the contract
 
-### Importing the FHE Library
+### Importing the FHE library
 
 To start using FHE, we need to import the FHE library.
 
@@ -87,7 +87,7 @@ import {FHE, euint64, externalEuint64} from "@fhenixprotocol/cofhe-contracts/FHE
 
 We want to keep the counter encrypted at all times, so we'll use the `euint64` type.
 
-### State Variables
+### State variables
 
 Next, we define some state variables for the contract:
 
@@ -96,7 +96,7 @@ euint64 counter;
 euint64 delta;
 ```
 
-### Constructor Initialization
+### Constructor initialization
 
 In the constructor, we initialize the `counter` and `delta` variables.
 
@@ -118,12 +118,12 @@ When we initialize the `delta` and `counter` variables, we use **trivial encrypt
 
 **Trivial encryption** produces a ciphertext from a public value, but this variable, even though represented as a ciphertext handle, is not really confidential because everyone can see what is the plaintext value that went into it.
 
-To make it completely private, we need to initialize these variables with an `InEuint` from the calldata.
+To make it completely private, initialize these variables from an encrypted input sent by the client (an `externalEuint64` handle plus its proof), the same way `reset_counter` does.
 
-More about trivial encryption [here](/fhe-library/core-concepts/trivial-encryption).
+Read more on the [trivial encryption](/fhe-library/core-concepts/trivial-encryption) page.
 </Accordion>
 
-### Access Control
+### Access control
 
 For every encrypted variable, we need to call `FHE.allowThis()` to allow the contract to access it.
 
@@ -138,7 +138,7 @@ FHE.allowThis(counter);
 FHE.allowThis(delta);
 ```
 
-### Increment and Decrement Functions
+### Increment and decrement functions
 
 In the `increment_counter` and `decrement_counter` functions, we use the `FHE.add` and `FHE.sub` functions to increment and decrement the counter, respectively.
 
@@ -149,13 +149,13 @@ counter = FHE.add(counter, delta);
 FHE.allowThis(counter);
 ```
 
-### Reset Function
+### Reset function
 
 In the `reset_counter` function, we receive an `externalEuint64` handle and the `bytes` proof that authenticates it. Together they represent an encrypted value that can be used to reset the counter, and `FHE.asEuint64(value, inputProof)` converts the pair into a `euint64` the contract can compute on.
 
-Both come from the client, created with the SDK (read more about it [here](/client-sdk/guides/encrypting-inputs)).
+Both come from the client, created with the SDK. See [encrypting inputs](/client-sdk/guides/encrypting-inputs).
 
-### Decryption: Allow Public and Reveal
+### Decryption: allow public and reveal
 
 Decryption follows a two-step onchain pattern, with an offchain step in between.
 
@@ -171,15 +171,24 @@ function allow_counter_publicly() external onlyOwner {
 
 **Step 2: Decrypt offchain**
 
-Anyone can now request decryption offchain using `decryptForTx`, which returns the plaintext value and a Threshold Network signature:
+Anyone can now request decryption offchain with `decryptForTx`. The Teecryptor (the TEE decryption service) returns the plaintext value and a signature over it. The client snippets on this page assume a connected `client` (see [client setup](/client-sdk/guides/client-setup)), viem `publicClient` and `walletClient` instances, and the contract ABI as `simpleCounterAbi`.
+
+The contract keeps `counter` private, so read the handle through `get_encrypted_counter_value`:
 
 ```typescript
-const countCtHash = await counter.counter();
+const countCtHash = await publicClient.readContract({
+  address: counterAddress,
+  abi: simpleCounterAbi,
+  functionName: 'get_encrypted_counter_value',
+});
 
-const result = await client
+const decryptResult = await client
   .decryptForTx(countCtHash)
   .withoutACP()
   .execute();
+
+decryptResult.decryptedValue; // bigint
+decryptResult.signature; // Teecryptor signature over the value
 ```
 
 **Step 3: Publish onchain with proof**
@@ -192,7 +201,16 @@ function reveal_counter(uint64 _decrypted, bytes memory _signature) external {
 }
 ```
 
-### Reading the Decrypted Value
+```typescript
+await walletClient.writeContract({
+  address: counterAddress,
+  abi: simpleCounterAbi,
+  functionName: 'reveal_counter',
+  args: [decryptResult.decryptedValue, decryptResult.signature],
+});
+```
+
+### Reading the decrypted value
 
 Once the result has been published, anyone can read the counter's value using `get_counter_value`. This function uses `FHE.getDecryptResultSafe` to check if a published result is available:
 
@@ -208,7 +226,7 @@ function get_counter_value() external view returns(uint256) {
 
 If the result has not been published yet, the function reverts. Otherwise, it returns the plaintext value.
 
-## Privacy Considerations
+## Privacy considerations
 
 In this contract, only the owner can allow public decryption. Once `reveal_counter` is called, the plaintext value is published onchain and visible to everyone.
 
@@ -216,7 +234,7 @@ What if we want to allow the owner to privately read the value without revealing
 
 For that, we need to add a call for `FHE.allow(counter, owner)` or `FHE.allowSender(counter)` every time that we change the counter's value.
 
-This will allow the owner to read the encrypted counter's value using the `get_encrypted_counter_value` function and decrypt it privately offchain using `decryptForView`:
+This lets the owner read the encrypted counter's value using the `get_encrypted_counter_value` function and decrypt it privately offchain using `decryptForView`. The call needs the value's type, and it resolves to the plaintext directly:
 
 ```solidity
 function increment_counter() external onlyOwner {
@@ -231,18 +249,26 @@ function get_encrypted_counter_value() external view returns(euint64) {
 ```
 
 ```typescript
-// Decrypt privately off-chain (no on-chain transaction, no public reveal)
-const countCtHash = await counter.get_encrypted_counter_value();
+import { FheTypes } from '@cofhe/sdk';
 
-const result = await client
-  .decryptForView(countCtHash)
+// Decrypt privately offchain: no transaction, no public reveal
+const countCtHash = await publicClient.readContract({
+  address: counterAddress,
+  abi: simpleCounterAbi,
+  functionName: 'get_encrypted_counter_value',
+});
+
+await client.acp.getOrCreateSelfACP();
+
+const plaintext = await client
+  .decryptForView(countCtHash, FheTypes.Uint64)
   .withACP()
   .execute();
 
-console.log(`Counter value (private): ${result.decryptedValue}`);
+console.log(`Counter value (private): ${plaintext}`);
 ```
 
-## Next Steps
+## Next steps
 
 - Explore [Adding FHE to an Existing Contract](/tutorials/adding-fhe-to-existing-contract)
 - Review [ACL Usage Examples](/tutorials/acl-usage-examples) for more access control patterns
