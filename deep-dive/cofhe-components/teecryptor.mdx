@@ -1,11 +1,11 @@
 ---
 title: Teecryptor
-description: "Offchain decryption service that decrypts CoFHE ciphertexts inside a hardware-attested Trusted Execution Environment (TEE)"
+description: "Offchain decryption component that decrypts CoFHE ciphertexts inside a hardware-attested Trusted Execution Environment (TEE)"
 ---
 
 | Aspect | Description |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Type** | Offchain service running inside a hardware-attested Trusted Execution Environment (TEE). |
+| **Type** | Offchain component running inside a hardware-attested Trusted Execution Environment (TEE). |
 | **Function** | Process decryption requests from the [Client SDK](/client-sdk/introduction/overview). |
 | **Responsibilities** | • Authorizes each request against the onchain ACL<br/>• Verifies the ciphertext against its onchain commitment<br/>• Decrypts inside the enclave<br/>• Signs (or seals) the result for delivery |
 
@@ -22,7 +22,7 @@ Teecryptor checks the handle against the onchain ACL through the [TaskManager](/
 </Step>
 
 <Step title="Commitment verification">
-Concurrently with authorization, Teecryptor confirms that the [FHE Engine](/deep-dive/cofhe-components/fhe-engine) posted a commitment for this handle in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry). Commitments are write-once, so a verified result is cached permanently.
+Concurrently with authorization, Teecryptor confirms that the [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) posted a commitment for this handle in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry). Commitments are write-once, so a verified result is cached permanently.
 </Step>
 
 <Step title="Ciphertext fetch and integrity check">

@@ -7,7 +7,7 @@ description: "Onchain contract that manages and enforces access control for ciph
 |--------|-------------|
 | **Type** | Contract deployed on every host chain, UUPS-upgradeable behind a proxy. |
 | **Function** | Manages and enforces access control for ciphertexts, for both contracts and user accounts. |
-| **Responsibilities** | • Records who may use each handle in FHE operations. <br/>• Records which handles may be decrypted, and by whom. <br/>• Answers the access queries of the [TaskManager](/deep-dive/cofhe-components/task-manager) and the decryption service. |
+| **Responsibilities** | • Records who may use each handle in FHE operations. <br/>• Records which handles may be decrypted, and by whom. <br/>• Answers the access queries of the [TaskManager](/deep-dive/cofhe-components/task-manager) and the decryption component. |
 
 Every encrypted value in CoFHE is guarded by this contract. A handle is useless to anyone the ACL does not list. The TaskManager rejects operations on inputs the caller cannot access, and [Teecryptor](/deep-dive/cofhe-components/teecryptor) refuses to decrypt handles without a matching grant.
 

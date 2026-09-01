@@ -13,7 +13,7 @@ This page follows a single FHE operation from the contract call that requests it
 | **Your contract** | Requests FHE operations through the FHE.sol library |
 | **FHE.sol** | The Solidity library providing FHE operation functions |
 | **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Validates requests, checks the [ACL](/deep-dive/cofhe-components/acl), and emits task events |
-| **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)** | Picks up task events, validates and orders the work, executes it, and commits the result |
+| **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | Picks up task events, validates and orders the work, executes it, and commits the result |
 | **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Records a hash commitment for every result ciphertext |
 
 ## Flow diagram
@@ -76,11 +76,11 @@ The TaskManager is the gateway for all FHE operation requests. It:
 2. Verifies access permissions: the caller must have ACL access to every encrypted input.
 3. Generates a unique handle that will reference the future ciphertext result.
 4. Returns the handle to the calling contract, synchronously. Subsequent operations can chain on it right away.
-5. Emits a `TaskCreated` event with the operation details for the offchain services.
+5. Emits a `TaskCreated` event with the operation details for the offchain components.
 </Step>
 
 <Step title="FHE Engine pickup">
-The [FHE Engine](/deep-dive/cofhe-components/fhe-engine) subscribes to TaskManager events on every host chain and picks up the `TaskCreated` event. It checks that the operation is well formed and that the inputs it references exist. An operation that arrives before its inputs finish computing is deferred and released once they land.
+The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) subscribes to TaskManager events on every host chain and picks up the `TaskCreated` event. It checks that the operation is well formed and that the inputs it references exist. An operation that arrives before its inputs finish computing is deferred and released once they land.
 </Step>
 
 <Step title="Execution">

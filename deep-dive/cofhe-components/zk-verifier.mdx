@@ -1,13 +1,13 @@
 ---
 title: ZK Verifier
-description: "Offchain service that verifies user inputs using Zero-Knowledge Proofs of Knowledge (ZKPoK) to ensure encrypted data is safe to use in smart contracts"
+description: "Offchain component that verifies user inputs using Zero-Knowledge Proofs of Knowledge (ZKPoK) to ensure encrypted data is safe to use in smart contracts"
 ---
 
 **ZK Verifier** checks every encrypted input before it can enter a confidential smart contract.
 
 | Aspect | Description |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Type** | Offchain service running inside a hardware-attested TEE. |
+| **Type** | Offchain component running inside a hardware-attested TEE. |
 | **Function** | Verifies the user's input, ensuring that it is safe to use. |
 | **Responsibilities** | • Receives users' ZKPoKs for their input batches.<br/>• Verifies those proofs.<br/>• Signs one approval per verified batch.<br/>• Stores the verified ciphertext bytes. |
 
@@ -45,7 +45,7 @@ Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK 
 
 ## Trust model
 
-The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is held as Shamir shares by independent partners and released only to the exact attested code image. Neither the operator nor anyone else can sign approvals outside the reviewed program. See [Key Management](/deep-dive/cofhe-components/key-management) for how shares are created and released. After a successful verification, the service stores the ciphertext bytes in the CT Server and archives the inputs and proofs for auditability.
+The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is held as Shamir shares by independent partners and released only to the exact attested code image. Neither the operator nor anyone else can sign approvals outside the reviewed program. See [Key Management](/deep-dive/cofhe-components/key-management) for how shares are created and released. After a successful verification, the component stores the ciphertext bytes in the CT Server and archives the inputs and proofs for auditability.
 
 The signed message is verified onchain by the TaskManager using `ecrecover`; the verifier's signer address is registered there as `verifierSigner`.
 
@@ -59,4 +59,4 @@ h_i    = keccak256(ct_hash (32 bytes) || utype (1 byte) || security_zone (1 byte
 digest = keccak256(h_0 || h_1 || ... || h_n)
 ```
 
-The digest binds the sender and the consuming contract, so a verified batch cannot be replayed by another account or into another contract. The `recid` value the service returns (0 or 1) must be adjusted to 27 or 28 for Solidity's `ecrecover`.
+The digest binds the sender and the consuming contract, so a verified batch cannot be replayed by another account or into another contract. The `recid` value the component returns (0 or 1) must be adjusted to 27 or 28 for Solidity's `ecrecover`.

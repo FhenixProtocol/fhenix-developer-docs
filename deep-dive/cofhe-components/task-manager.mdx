@@ -7,7 +7,7 @@ description: "Onchain entry point for CoFHE integration that initiates FHE opera
 |---------|-------------|
 | **Type** | Contract deployed on every host chain, UUPS-upgradeable behind a proxy. |
 | **Function** | Acts as the onchain entry point for CoFHE integration. |
-| **Responsibilities** | • Initiates FHE operations requested through the `FHE.sol` library. <br/>• Generates the unique handles that reference future FHE results. <br/>• Emits structured task events for the offchain services. <br/>• Verifies the signatures on encrypted inputs and published decrypt results. |
+| **Responsibilities** | • Initiates FHE operations requested through the `FHE.sol` library. <br/>• Generates the unique handles that reference future FHE results. <br/>• Emits structured task events for the offchain components. <br/>• Verifies the signatures on encrypted inputs and published decrypt results. |
 | **Deployment** | A separate TaskManager contract is deployed on each supported host chain, enabling chain-specific integrations. |
 
 ## Two signers
@@ -21,7 +21,7 @@ The TaskManager holds two distinct signer addresses, one per trust boundary:
 
 ## Decrypt result signature verification
 
-The TaskManager supports **permissionless publishing of decrypt results**. Anyone holding a valid signature from the decryption service can publish the result onchain. Today that signature comes from Teecryptor; a decentralized [Threshold Network](/deep-dive/research/future-plans) is the planned successor.
+The TaskManager supports **permissionless publishing of decrypt results**. Anyone holding a valid signature from the decryption component can publish the result onchain. Today that signature comes from Teecryptor; a decentralized [Threshold Network](/deep-dive/research/future-plans) is the planned successor.
 
 Verified results are stored in the [PlaintextsStorage](/deep-dive/cofhe-components/plaintext-storage) contract, where any contract can read them back with `getDecryptResult` (reverts with `DecryptionResultNotReady` if pending) or `getDecryptResultSafe` (returns a ready flag).
 
