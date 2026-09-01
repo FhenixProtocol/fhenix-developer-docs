@@ -28,7 +28,7 @@ flowchart TB
         CTS[("Ciphertext store")]
         subgraph ENG["Compute pipeline"]
             direction TB
-            L["Slim listener"] --> FO["FheOS"] --> X["FHE Engine"] --> P["Blockchain poster"]
+            L["subscribe to task events"] --> X["process FHE computation"] --> P["post commitments to registry"]
         end
     end
 
@@ -67,7 +67,7 @@ flowchart TB
 
 - **[Client SDK](/client-sdk/introduction/overview)** (`@cofhe/sdk`): the TypeScript library applications use to encrypt inputs, manage [permits](/client-sdk/guides/permits), and decrypt outputs.
 - **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)**: verifies encrypted inputs in batches, inside a hardware-attested TEE. It checks each zero-knowledge proof, stores the ciphertexts, and signs one approval for the whole batch.
-- **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)**: four offchain components in a line, the slim listener, FheOS, the FHE Engine, and the blockchain poster. Together they subscribe to TaskManager events, validate and order operations, run them on encrypted data, and post a commitment for every result.
+- **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)**: the execution pipeline. It subscribes to TaskManager events, validates and orders operations, runs them on encrypted data, and posts a commitment for every result.
 - **Ciphertext store**: the database that holds every ciphertext, fronted by the CT Server. The ZK Verifier writes verified inputs, the FHE Engine reads operands and writes results, and Teecryptor fetches bytes to decrypt.
 - **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption component. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
 - **Partners**: independent custodians of the key material. Each holds a Shamir share and releases it only to an attested enclave. See [Key Management](/deep-dive/cofhe-components/key-management).
