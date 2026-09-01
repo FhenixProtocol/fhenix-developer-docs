@@ -3,13 +3,13 @@ title: Logging
 description: "Inspect FHE operations in your Hardhat test output"
 ---
 
-The mock contracts log every FHE operation to the console. This makes it easy to inspect what your contracts are doing under the hood during tests.
+The mock contracts log every FHE operation to the console. This shows exactly which operations your contracts perform during tests.
 
 ## What gets logged
 
 Each FHE operation emits a formatted log entry showing the operation name, the input and output operand hashes (truncated), and the security zone:
 
-```
+```text
 ┌──────────────────┬──────────────────────────────────────────────────
 │ [COFHE-MOCKS]    │ "counter.increment()" logs:
 ├──────────────────┴──────────────────────────────────────────────────
@@ -19,7 +19,7 @@ Each FHE operation emits a formatted log entry showing the operation name, the i
 └─────────────────────────────────────────────────────────────────────
 ```
 
-## `withLogs(name, fn)` — recommended
+## `withLogs(name, fn)` (recommended)
 
 Wraps a block of code with logging enabled and prints a labeled box around the output. The `name` appears as the header so you can identify which call produced which operations.
 
@@ -33,7 +33,7 @@ await hre.cofhe.mocks.withLogs('counter.increment()', async () => {
 
 `withLogs` enables logging before the closure runs and disables it after, so only operations from within that block appear in the output.
 
-## `enableLogs()` / `disableLogs()` — manual
+## `enableLogs()` / `disableLogs()` (manual)
 
 For finer-grained control, you can enable and disable logging manually:
 
@@ -48,7 +48,7 @@ await hre.cofhe.mocks.disableLogs();
 ```
 
 <Info>
-`enableLogs` accepts an optional label string. If provided, it prints a labeled header immediately — useful when you want to mark a section of output at a known point.
+`enableLogs` accepts an optional label string. If provided, it prints a labeled header immediately, useful when you want to mark a section of output at a known point.
 </Info>
 
 ## Default logging behavior
@@ -75,5 +75,5 @@ npx hardhat task:cofhe-mocks:setlogops --enable false
 ```
 
 <Warning>
-There is no Hardhat config option for this. The plugin's config type still accepts a `cofhe.logMocks` boolean, but no plugin code reads it — setting it has no effect on FHE-op logging. Use `disableLogs()` or the `setlogops` task instead.
+There is no Hardhat config option for this. The plugin's config type still accepts a `cofhe.logMocks` boolean, but no plugin code reads it. Setting it has no effect on FHE-op logging. Use `disableLogs()` or the `setlogops` task instead.
 </Warning>
