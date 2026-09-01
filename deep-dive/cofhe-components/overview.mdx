@@ -1,9 +1,9 @@
 ---
 title: "CoFHE Architecture Overview"
-description: "How CoFHE's onchain contracts and offchain services fit together to run FHE computations for any EVM chain"
+description: "How CoFHE's onchain contracts and offchain components fit together to run FHE computations for any EVM chain"
 ---
 
-CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts compute on encrypted data. Contracts request operations through onchain calls; a set of offchain services executes them and commits to the results. Data stays encrypted until an authorized decryption, and every result can be verified against an onchain commitment.
+CoFHE (Coprocessor for Fully Homomorphic Encryption) lets smart contracts compute on encrypted data. Contracts request operations through onchain calls; a set of offchain components executes them and commits to the results. Data stays encrypted until an authorized decryption, and every result can be verified against an onchain commitment.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
@@ -26,9 +26,9 @@ flowchart TB
         ZK["ZK Verifier<br/>TEE enclave, signing key"]
         PRT["Partners<br/>key custodians"]
         CTS[("Ciphertext store")]
-        subgraph ENG["FHE Engine"]
+        subgraph ENG["Compute pipeline"]
             direction TB
-            L["subscribe to task events"] --> X["process FHE computation"] --> P["post commitments to registry"]
+            L["Slim listener"] --> FO["FheOS"] --> X["FHE Engine"] --> P["Blockchain poster"]
         end
     end
 
@@ -58,7 +58,7 @@ flowchart TB
 ## The onchain contracts
 
 - **FHE.sol**: the Solidity library your contract imports. It exposes arithmetic, comparison, and logical operations on encrypted values, plus access control (`allow`, `allowGlobal`) and decrypt-result verification.
-- **[TaskManager](/deep-dive/cofhe-components/task-manager)**: the gateway for all FHE operation requests. It validates requests, emits task events for the offchain services, and manages permissions through the ACL.
+- **[TaskManager](/deep-dive/cofhe-components/task-manager)**: the gateway for all FHE operation requests. It validates requests, emits task events for the offchain components, and manages permissions through the ACL.
 - **[ACL](/deep-dive/cofhe-components/acl)**: the access control contract. It records who may use or decrypt each handle; all writes to it go through the TaskManager.
 - **[PlaintextsStorage](/deep-dive/cofhe-components/plaintext-storage)**: stores decrypted results. The TaskManager writes them during `publishDecryptResult`, only after ECDSA-verifying the result against `decryptResultSigner`.
 - **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)**: lives on a dedicated registry chain and records a hash commitment for every ciphertext the coprocessor produces or verifies. Teecryptor verifies integrity against it before decrypting anything.
@@ -67,9 +67,9 @@ flowchart TB
 
 - **[Client SDK](/client-sdk/introduction/overview)** (`@cofhe/sdk`): the TypeScript library applications use to encrypt inputs, manage [permits](/client-sdk/guides/permits), and decrypt outputs.
 - **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)**: verifies encrypted inputs in batches, inside a hardware-attested TEE. It checks each zero-knowledge proof, stores the ciphertexts, and signs one approval for the whole batch.
-- **[FHE Engine](/deep-dive/cofhe-components/fhe-engine)**: the execution pipeline. It subscribes to TaskManager events, validates and orders operations, runs them on encrypted data, and posts a commitment for every result.
+- **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)**: four offchain components in a line, the slim listener, FheOS, the FHE Engine, and the blockchain poster. Together they subscribe to TaskManager events, validate and order operations, run them on encrypted data, and post a commitment for every result.
 - **Ciphertext store**: the database that holds every ciphertext, fronted by the CT Server. The ZK Verifier writes verified inputs, the FHE Engine reads operands and writes results, and Teecryptor fetches bytes to decrypt.
-- **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption service. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
+- **[Teecryptor](/deep-dive/cofhe-components/teecryptor)**: the decryption component. It runs inside a hardware-attested TEE, authorizes every request against the onchain ACL, verifies the ciphertext commitment, and returns signed or sealed results.
 - **Partners**: independent custodians of the key material. Each holds a Shamir share and releases it only to an attested enclave. See [Key Management](/deep-dive/cofhe-components/key-management).
 
 ## Data flows
