@@ -45,7 +45,7 @@ Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK 
 
 ## Trust model
 
-The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is held as Shamir shares by independent partners and released only to the exact attested code image. Neither the operator nor anyone else can sign approvals outside the reviewed program. See [Key Management](/deep-dive/cofhe-components/key-management) for how shares are created and released. After a successful verification, the component stores the ciphertext bytes in the CT Server and archives the inputs and proofs for auditability.
+The ZK Verifier runs inside a hardware-attested TEE (Intel TDX). Its signing key is held as Shamir shares by independent partners and released only to the exact attested code image. Neither the operator nor anyone else can sign approvals outside the reviewed program. See [Key Management](/deep-dive/cofhe-components/key-management) for how shares are created and released. After a successful verification, the component stores the ciphertext bytes in the CT Server. It also archives the inputs and their proofs in Google Cloud Storage. Those archives are public, so anyone can fetch a batch and check the verification independently.
 
 The signed message is verified onchain by the TaskManager using `ecrecover`; the verifier's signer address is registered there as `verifierSigner`.
 
