@@ -62,9 +62,10 @@ One name per thing, used consistently. Canonical names:
 | Term | Notes |
 |---|---|
 | CoFHE | The coprocessor as a whole. Not COFHE, not Cofhe. |
-| Teecryptor | The TEE decryption service. Capitalized as a product name. |
-| FHE Engine | The offchain pipeline that subscribes to task events, executes FHE operations, and posts commitments. One name for the whole pipeline; its internal stages are not named in public docs. |
-| ZK Verifier | The input proof verification service. |
+| Teecryptor | The TEE decryption component. Capitalized as a product name. |
+| Compute pipeline | The offchain pipeline that carries a task from onchain event to committed result. Lowercase, except at the start of a sentence. |
+| Slim listener, FheOS, FHE Engine, Blockchain poster | The four components of the compute pipeline, in order. FHE Engine names the component that computes, never the pipeline around it. |
+| ZK Verifier | The input proof verification component. |
 | TaskManager, CommitmentRegistry, ACL | Contract names, written as in the source. |
 | ACP | Access Control Permission. Replaces "Permit" from `0.7` onward, so that it is not confused with an ERC-2612 permit. Spell it out before the acronym: a page whose subject is ACPs carries the full term in its `title`, and every other page expands it on first use. Never write "ACP permission". |
 | `FHE.sol` | The Solidity library, in backticks when referring to the file or API. |
