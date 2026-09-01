@@ -17,7 +17,7 @@ Outlined here is a non-exhaustive list of trust points, centralized components, 
 | ZK Verifier | Input proofs are checked by a single TEE component operated by Fhenix | Move to multi-party computation, with each partner verifying inputs on its own side | Planned |
 | Key custody | The FHE key is reconstructed inside one attested enclave at runtime | Threshold decryption, where no party ever holds the full key | Planned |
 | CoFHE | Trust in CoFHE to perform correct FHE computations | External verification through an AVS (actively validated service) | Planned |
-| CoFHE | User inputs stored in a centralized manner | Use a decentralized DA | Planned |
+| CoFHE | User inputs are held by a single cloud provider | No current plan. The inputs and proofs are public, so anyone can audit them | Not planned |
 | All | Codebase is unaudited | Perform a security audit | Planned |
 | All | Codebase is not fully open source | Open-source the codebase | Planned |
 
