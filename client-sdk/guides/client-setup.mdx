@@ -52,11 +52,43 @@ The SDK connects to CoFHE using viem clients:
 - `PublicClient`: read-only chain access
 - `WalletClient`: signing + sending transactions
 
-If you already have viem clients, pass them directly.
+The wallet client must carry an account. `connect` reads the connected address from `walletClient.account`, and falls back to `eth_accounts` on the transport. A wallet client created with `http()` and no `account` has neither, so `connect` throws `PublicWalletGetAddressesFailed` and the client stays disconnected.
 
-```typescript
+In the browser, take the account from the injected wallet. In Node.js, build it from a private key.
+
+<CodeGroup>
+
+```typescript Browser wallet
+import { createPublicClient, createWalletClient, custom, http } from 'viem';
+import { sepolia } from 'viem/chains';
+
+const [account] = await window.ethereum.request({
+  method: 'eth_requestAccounts',
+});
+
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
+
+const walletClient = createWalletClient({
+  chain: sepolia,
+  transport: custom(window.ethereum),
+  account,
+});
+
+await cofheClient.connect(publicClient, walletClient);
+
+cofheClient.connected; // true
+cofheClient.connection.account; // the address selected in the wallet
+```
+
+```typescript Node.js
 import { createPublicClient, createWalletClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0xYOUR_PRIVATE_KEY');
 
 const publicClient = createPublicClient({
   chain: sepolia,
@@ -66,16 +98,20 @@ const publicClient = createPublicClient({
 const walletClient = createWalletClient({
   chain: sepolia,
   transport: http(),
+  account,
 });
 
 await cofheClient.connect(publicClient, walletClient);
 
 cofheClient.connected; // true
+cofheClient.connection.account; // account.address
 ```
+
+</CodeGroup>
 
 ### Using adapters
 
-If you use a different wallet/provider stack, `@cofhe/sdk/adapters` provides adapters that convert into viem-shaped clients.
+If you use Ethers, `@cofhe/sdk/adapters` converts an Ethers provider and signer into viem-shaped clients, and derives the account from the signer. wagmi already gives you viem clients, so pass them to `connect` directly. The wallet client from `useWalletClient` carries the connected account.
 
 <CodeGroup>
 
@@ -111,26 +147,20 @@ const { publicClient, walletClient } = await Ethers5Adapter(
 await cofheClient.connect(publicClient, walletClient);
 ```
 
-```typescript Wagmi
-import { WagmiAdapter } from '@cofhe/sdk/adapters';
-import { createPublicClient, createWalletClient, http } from 'viem';
-import { sepolia } from 'viem/chains';
+```tsx Wagmi
+import { useEffect } from 'react';
+import { usePublicClient, useWalletClient } from 'wagmi';
 
-const wagmiPublicClient = createPublicClient({
-  chain: sepolia,
-  transport: http(),
-});
-const wagmiWalletClient = createWalletClient({
-  chain: sepolia,
-  transport: http(),
-});
+function useConnectCofhe() {
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
 
-const { publicClient, walletClient } = await WagmiAdapter(
-  wagmiWalletClient,
-  wagmiPublicClient
-);
-
-await cofheClient.connect(publicClient, walletClient);
+  useEffect(() => {
+    // useWalletClient resolves only after the user connects a wallet
+    if (!publicClient || !walletClient) return;
+    cofheClient.connect(publicClient, walletClient);
+  }, [publicClient, walletClient]);
+}
 ```
 
 </CodeGroup>
@@ -143,27 +173,32 @@ Calling `connect` again with the same clients is a no-op. Calling it with new cl
 
 ### Changing connected account
 
-To switch the client's connected account, call `cofheClient.connect()` with updated viem clients.
+To switch the client's connected account, call `cofheClient.connect()` with a wallet client that carries the new account.
 
 ```typescript
+import { privateKeyToAccount } from 'viem/accounts';
+
+const bob = privateKeyToAccount('0xBOB_PRIVATE_KEY');
+const alice = privateKeyToAccount('0xALICE_PRIVATE_KEY');
+
 const bobWalletClient = createWalletClient({
   chain: sepolia,
   transport: http(),
-  account: bobAddress,
+  account: bob,
 });
 const aliceWalletClient = createWalletClient({
   chain: sepolia,
   transport: http(),
-  account: aliceAddress,
+  account: alice,
 });
 
 // Connect as Bob
 await cofheClient.connect(publicClient, bobWalletClient);
-cofheClient.connection.account; // Bob's address
+cofheClient.connection.account; // bob.address
 
 // Switch to Alice
 await cofheClient.connect(publicClient, aliceWalletClient);
-cofheClient.connection.account; // Alice's address
+cofheClient.connection.account; // alice.address
 ```
 
 ### Disconnecting
