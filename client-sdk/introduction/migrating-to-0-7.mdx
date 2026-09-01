@@ -262,6 +262,7 @@ A clean build proves very little in this migration. Each of these compiles and t
 | `ACPUtils.export()` on a self ACP | `0.6` serialized anything; `0.7` throws unless the ACP is a signed sharing ACP. |
 | A transient allowance relied on across transactions | Mock transient storage is now real EIP-1153, so it expires with its own transaction rather than the block. |
 | Overload selector strings and ERC-165 interface ids | `InEuint64` was a tuple; `externalEuint64` is a `bytes32`, so ids change. Recompute them. |
+| `cofhe.logMocks` in a Hardhat config | Still accepted by the plugin's config type, so it typechecks. No plugin code reads it. Use `hre.cofhe.mocks.disableLogs()` or the `setlogops` task. |
 
 Verify by exercising a round trip, not by compiling. For every bare-handle function you kept, ask whether an arbitrary caller can reach it with a handle the contract is allowed on. If they can, guard it with `FHE.isAllowed(value, msg.sender)`.
 
