@@ -53,22 +53,27 @@ await hre.cofhe.mocks.disableLogs();
 
 ## Default logging behavior
 
-Logging is **enabled by default**. You can turn it off globally in your Hardhat config:
+Logging is **enabled by default**: `MockTaskManager` ships with its `logOps` flag set to `true`, so every FHE operation prints from the moment the mocks are deployed.
 
-```typescript hardhat.config.ts
-import '@cofhe/hardhat-plugin';
+The flag lives onchain, not in your Hardhat config. Every control below is a transaction that flips `logOps` on the deployed `MockTaskManager`, which is why the setting resets each time the mocks are redeployed.
 
-export default {
-  solidity: '0.8.28',
-  cofhe: {
-    logMocks: false, // disable FHE op logs globally
-  },
-};
+To silence logs for a whole test suite, disable them once in a global setup hook:
+
+```typescript test/setup.ts
+import hre from 'hardhat';
+
+before(async () => {
+  await hre.cofhe.mocks.disableLogs();
+});
 ```
 
-You can also toggle logging for a specific test run using the Hardhat task:
+Or toggle logging for a specific run using the Hardhat task:
 
 ```bash
 npx hardhat task:cofhe-mocks:setlogops --enable true
 npx hardhat task:cofhe-mocks:setlogops --enable false
 ```
+
+<Warning>
+There is no Hardhat config option for this. The plugin's config type still accepts a `cofhe.logMocks` boolean, but no plugin code reads it — setting it has no effect on FHE-op logging. Use `disableLogs()` or the `setlogops` task instead.
+</Warning>
