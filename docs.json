@@ -310,6 +310,26 @@
     {
       "source": "/client-sdk/guides/permits",
       "destination": "/client-sdk/guides/acps"
+    },
+    {
+      "source": "/api-reference/introduction",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/get",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/create",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/delete",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/webhook",
+      "destination": "/client-sdk/reference/sdk-reference"
     }
   ],
   "integrations": {
