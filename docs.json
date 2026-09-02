@@ -30,6 +30,7 @@
           {
             "group": "Introduction",
             "pages": [
+              "index",
               "get-started/introduction/fhenix",
               "get-started/introduction/what-is-cofhe",
               "get-started/introduction/compatibility",
@@ -330,6 +331,42 @@
     {
       "source": "/api-reference/endpoint/webhook",
       "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/cofhejs/introduction/overview",
+      "destination": "/client-sdk/introduction/overview"
+    },
+    {
+      "source": "/cofhejs/introduction/installation",
+      "destination": "/client-sdk/introduction/installation"
+    },
+    {
+      "source": "/cofhejs/introduction/mental-model",
+      "destination": "/client-sdk/introduction/mental-model"
+    },
+    {
+      "source": "/cofhejs/guides/encryption",
+      "destination": "/client-sdk/guides/encrypting-inputs"
+    },
+    {
+      "source": "/cofhejs/guides/permits-management",
+      "destination": "/client-sdk/guides/acps"
+    },
+    {
+      "source": "/cofhejs/guides/sealing-unsealing",
+      "destination": "/client-sdk/guides/decrypt-to-view"
+    },
+    {
+      "source": "/cofhejs/guides/error-handling",
+      "destination": "/client-sdk/guides/error-handling"
+    },
+    {
+      "source": "/cofhejs/examples/end-to-end",
+      "destination": "/client-sdk/examples/end-to-end"
+    },
+    {
+      "source": "/cofhejs/resources/templates",
+      "destination": "/client-sdk/examples/templates"
     }
   ],
   "integrations": {
