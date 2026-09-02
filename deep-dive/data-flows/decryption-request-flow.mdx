@@ -35,18 +35,18 @@ The application calls one of the two builders:
 ```typescript
 const { ctHash, decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withPermit()
+  .withACP()
   .execute();
 ```
 
 ```typescript
 const balance = await client
   .decryptForView(ctHash, FheTypes.Uint32)
-  .withPermit()
+  .withACP()
   .execute();
 ```
 
-The request goes to Teecryptor with the handle, the host chain id, and the ACP. For publicly decryptable handles, `decryptForTx` can use `.withoutPermit()` instead.
+The request goes to Teecryptor with the handle, the host chain id, and the ACP. For publicly decryptable handles, `decryptForTx` can use `.withoutACP()` instead.
 </Step>
 
 <Step title="Teecryptor verifies and decrypts">
