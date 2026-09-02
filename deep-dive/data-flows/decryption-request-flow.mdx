@@ -13,7 +13,7 @@ Decryption in CoFHE is SDK-driven and happens offchain, inside [Teecryptor](/dee
 There are two SDK entry points, one per destination:
 
 - **`decryptForTx`**: returns the plaintext with a Teecryptor signature you can publish onchain. Guide: [Decrypt to Tx](/client-sdk/guides/decrypt-to-tx).
-- **`decryptForView`**: returns the plaintext sealed to your [permit](/client-sdk/guides/acps) (an ACP, Access Control Permission, onchain), for UI display and offchain reads. Guide: [Decrypt to View](/client-sdk/guides/decrypt-to-view).
+- **`decryptForView`**: returns the plaintext sealed to your [ACP](/client-sdk/guides/acps) (Access Control Permission), for UI display and offchain reads. Guide: [Decrypt to View](/client-sdk/guides/decrypt-to-view).
 
 <Note>
 A freshly computed handle may not be decryptable immediately: its ciphertext and commitment land shortly after the transaction. Until then Teecryptor answers with a retryable status and the SDK re-submits automatically.
@@ -46,7 +46,7 @@ const balance = await client
   .execute();
 ```
 
-The request goes to Teecryptor with the handle, the host chain id, and the permit. For publicly decryptable handles, `decryptForTx` can use `.withoutPermit()` instead.
+The request goes to Teecryptor with the handle, the host chain id, and the ACP. For publicly decryptable handles, `decryptForTx` can use `.withoutPermit()` instead.
 </Step>
 
 <Step title="Teecryptor verifies and decrypts">
@@ -84,7 +84,7 @@ To check a signature without storing the result, use the `verifyDecryptResult` f
 
 ## The view path
 
-For `decryptForView`, Teecryptor never returns a bare plaintext. It encrypts the result to the permit's sealing key, and the SDK unseals it locally, so the plaintext is not exposed in transit. There is nothing to publish; the value goes straight to your application.
+For `decryptForView`, Teecryptor never returns a bare plaintext. It encrypts the result to the ACP's sealing key, and the SDK unseals it locally, so the plaintext is not exposed in transit. There is nothing to publish; the value goes straight to your application.
 
 ## Flow diagram
 
@@ -105,7 +105,7 @@ sequenceDiagram
         SDK-->>App: { ctHash, decryptedValue, signature }
         App->>Chain: FHE.publishDecryptResult(ctHash, result, signature)
     else decryptForView
-        Teecryptor-->>SDK: result sealed to the permit's sealing key
+        Teecryptor-->>SDK: result sealed to the ACP's sealing key
         SDK->>SDK: unseal locally
         SDK-->>App: plaintext
     end
@@ -117,7 +117,7 @@ sequenceDiagram
 |---|---|---|
 | **Returns** | Plaintext + Teecryptor signature | Plaintext (sealed in transit, unsealed by the SDK) |
 | **Use case** | Submit the decrypted value onchain | Display in a UI, offchain reads |
-| **Requires permit** | Only if the handle is not publicly decryptable | Yes |
+| **Requires ACP** | Only if the handle is not publicly decryptable | Yes |
 | **Onchain verification** | <code style={{ whiteSpace: "nowrap" }}>publishDecryptResult</code> or <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResult</code> | Not applicable |
 | **Gas cost** | None for the decryption itself; gas only for the publish transaction | None |
 

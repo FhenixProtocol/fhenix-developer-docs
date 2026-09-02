@@ -76,7 +76,7 @@ flowchart TB
 
 1. **[Encryption request](/deep-dive/data-flows/encryption-request-flow)**: an input is encrypted client-side and proven valid with a zero-knowledge proof before it enters the chain.
 2. **[FHE operation](/deep-dive/data-flows/fhe-operation-request-flow)**: a contract requests a computation; the coprocessor executes it and commits to the result.
-3. **[Decryption](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor to decrypt a handle, either as a signed plaintext for onchain publication or sealed to a permit for offchain reads.
+3. **[Decryption](/deep-dive/data-flows/decryption-request-flow)**: the SDK asks Teecryptor to decrypt a handle, either as a signed plaintext for onchain publication or sealed to an ACP for offchain reads.
 
 ## Future plans
 

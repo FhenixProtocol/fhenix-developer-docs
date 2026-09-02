@@ -13,12 +13,12 @@ Teecryptor is the component that decrypts CoFHE ciphertexts. It holds the FHE se
 
 ## How a decrypt request is processed
 
-Every `decrypt` and `sealoutput` request carries a ciphertext handle, a host chain id, and optionally a [permit](/client-sdk/guides/acps), sent on the wire as an `acp` (Access Control Permission). A `sealoutput` request requires one, since the ACP carries the sealing key. Teecryptor then runs a fixed pipeline:
+Every `decrypt` and `sealoutput` request carries a ciphertext handle, a host chain id, and optionally an [ACP](/client-sdk/guides/acps) (Access Control Permission), sent on the wire as `acp`. A `sealoutput` request requires one, since the ACP carries the sealing key. Teecryptor then runs a fixed pipeline:
 
 <Steps>
 
 <Step title="Authorization">
-Teecryptor checks the handle against the onchain ACL through the [TaskManager](/deep-dive/cofhe-components/task-manager) on the requested host chain. With a permit, the contract verifies the permit's EIP-712 signature and calls `isAllowedWithPermission`. Without a permit, the handle must have been marked publicly decryptable, checked via `isPubliclyAllowed`. Both paths fail closed: no onchain allowance, no decryption.
+Teecryptor checks the handle against the onchain ACL through the [TaskManager](/deep-dive/cofhe-components/task-manager) on the requested host chain. With an ACP, the contract verifies its EIP-712 signature and calls `isAllowedWithPermission`. Without one, the handle must have been marked publicly decryptable, checked via `isPubliclyAllowed`. Both paths fail closed: no onchain allowance, no decryption.
 </Step>
 
 <Step title="Commitment verification">
@@ -34,7 +34,7 @@ The enclave decrypts the stored bytes with the FHE secret key, exactly as they w
 </Step>
 
 <Step title="Signing or sealing">
-For `decrypt` (the `decryptForTx` path), the plaintext is signed with an ECDSA key that never leaves the enclave, producing a result any contract can verify onchain. For `sealoutput` (the `decryptForView` path), the plaintext is instead encrypted to the permit's sealing key using NaCl `crypto_box` (X25519 with XSalsa20-Poly1305). Only the permit holder can read it, and the SDK unseals it locally.
+For `decrypt` (the `decryptForTx` path), the plaintext is signed with an ECDSA key that never leaves the enclave, producing a result any contract can verify onchain. For `sealoutput` (the `decryptForView` path), the plaintext is instead encrypted to the ACP's sealing key using NaCl `crypto_box` (X25519 with XSalsa20-Poly1305). Only the ACP holder can read it, and the SDK unseals it locally.
 </Step>
 
 </Steps>
