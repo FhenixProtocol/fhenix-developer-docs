@@ -13,7 +13,7 @@ Teecryptor is the component that decrypts CoFHE ciphertexts. It holds the FHE se
 
 ## How a decrypt request is processed
 
-Every `decrypt` and `sealoutput` request carries a ciphertext handle, a host chain id, and optionally a [permit](/client-sdk/guides/permits), sent on the wire as an `acp` (Access Control Permission). A `sealoutput` request requires one, since the ACP carries the sealing key. Teecryptor then runs a fixed pipeline:
+Every `decrypt` and `sealoutput` request carries a ciphertext handle, a host chain id, and optionally a [permit](/client-sdk/guides/acps), sent on the wire as an `acp` (Access Control Permission). A `sealoutput` request requires one, since the ACP carries the sealing key. Teecryptor then runs a fixed pipeline:
 
 <Steps>
 

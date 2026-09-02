@@ -13,7 +13,7 @@ Decryption in CoFHE is SDK-driven and happens offchain, inside [Teecryptor](/dee
 There are two SDK entry points, one per destination:
 
 - **`decryptForTx`**: returns the plaintext with a Teecryptor signature you can publish onchain. Guide: [Decrypt to Tx](/client-sdk/guides/decrypt-to-tx).
-- **`decryptForView`**: returns the plaintext sealed to your [permit](/client-sdk/guides/permits) (an ACP, Access Control Permission, onchain), for UI display and offchain reads. Guide: [Decrypt to View](/client-sdk/guides/decrypt-to-view).
+- **`decryptForView`**: returns the plaintext sealed to your [permit](/client-sdk/guides/acps) (an ACP, Access Control Permission, onchain), for UI display and offchain reads. Guide: [Decrypt to View](/client-sdk/guides/decrypt-to-view).
 
 <Note>
 A freshly computed handle may not be decryptable immediately: its ciphertext and commitment land shortly after the transaction. Until then Teecryptor answers with a retryable status and the SDK re-submits automatically.

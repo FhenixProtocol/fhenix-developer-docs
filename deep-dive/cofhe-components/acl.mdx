@@ -26,7 +26,7 @@ All state-mutating entry points require `msg.sender` to be the TaskManager; dire
 
 ## Permits
 
-Offchain reads are authorized by a [permit](/client-sdk/guides/permits), which onchain is an `ACP` (Access Control Permission): an EIP-712 body signed by its issuer. Beyond the issuer, expiration, and the sealing key used for sealed outputs, an ACP carries a **scope**: global, limited to specific contracts, or limited to specific handles. A scope only narrows what the issuer could already access; it never grants more.
+Offchain reads are authorized by a [permit](/client-sdk/guides/acps), which onchain is an `ACP` (Access Control Permission): an EIP-712 body signed by its issuer. Beyond the issuer, expiration, and the sealing key used for sealed outputs, an ACP carries a **scope**: global, limited to specific contracts, or limited to specific handles. A scope only narrows what the issuer could already access; it never grants more.
 
 An ACP can be shared with a recipient, revoked through a revoker contract, and handed over onchain through the ACP share registry.
 
