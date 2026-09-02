@@ -32,7 +32,6 @@ The plugin extends the Hardhat Runtime Environment with a `cofhe` namespace.
 | `hre.cofhe.mocks.getMockACL()` | Returns the `MockACL` contract instance. |
 | `hre.cofhe.mocks.getMockThresholdNetwork()` | Returns the `MockThresholdNetwork` contract instance. |
 | `hre.cofhe.mocks.getMockZkVerifier()` | Returns the `MockZkVerifier` contract instance. |
-| `hre.cofhe.mocks.getTestBed()` | Returns the `TestBed` contract instance. |
 | `hre.cofhe.mocks.withLogs(name, fn)` | Wraps a function with labeled FHE operation logging. |
 | `hre.cofhe.mocks.enableLogs(label?)` | Enables FHE operation logging. |
 | `hre.cofhe.mocks.disableLogs()` | Disables FHE operation logging. |
@@ -45,8 +44,8 @@ import '@cofhe/hardhat-plugin';
 export default {
   solidity: '0.8.28',
   cofhe: {
-    logMocks: true,    // Log FHE operations (default: true)
-    gasWarning: true,  // Warn on high mock gas usage (default: true)
+    gasWarning: true,           // Warn on high mock gas usage (default: false)
+    mocksDeployVerbosity: 'v',  // Mock deploy log verbosity: '' | 'v' | 'vv' (default: 'v')
   },
 };
 ```
@@ -55,7 +54,7 @@ export default {
 
 | Task | Description |
 | --- | --- |
-| `task:cofhe-mocks:deploy` | Deploy mock contracts. Options: `--deployTestBed`, `--silent`. |
+| `task:cofhe-mocks:deploy` | Deploy mock contracts. Takes no parameters. |
 | `task:cofhe-mocks:setlogops` | Toggle FHE operation logging. Options: `--enable`. |
 
 ## Pre-configured networks

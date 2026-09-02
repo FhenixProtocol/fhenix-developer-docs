@@ -146,12 +146,12 @@ We will pay special attention to the following updates that need to be made:
 
 ### Step 1: Import `FHE.sol`
 
-The first thing that we need to do is import `FHE.sol` from the `cofhe-contracts` repo. This package allows smart contracts to start using FHE operations and encrypted variables.
+The first thing that we need to do is import `FHE.sol` from the `cofhe-contracts` package. It gives smart contracts the FHE operations and encrypted types. We import the two encrypted types this contract stores (`euint8` and `euint64`) and the input type it receives (`externalEuint8`).
 
 ```solidity
 pragma solidity ^0.8.25;
 
-import {FHE, euint64, InEuint64} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
+import {FHE, euint8, euint64, externalEuint8} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
 
 contract VotingExample {
 ```
@@ -187,10 +187,10 @@ function createProposal(
     proposal.deadline = _deadline;
     proposal.exists = true;
 
+    euint64 zero = FHE.asEuint64(0);
+    FHE.allowThis(zero);
     for (uint i = 0; i < _options.length; i++) {
-        proposal.options.push(
-            Option({name: _options[i], votes: FHE.asEuint64(0)})
-        );
+        proposal.options.push(Option({name: _options[i], votes: zero}));
     }
 
     emit ProposalCreated(proposalId, _name, _deadline);
@@ -198,7 +198,9 @@ function createProposal(
 }
 ```
 
-This will work, but it may make sense to prepare the trivially encrypted values in the constructor rather than in each transaction to save on gas and the number of FHE operations being executed. Let's see how that would look:
+The `FHE.allowThis` call matters: a trivially encrypted value is usable only inside the transaction that created it, and `vote` runs in a later transaction. Step 8 covers access in detail.
+
+This works, but it may make sense to prepare the trivially encrypted values once, in the constructor, rather than in each transaction. That saves gas and FHE operations. Let's see how that would look:
 
 ```solidity
 contract VotingExample {
@@ -211,6 +213,8 @@ contract VotingExample {
         owner = msg.sender;
         EUINT64_ZERO = FHE.asEuint64(0);
         EUINT64_ONE = FHE.asEuint64(1);
+        FHE.allowThis(EUINT64_ZERO);
+        FHE.allowThis(EUINT64_ONE);
     }
 
     function createProposal(
@@ -231,9 +235,9 @@ contract VotingExample {
 }
 ```
 
-### Step 4: Handle user votes with `InEuint8`
+### Step 4: Handle user votes with `externalEuint8`
 
-We now need to handle the user's vote casting. The first thing that we need to do is hide which option the user is voting for. We can do this by replacing the `vote` function parameter `uint256 _optionIndex` with `InEuint8 memory _optionIndex`. `InEuint8` is an encrypted input type. We then need to convert the `InEuint8` to an `euint8` for use in computation.
+We now need to handle the user's vote casting. The first thing that we need to do is hide which option the user is voting for. We can do this by replacing the `vote` function parameter `uint256 _optionIndex` with two parameters: `externalEuint8 _optionIndex`, the encrypted input handle, and `bytes calldata inputProof`, the proof that authenticates it. `FHE.asEuint8(_optionIndex, inputProof)` then converts the pair into an `euint8` for use in computation.
 
 <Note>
 Encrypting inputs requires the use of the [**Client SDK**](/client-sdk/introduction/overview) (`@cofhe/sdk`).
@@ -242,8 +246,8 @@ Read more about [**encrypted inputs**](/client-sdk/guides/encrypting-inputs).
 </Note>
 
 ```solidity
-function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
-    euint8 optionIndex = FHE.asEuint8(_optionIndex);
+function vote(uint256 _proposalId, externalEuint8 _optionIndex, bytes calldata inputProof) external {
+    euint8 optionIndex = FHE.asEuint8(_optionIndex, inputProof);
 ```
 
 ### Step 5: Constant time computation
@@ -251,8 +255,8 @@ function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
 To preserve the confidentiality of the user's vote, we must make sure that we aren't leaking any information about the user's choice. If we only updated the voting option that the user has selected, then a user's vote could be deduced by simply watching which vote counter changes. Therefore, we must update _all_ the vote counters to hide the user's true vote:
 
 ```solidity
-function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
-    euint8 optionIndex = FHE.asEuint8(_optionIndex);
+function vote(uint256 _proposalId, externalEuint8 _optionIndex, bytes calldata inputProof) external {
+    euint8 optionIndex = FHE.asEuint8(_optionIndex, inputProof);
     Proposal storage proposal = proposals[_proposalId];
 
     if (!proposal.exists) revert ProposalNotFound();
@@ -338,8 +342,8 @@ By default, access and computation on an encrypted variable is blocked, and tryi
 - `FHE.allowPublic(ctHash)` - grants access to everyone, useful for things like an encrypted totalSupply variable, which everyone should have access to
 
 ```solidity
-function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
-    euint8 optionIndex = FHE.asEuint8(_optionIndex);
+function vote(uint256 _proposalId, externalEuint8 _optionIndex, bytes calldata inputProof) external {
+    euint8 optionIndex = FHE.asEuint8(_optionIndex, inputProof);
     Proposal storage proposal = proposals[_proposalId];
 
     if (!proposal.exists) revert ProposalNotFound();
@@ -394,7 +398,23 @@ function finalizeVote(uint256 _proposalId) external {
 
 ### Step 10: Reveal the results with `FHE.publishDecryptResult`
 
-After `finalizeVote` is called, the vote counts need to be decrypted offchain and published onchain with proof. We add a `revealResults` function that accepts the decrypted values and their Threshold Network signatures:
+After `finalizeVote` is called, the vote counts need to be decrypted offchain and published onchain with proof. The client needs the encrypted vote handles to request decryption, and `getProposal` returns option names and plaintext counts only, so we add a getter for the handles:
+
+```solidity
+function getEncryptedVotes(
+    uint256 _proposalId
+) external view returns (euint64[] memory votes) {
+    Proposal storage proposal = proposals[_proposalId];
+    if (!proposal.exists) revert ProposalNotFound();
+
+    votes = new euint64[](proposal.options.length);
+    for (uint8 i = 0; i < proposal.options.length; i++) {
+        votes[i] = proposal.options[i].votes;
+    }
+}
+```
+
+We then add a `revealResults` function that accepts the decrypted values and the Teecryptor signatures over them:
 
 ```solidity
 function revealResults(
@@ -419,28 +439,44 @@ function revealResults(
 }
 ```
 
-The client-side flow looks like this:
+The client-side flow looks like this. It assumes a connected `client` (see [client setup](/client-sdk/guides/client-setup)), viem `publicClient` and `walletClient` instances, the contract ABI as `votingAbi`, and its address as `votingAddress`:
 
 ```typescript
 // 1. Finalize the vote (owner only)
-await voting.finalizeVote(proposalId);
+await walletClient.writeContract({
+  address: votingAddress,
+  abi: votingAbi,
+  functionName: 'finalizeVote',
+  args: [proposalId],
+});
 
-// 2. Decrypt each option's vote count off-chain
-const proposal = await voting.getProposal(proposalId);
-const decryptedVotes = [];
-const signatures = [];
+// 2. Read the encrypted tallies and decrypt each one offchain
+const encryptedVotes = await publicClient.readContract({
+  address: votingAddress,
+  abi: votingAbi,
+  functionName: 'getEncryptedVotes',
+  args: [proposalId],
+});
 
-for (const option of proposal.options) {
-    const result = await client
-        .decryptForTx(option.votes)
-        .withoutPermit()
-        .execute();
-    decryptedVotes.push(result.decryptedValue);
-    signatures.push(result.signature);
+const decryptedVotes: bigint[] = [];
+const signatures: `0x${string}`[] = [];
+
+for (const ctHash of encryptedVotes) {
+  const result = await client
+    .decryptForTx(ctHash)
+    .withoutACP()
+    .execute();
+  decryptedVotes.push(result.decryptedValue);
+  signatures.push(result.signature);
 }
 
-// 3. Publish all results on-chain
-await voting.revealResults(proposalId, decryptedVotes, signatures);
+// 3. Publish all results onchain
+await walletClient.writeContract({
+  address: votingAddress,
+  abi: votingAbi,
+  functionName: 'revealResults',
+  args: [proposalId, decryptedVotes, signatures],
+});
 ```
 
 ### Step 11: Checking the results with `FHE.getDecryptResultSafe`
@@ -528,7 +564,7 @@ The resulting contract provides the same functionality as the original, but with
 
 pragma solidity ^0.8.25;
 
-import {FHE, euint64, InEuint8} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
+import {FHE, euint8, euint64, externalEuint8} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
 
 contract FHEVotingExample {
     struct Option {
@@ -575,6 +611,8 @@ contract FHEVotingExample {
         owner = msg.sender;
         EUINT64_ZERO = FHE.asEuint64(0);
         EUINT64_ONE = FHE.asEuint64(1);
+        FHE.allowThis(EUINT64_ZERO);
+        FHE.allowThis(EUINT64_ONE);
     }
 
     modifier onlyOwner() {
@@ -607,8 +645,8 @@ contract FHEVotingExample {
         return proposalId;
     }
 
-    function vote(uint256 _proposalId, InEuint8 memory _optionIndex) external {
-        euint8 optionIndex = FHE.asEuint8(_optionIndex);
+    function vote(uint256 _proposalId, externalEuint8 _optionIndex, bytes calldata inputProof) external {
+        euint8 optionIndex = FHE.asEuint8(_optionIndex, inputProof);
         Proposal storage proposal = proposals[_proposalId];
 
         if (!proposal.exists) revert ProposalNotFound();
@@ -641,6 +679,18 @@ contract FHEVotingExample {
 
         for (uint8 i = 0; i < proposal.options.length; i++) {
             FHE.allowPublic(proposal.options[i].votes);
+        }
+    }
+
+    function getEncryptedVotes(
+        uint256 _proposalId
+    ) external view returns (euint64[] memory votes) {
+        Proposal storage proposal = proposals[_proposalId];
+        if (!proposal.exists) revert ProposalNotFound();
+
+        votes = new euint64[](proposal.options.length);
+        for (uint8 i = 0; i < proposal.options.length; i++) {
+            votes[i] = proposal.options[i].votes;
         }
     }
 

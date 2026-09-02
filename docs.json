@@ -4,8 +4,8 @@
   "name": "Fhenix Documentation",
   "colors": {
     "primary": "#0AD9DC",
-    "light": "#0AD9DC",
-    "dark": "#0AD9DC"
+    "light": "#5FE8EA",
+    "dark": "#089EA1"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -30,6 +30,7 @@
           {
             "group": "Introduction",
             "pages": [
+              "index",
               "get-started/introduction/fhenix",
               "get-started/introduction/what-is-cofhe",
               "get-started/introduction/compatibility",
@@ -146,6 +147,7 @@
             "group": "Core Concepts",
             "pages": [
               "fhe-library/core-concepts/inputs",
+              "fhe-library/core-concepts/handles",
               "fhe-library/core-concepts/trivial-encryption",
               "fhe-library/core-concepts/data-evaluation",
               "fhe-library/core-concepts/encrypted-operations",
@@ -333,6 +335,66 @@
     {
       "source": "/deep-dive/cofhe-components/fhe-engine",
       "destination": "/deep-dive/cofhe-components/compute-pipeline"
+    },
+    {
+      "source": "/api-reference/introduction",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/get",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/create",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/delete",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/api-reference/endpoint/webhook",
+      "destination": "/client-sdk/reference/sdk-reference"
+    },
+    {
+      "source": "/cofhejs/introduction/overview",
+      "destination": "/client-sdk/introduction/overview"
+    },
+    {
+      "source": "/cofhejs/introduction/installation",
+      "destination": "/client-sdk/introduction/installation"
+    },
+    {
+      "source": "/cofhejs/introduction/mental-model",
+      "destination": "/client-sdk/introduction/mental-model"
+    },
+    {
+      "source": "/cofhejs/guides/encryption",
+      "destination": "/client-sdk/guides/encrypting-inputs"
+    },
+    {
+      "source": "/cofhejs/guides/permits-management",
+      "destination": "/client-sdk/guides/acps"
+    },
+    {
+      "source": "/cofhejs/guides/sealing-unsealing",
+      "destination": "/client-sdk/guides/decrypt-to-view"
+    },
+    {
+      "source": "/cofhejs/guides/error-handling",
+      "destination": "/client-sdk/guides/error-handling"
+    },
+    {
+      "source": "/cofhejs/examples/end-to-end",
+      "destination": "/client-sdk/examples/end-to-end"
+    },
+    {
+      "source": "/cofhejs/resources/templates",
+      "destination": "/client-sdk/examples/templates"
+    },
+    {
+      "source": "/fhe-library/reference/fhe-sol",
+      "destination": "/fhe-library/reference/fhe-sol/overview"
     }
   ],
   "integrations": {

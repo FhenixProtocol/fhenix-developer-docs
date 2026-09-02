@@ -45,7 +45,7 @@ The client requests decryption from the Threshold Network, which returns the pla
 ```typescript
 const result = await client
     .decryptForTx(ctHash)
-    .withoutPermit()  // use .withPermit() if FHE.allow was used instead of allowPublic
+    .withoutACP()  // use .withACP() if FHE.allow was used instead of allowPublic
     .execute();
 
 // result.decryptedValue — the plaintext (bigint)
@@ -135,7 +135,7 @@ await counter.allow_counter_publicly();
 const ctHash = await counter.counter();
 const result = await client
     .decryptForTx(ctHash)
-    .withoutPermit()
+    .withoutACP()
     .execute();
 
 // 3. Publish on-chain with proof
@@ -231,7 +231,7 @@ const ctHash = /* ... from UnshieldedERC20 event ... */;
 // 3. Decrypt off-chain
 const result = await client
     .decryptForTx(ctHash)
-    .withoutPermit()
+    .withoutACP()
     .execute();
 
 // 4. Claim with proof

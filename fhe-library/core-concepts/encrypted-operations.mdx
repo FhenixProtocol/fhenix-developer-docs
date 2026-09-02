@@ -100,7 +100,7 @@ In this example, `lhs.add(rhs)` performs the addition using the library function
 ## Supported Operations
 
 <Tip>
-Complete documentation of every function in FHE.sol (including inputs and outputs) can be found in the [FHE.sol API Reference](/fhe-library/reference/fhe-sol).
+Complete documentation of every function in FHE.sol (including inputs and outputs) can be found in the [FHE.sol reference](/fhe-library/reference/fhe-sol/overview).
 </Tip>
 
 All operations supported by FHE.sol are listed in the table below. Note that all functions are supported in both direct function calls and library bindings.
@@ -132,7 +132,7 @@ All operations supported by FHE.sol are listed in the table below. Note that all
 | Select                | `select`         | n/a      | Yes    | Yes     | Yes     | Yes     | Yes      | Yes   | Yes      |
 
 <Warning>
-**Division and Remainder by `0`**: These operations will output an encrypted representation of the maximal value of the uint type being used (e.g., encrypted 255 for `euint8`). This behavior prevents information leakage about the divisor.
+**Division and remainder by `0`**: Neither operation reverts. `div` returns the maximum value of the operand type (encrypted 255 for `euint8`), and `rem` returns the dividend unchanged. The FHE Engine cannot inspect the encrypted divisor, so it cannot raise an error without leaking whether the divisor is zero.
 </Warning>
 
 ---

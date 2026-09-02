@@ -6,9 +6,9 @@ Official documentation for Fhenix - the privacy-preserving blockchain platform t
 
 This repository contains the complete developer documentation for Fhenix, including:
 
-- **Getting Started** - Introduction to Fhenix, compatibility guides, and builder support
-- **Cofhejs** - JavaScript library for client-side encryption, permit management, and decryption
-- **FHE Library** - Solidity library for working with encrypted data in smart contracts
+- **Get Started** - Introduction to Fhenix and CoFHE, compatibility, support, and builder programs
+- **Client SDK** - `@cofhe/sdk` for encrypting inputs, managing Access Control Permissions, and decrypting outputs, plus the Hardhat and Foundry plugins
+- **FHE library** - `FHE.sol`, the Solidity library for working with encrypted data in smart contracts
 - **Tutorials** - Step-by-step guides for building FHE-enabled applications
 - **Deep Dive** - Technical architecture details, CoFHE components, and data flows
 
@@ -38,12 +38,15 @@ The documentation will be available at `http://localhost:3000`.
 
 ```
 fhenix-developer-docs/
-├── get-started/           # Introduction and getting started guides
-├── cofhejs/              # Client-side encryption library docs
+├── get-started/          # Introduction and getting started guides
+├── client-sdk/           # @cofhe/sdk, Hardhat plugin, and Foundry plugin docs
 ├── fhe-library/          # Solidity FHE library documentation
 ├── tutorials/            # Step-by-step tutorials
 ├── deep-dive/            # Architecture and technical deep dives
-├── api-reference/        # API reference documentation
+├── images/               # Images referenced from pages
+├── scripts/              # Structure linter (lint-docs.py)
+├── styles/               # Vale prose rules
+├── STYLE.md              # Writing style guide, binding for all pages
 └── docs.json             # Mintlify configuration
 ```
 
@@ -55,10 +58,11 @@ Changes pushed to the default branch are automatically deployed to production th
 
 We welcome contributions to improve the documentation. When making changes:
 
-1. Test locally using `mint dev`
-2. Ensure all links and navigation work correctly
-3. Follow the existing documentation style and structure
-4. Submit a pull request with a clear description of your changes
+1. Read `STYLE.md` before writing; it is binding for all pages
+2. Test locally using `mint dev`
+3. Run the linters on the pages you changed: `python3 scripts/lint-docs.py <files>` and `vale <files>`
+4. Ensure all links and navigation work correctly
+5. Submit a pull request with a clear description of your changes
 
 ## Links
 
@@ -76,7 +80,7 @@ We welcome contributions to improve the documentation. When making changes:
 ## Resources
 
 - [Mintlify Documentation](https://mintlify.com/docs)
-- [Fhenix Documentation Live Site](https://docs.fhenix.io)
+- [CoFHE documentation live site](https://cofhe-docs.fhenix.zone)
 
 ## Support
 

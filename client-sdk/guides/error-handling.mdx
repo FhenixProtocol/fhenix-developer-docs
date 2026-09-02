@@ -24,10 +24,31 @@ try {
 
 ## What a CofheError carries
 
-Every `CofheError` has:
+Two fields are always set:
 
-- `code`: a `CofheErrorCode` enum value identifying the error type
-- `message`: a human-readable description of what went wrong
+- `code: CofheErrorCode` — the enum value identifying the error type
+- `message: string` — a human-readable description of what went wrong
+
+Four more are declared optional on the class. The property always exists; its value is `undefined` unless the code that threw supplied it, so narrow before using it:
+
+- `hint?: string` — an actionable suggestion for fixing the error. Set by most SDK throw sites, but not all
+- `context?: Record<string, unknown>` — the state that produced the error. For a `ZkPackFailed` from oversized inputs this holds `totalBits`, `maxBits`, and the offending `items`
+- `cause?: Error` — the inner error being wrapped. When set, its message is also appended to `message` as `| Caused by: ...`
+- `apiErrorCode?: string` — the raw backend error string. Set only on errors built from a decryption backend response
+
+Because the four are optional, guard each one rather than assuming it is there:
+
+```typescript
+try {
+  await client.encryptInputs([Encryptable.uint32(42n)]).execute();
+} catch (err) {
+  if (isCofheError(err)) {
+    console.error(err.code, err.message);
+    if (err.hint) console.error('Hint:', err.hint);
+    if (err.context) console.error('Context:', err.context);
+  }
+}
+```
 
 Use `isCofheError(err)` to check if a caught error is a `CofheError`.
 
@@ -35,19 +56,22 @@ Use `isCofheError(err)` to check if a caught error is a `CofheError`.
 
 | Error code | When it occurs |
 | --- | --- |
-| `ZkPackFailed` | `encryptInputs` exceeded the 2048-bit plaintext limit |
+| `ZkPackFailed` | `encryptInputs` exceeded the 2048-bit total plaintext limit, or an item had an invalid `utype` |
 | `ConsumingContractUninitialized` | `execute()` was called without `setConsumingContract(...)` |
 | `ACPNotFound` | No ACP found for the given `chainId + account` |
 | `ACPInvalid` | The ACP signature is invalid |
+| `ACPMalformed` | The decryption backend could not parse the submitted ACP |
 | `ACPExpired` | The ACP is past its expiration |
 | `ACPRevoked` | The issuer revoked this ACP |
 | `ACPDenied` | The ACP does not cover the requested handle |
 | `ACPRequired` | The flow needs an ACP and none was supplied |
-| `DecryptFailed` | Decryption request was rejected by the Threshold Network |
+| `DecryptFailed` | The decryption request was rejected, or the response came back malformed |
 | `NotConnected` | Attempted an operation before calling `client.connect(...)` |
 
+The first two codes above are raised locally by the SDK. The `ACP*` codes other than `ACPNotFound` are stable codes returned by the decryption backend and mapped onto the enum, so those errors also carry `apiErrorCode`.
+
 <Note>
-The `Permit*` codes are gone. `PermitNotFound` and `PermitInvalid` are now `ACPNotFound` and `ACPInvalid`. The set also expanded: expiry, revocation, and scope denial each have their own code, so you no longer have to infer which one applied from the message.
+**Migrating from 0.6.x:** the `Permit*` codes are gone. `PermitNotFound` is now `ACPNotFound`, `InvalidPermitData` is `InvalidACPData`, `InvalidPermitDomain` is `InvalidACPDomain`, and `CannotRemoveLastPermit` is `CannotRemoveLastACP`. The set also expanded: expiry, revocation, and scope denial each have their own code, so you no longer have to infer which one applied from the message.
 </Note>
 
 ## Error handling patterns
@@ -91,7 +115,7 @@ try {
 
 ### Distinguishing why an ACP is invalid
 
-The decrypt flows call `ACPUtils.validate(acp)` internally before talking to the Threshold Network. That helper enforces **schema + signed + not-expired** all at once, so when it fails the recovery path depends on **which** check tripped.
+The decrypt flows call `ACPUtils.validate(acp)` internally before submitting the request to the decryption backend. That helper enforces **schema + signed + not-expired** all at once, so when it fails the recovery path depends on **which** check tripped.
 
 Use the non-throwing `ValidationUtils.isValid` helper from `@cofhe/sdk/acps` to pre-flight the active ACP and route based on the typed reason, which avoids the thrown error path entirely:
 

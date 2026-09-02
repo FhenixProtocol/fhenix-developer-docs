@@ -19,15 +19,24 @@ The following functions are available for managing access control:
 
 ## Automatic Transaction-Scoped Allowance
 
-The contract that creates the value for the first time will automatically get ownership of the ciphertext **for the duration of the transaction**, by using `ACL.allowTransient(this)` behind the scenes.
+The contract that creates the value for the first time automatically gets ownership of the ciphertext **for the duration of the transaction**, through an internal `ACL.allowTransient(this)` call.
+
+Every snippet on this page assumes this import:
+
+```solidity
+import {FHE, euint32, externalEuint32} from "@fhenixprotocol/cofhe-contracts/FHE.sol";
+```
 
 ```solidity
 // Contract A
-function doAdd(InEuint32 input1, InEuint32 input2) {
-    euint32 handle1 = FHE.asEuint32(input1); // Contract A gets temporary ownership of handle1
-    euint32 handle2 = FHE.asEuint32(input2); // Contract A gets temporary ownership of handle2
-    
-    euint32 result = FHE.add(handle1, handle2); // possible because Contract A has ownership of handle1 and handle2
+function doAdd(externalEuint32 input1, externalEuint32 input2, bytes calldata inputProof) external {
+    // Both inputs share one batch signature, so convert them together
+    externalEuint32[] memory inputs = new externalEuint32[](2);
+    inputs[0] = input1;
+    inputs[1] = input2;
+    euint32[] memory handles = FHE.asEuint32s(inputs, inputProof); // Contract A gets temporary ownership of both
+
+    euint32 result = FHE.add(handles[0], handles[1]); // possible because Contract A has ownership of both
 }
 ```
 
@@ -41,20 +50,23 @@ To use the results in other transactions, explicit ownership must be granted wit
 
 ```solidity
 contract A {
-    private euint32 result;
-    private euint32 handle1;
+    euint32 private result;
+    euint32 private handle1;
 
-    function doAdd(InEuint32 input1, InEuint32 input2) {
-        handle1 = FHE.asEuint32(input1);         // Contract A gets temporary ownership of handle1
-        euint32 handle2 = FHE.asEuint32(input2); // Contract A gets temporary ownership of handle2
+    function doAdd(externalEuint32 input1, externalEuint32 input2, bytes calldata inputProof) external {
+        externalEuint32[] memory inputs = new externalEuint32[](2);
+        inputs[0] = input1;
+        inputs[1] = input2;
+        euint32[] memory handles = FHE.asEuint32s(inputs, inputProof); // temporary ownership of both
 
-        result = FHE.add(handle1, handle2);      // Contract A gets temporary ownership of result
+        handle1 = handles[0];
+        result = FHE.add(handles[0], handles[1]); // Contract A gets temporary ownership of result
         FHE.allowThis(result);                   // result is allowed for future transactions
     }
 
-    function doSomethingWithResult() {
-        FHE.allowPublic(result);  // Allowed — marks result as publicly decryptable
-        FHE.add(handle1, result); // ACLNotAllowed (handle1 is not owned persistently)
+    function doSomethingWithResult() external {
+        FHE.allowPublic(result);  // Allowed: marks result as publicly decryptable
+        FHE.add(handle1, result); // Reverts with ACLNotAllowed: handle1 was never allowed persistently
     }
 }
 ```
@@ -65,14 +77,14 @@ If you don't call `FHE.allowThis()` after modifying encrypted values, you won't 
 
 ## Allowance for Decryptions
 
-To decrypt a ciphertext offchain via the decryption network, the issuer must be allowed on the ciphertext handle via `FHE.allow(userAddress)`.
+To decrypt a ciphertext offchain through the Teecryptor, the requesting account must be allowed on the ciphertext handle with `FHE.allow(handle, userAddress)`.
 
 ```solidity
 contract A {
-    private mapping(address => euint32) balances;
+    mapping(address => euint32) private balances;
 
-    function transfer(InEuint32 _amount, address to) {
-        euint32 amount = FHE.asEuint32(_amount);
+    function transfer(externalEuint32 _amount, bytes calldata inputProof, address to) external {
+        euint32 amount = FHE.asEuint32(_amount, inputProof);
 
         balances[msg.sender] = FHE.sub(balances[msg.sender], amount);
         balances[to] = FHE.add(balances[to], amount);
@@ -96,14 +108,20 @@ When allowing users to decrypt their own encrypted values, use `FHE.allow()` to 
 You can also allow other contracts to use your ciphertexts, either persistently or only for the course of this transaction via `FHE.allowTransient(handle, address)`.
 
 ```solidity
+interface IContractB {
+    function doSomethingWithHandle1(euint32 handle1) external;
+}
+
 contract A {
-    function doAdd(InEuint32 input1) {
-        euint32 handle1 = FHE.asEuint32(input1);       // Contract A gets temporary ownership of handle1
+    address private addressB;
+
+    function doAdd(externalEuint32 input1, bytes calldata inputProof) external {
+        euint32 handle1 = FHE.asEuint32(input1, inputProof); // Contract A gets temporary ownership of handle1
 
         FHE.allowTransient(handle1, addressB); // Contract B is allowed to use handle1 in this transaction alone
         // or
         FHE.allow(handle1, addressB);          // Contract B is allowed to use handle1 forever
-        
+
         IContractB(addressB).doSomethingWithHandle1(handle1);
     }
 }
@@ -120,8 +138,8 @@ Use `FHE.allowTransient()` when you only need to grant access for a single trans
 When modifying encrypted values that users need to access:
 
 ```solidity
-function updateBalance(address user, InEuint32 amount) public {
-    euint32 encryptedAmount = FHE.asEuint32(amount);
+function updateBalance(address user, externalEuint32 amount, bytes calldata inputProof) public {
+    euint32 encryptedAmount = FHE.asEuint32(amount, inputProof);
     balances[user] = FHE.add(balances[user], encryptedAmount);
     
     // Allow contract to use in future transactions
@@ -137,8 +155,8 @@ function updateBalance(address user, InEuint32 amount) public {
 A common pattern is to allow the message sender:
 
 ```solidity
-function submitEncryptedData(InEuint32 data) public {
-    euint32 encryptedData = FHE.asEuint32(data);
+function submitEncryptedData(externalEuint32 data, bytes calldata inputProof) public {
+    euint32 encryptedData = FHE.asEuint32(data, inputProof);
     storedData[msg.sender] = encryptedData;
     
     FHE.allowThis(storedData[msg.sender]);
@@ -151,8 +169,8 @@ function submitEncryptedData(InEuint32 data) public {
 For values that should be accessible to everyone:
 
 ```solidity
-function setPublicValue(InEuint32 value) public onlyOwner {
-    publicValue = FHE.asEuint32(value);
+function setPublicValue(externalEuint32 value, bytes calldata inputProof) public onlyOwner {
+    publicValue = FHE.asEuint32(value, inputProof);
     FHE.allowPublic(publicValue); // Everyone can now access this value
 }
 ```

@@ -35,9 +35,9 @@ eaddress encrypted = FHE.asEaddress(0x1234567890123456789012345678901234567890);
 
 ---
 
-## From Encrypted Input Structs
+## From encrypted inputs
 
-Convert client-side encrypted inputs (received as function parameters) into encrypted types.
+Convert client-side encrypted inputs (received as function parameters) into encrypted types. Each input arrives as an `externalE*` handle plus a `bytes` proof that authenticates it.
 
 ```solidity
 function deposit(externalEuint64 encryptedAmount, bytes calldata inputProof) external {
@@ -48,20 +48,22 @@ function deposit(externalEuint64 encryptedAmount, bytes calldata inputProof) ext
 All input types follow the same pattern:
 
 ```solidity
-ebool val   = FHE.asEbool(inEbool);
-euint8 val  = FHE.asEuint8(inEuint8);
-euint16 val = FHE.asEuint16(inEuint16);
-euint32 val = FHE.asEuint32(inEuint32);
-euint64 val = FHE.asEuint64(inEuint64);
-euint128 val = FHE.asEuint128(inEuint128);
-eaddress val = FHE.asEaddress(inEaddress);
+ebool val    = FHE.asEbool(externalEboolValue, inputProof);
+euint8 val   = FHE.asEuint8(externalEuint8Value, inputProof);
+euint16 val  = FHE.asEuint16(externalEuint16Value, inputProof);
+euint32 val  = FHE.asEuint32(externalEuint32Value, inputProof);
+euint64 val  = FHE.asEuint64(externalEuint64Value, inputProof);
+euint128 val = FHE.asEuint128(externalEuint128Value, inputProof);
+eaddress val = FHE.asEaddress(externalEaddressValue, inputProof);
 ```
+
+One proof covers every encrypted input in a call. When a function receives more than one, convert them together with the plural form (`FHE.asEuint32s(handles, inputProof)`) instead of calling the single form per value.
 
 ---
 
-## Between Encrypted Types
+## Between encrypted types
 
-Cast any encrypted type to another. The full cross-cast matrix is supported:
+Cast between `ebool`, the `euint` types, and `eaddress`. Every direction is supported except into `eaddress`: there is no cast from another encrypted type into an address. Create an `eaddress` from a plaintext address or an encrypted input instead.
 
 ```solidity
 // ebool from integers
@@ -111,7 +113,4 @@ euint128 result = FHE.asEuint128(euint16Value);
 euint128 result = FHE.asEuint128(euint32Value);
 euint128 result = FHE.asEuint128(euint64Value);
 euint128 result = FHE.asEuint128(eaddressValue);
-
-// eaddress from euint128
-eaddress result = FHE.asEaddress(euint128Value);
 ```

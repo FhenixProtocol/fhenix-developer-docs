@@ -155,18 +155,47 @@ Importing generates a fresh sealing key for the recipient.
 
 ### Sharing onchain
 
-The issuer can instead post the signed offer to a registry, so the recipient discovers it without a side channel.
+Passing the offer yourself means building a channel for it: an API, a message, a QR code. `0.7` adds an alternative. The issuer posts the signed offer to a sharing registry, and the recipient discovers it by reading the chain.
 
 ```typescript
-// Issuer
+// Issuer: post the signed sharing ACP
 await client.acp.shareOnChain(sharingAcp);
 
-// Recipient
+// Recipient: discover and import
 const shares = await client.acp.getIncomingShares();
 const recipientAcp = await client.acp.importFromChain(shares[0]);
 ```
 
-`dismissShare(shareId)` clears an entry the recipient does not want, and `cancelShare` withdraws one the issuer posted.
+Both sides need a connected wallet. Only `getIncomingShares` is a read; the rest send transactions.
+
+| Method | Who calls it | What it does |
+| --- | --- | --- |
+| `shareOnChain(acp)` | Issuer | Posts a signed sharing ACP to the registry. Returns `{ txHash, shareId }` |
+| `getIncomingShares()` | Recipient | Reads the importable shares addressed to the connected account |
+| `importFromChain(share)` | Recipient | Fills in the recipient's sealing key, signs, stores, and makes it the active ACP |
+| `cancelShare(shareId)` | Issuer | Retracts a pending share that has not been imported yet |
+| `dismissShare(shareId)` | Recipient | Declines a share, or clears an entry the recipient no longer wants |
+
+`getIncomingShares()` returns only shares that are still importable, so expired and revoked ones are filtered out. Each entry carries a `shareId` alongside the shared ACP fields, and that id is what `cancelShare` and `dismissShare` take.
+
+<Note>
+`cancelShare` and `dismissShare` resolve to the same registry call. They are named for who is acting and why: the issuer retracting an offer, or the recipient declining one.
+</Note>
+
+The registry address resolves from the chain's ACL. Override it per chain with the `sharingRegistry` key in the `acp` config block:
+
+```typescript
+createCofheConfig({
+  supportedChains: [chains.sepolia],
+  acp: {
+    sharingRegistry: { 11155111: '0x…' },
+  },
+});
+```
+
+<Warning>
+Posting onchain makes the offer's existence public. The registry records that this issuer shared with this recipient, and when. The encrypted values stay confidential, but the relationship does not, which the offline route avoids.
+</Warning>
 
 ## Revoking access
 
