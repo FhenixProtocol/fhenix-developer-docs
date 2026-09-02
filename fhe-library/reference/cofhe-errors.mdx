@@ -7,32 +7,36 @@ description: "Decode Solidity smart contract errors and resolve 'execution rever
 
 When working with Solidity smart contracts, you've probably encountered cryptic error messages like:
 
-```
+```text
 Error: execution reverted: 0x118cdaa7
 Transaction reverted without a reason string
 execution reverted
 ```
 
-These errors are frustrating because you only get a 4-byte error selector (e.g., `0x118cdaa7`) with no human-readable message. The `@fhenixprotocol/cofhe-errors` package provides **instant, human-readable error decoding** for CoFHE smart contracts.
+You only get a 4-byte error selector (`0x118cdaa7` here) with no readable message. The `@fhenixprotocol/cofhe-errors` package maps a selector back to the error name, signature, and source contract.
 
-<Card title="What's Inside" icon="box">
-  - **53 custom errors** from **13 smart contracts**
+<Card title="What's inside" icon="box">
+  - 53 custom errors from 13 contracts, as of package version 1.0.2
   - Complete error signatures with parameter types
   - Source contract information
-  - Fast CLI lookup tool
-  - Programmatic JavaScript/TypeScript API
+  - CLI lookup tool
+  - JavaScript/TypeScript API
 </Card>
 
-## Quick Start
+<Warning>
+Version 1.0.2 of the package was published in January 2026 and predates the current contracts. Its database does not include errors added since, such as `NotOnAccessList`, `DecryptFunctionNotSupported`, `LengthMismatch`, `NotShared`, `UnexpectedSharer`, and the ACPShareRegistry errors. It still lists `OnlyAggregatorAllowed`, which the TaskManager no longer raises. When the CLI reports `Error not found for selector`, look the selector up on the [error reference](/fhe-library/reference/cofhe-errors-reference), which is generated from the deployed contracts.
+</Warning>
 
-**No installation required!** Use `npx` to decode errors immediately:
+## Quick start
+
+No installation is required. Use `npx` to decode an error:
 
 ```bash
 npx cofhe-errors 0x118cdaa7
 ```
 
 **Output:**
-```
+```text
 Name:      OwnableUnauthorizedAccount
 Selector:  0x118cdaa7
 Signature: OwnableUnauthorizedAccount(address)
@@ -40,7 +44,7 @@ Source:    ACL
 Inputs:    address
 ```
 
-## Installation (Optional)
+## Installation (optional)
 
 Only install if you need to import the error database programmatically in your code:
 
@@ -58,17 +62,17 @@ pnpm add @fhenixprotocol/cofhe-errors
 ```
 </CodeGroup>
 
-## CLI Usage
+## CLI usage
 
-### Decode an Error Selector
+### Decode an error selector
 
-When you see "execution reverted: 0x...", decode it instantly:
+When you see "execution reverted: 0x...", decode it:
 
 ```bash
 npx cofhe-errors 0x118cdaa7
 ```
 
-### Search Errors by Name
+### Search errors by name
 
 Find errors when you know part of the error name:
 
@@ -77,14 +81,14 @@ npx cofhe-errors --name Permission
 ```
 
 **Output:**
-```
+```text
 0x4c40eccb PermissionInvalid_IssuerSignature (ACL)
 0x8e143bf7 PermissionInvalid_RecipientSignature (ACL)
 0xcbd3a966 PermissionInvalid_Disabled (ACL)
 0xed0764a1 PermissionInvalid_Expired (ACL)
 ```
 
-### List All Known Errors
+### List all known errors
 
 Browse the complete error database:
 
@@ -92,7 +96,7 @@ Browse the complete error database:
 npx cofhe-errors --list
 ```
 
-### JSON Output
+### JSON output
 
 Get JSON output for scripting and automation:
 
@@ -114,7 +118,7 @@ npx cofhe-errors --json 0x118cdaa7
 
 ## Programmatic API
 
-### JavaScript/TypeScript Usage
+### JavaScript/TypeScript usage
 
 ```javascript
 const errors = require('@fhenixprotocol/cofhe-errors/errors.json');
@@ -133,7 +137,7 @@ const permissionErrors = errors.filter(e =>
 const aclErrors = errors.filter(e => e.source === 'ACL');
 ```
 
-### TypeScript with Types
+### TypeScript with types
 
 ```typescript
 import errors from '@fhenixprotocol/cofhe-errors/errors.json';
@@ -150,7 +154,7 @@ interface SolidityError {
 const error = errors.find(e => e.selector === '0x118cdaa7') as SolidityError;
 ```
 
-### Error Monitoring Example
+### Error monitoring example
 
 ```javascript
 const errors = require('@fhenixprotocol/cofhe-errors/errors.json');
@@ -168,9 +172,9 @@ function decodeError(errorData) {
 }
 ```
 
-## Error Coverage
+## Error coverage
 
-The package includes errors from the following contracts:
+Package version 1.0.2 includes errors from the following contracts. The counts reflect the contracts at the time of that release, not the contracts deployed today.
 
 | Contract | Error Count |
 |----------|-------------|
@@ -188,11 +192,11 @@ The package includes errors from the following contracts:
 | FHE | 1 |
 | PlaintextsStorage | 1 |
 
-## How Error Selectors Work
+## How error selectors work
 
 Solidity custom errors use a 4-byte selector computed as:
 
-```
+```text
 selector = keccak256("ErrorName(type1,type2,...)").slice(0, 4)
 ```
 
@@ -206,8 +210,8 @@ Becomes:
 - Selector: `keccak256("OwnableUnauthorizedAccount(address)") = 0x118cdaa7...`
 - First 4 bytes: `0x118cdaa7`
 
-## Next Steps
+## Next steps
 
-- View the [complete error reference](/fhe-library/reference/cofhe-errors-reference) with all 53 errors
+- View the [error reference](/fhe-library/reference/cofhe-errors-reference), generated from the deployed contracts
 - Learn about [common errors](/fhe-library/core-concepts/common-errors) and troubleshooting
 - Review [best practices](/fhe-library/introduction/best-practices) for FHE development

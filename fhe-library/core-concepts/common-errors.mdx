@@ -5,7 +5,7 @@ description: "Critical limitations and important considerations when working wit
 
 ## Overview
 
-This page documents critical limitations and important considerations when working with CoFHE. Understanding these common issues and error messages will help you troubleshoot problems and build more robust FHE-enabled smart contracts.
+This page documents the limits and error messages you are most likely to meet when working with CoFHE, and what to do about each one.
 
 <Warning>
 Always verify you're using compatible component versions. Many errors can be resolved by ensuring you're using the latest versions of all CoFHE components.
@@ -16,12 +16,12 @@ Always verify you're using compatible component versions. Many errors can be res
   ```bash
   npx cofhe-errors 0x118cdaa7
   ```
-  See the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) documentation for full usage instructions and the [Error Reference](/fhe-library/reference/cofhe-errors-reference) for a complete list of all 53 errors.
+  See the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) documentation for usage, and the [Error Reference](/fhe-library/reference/cofhe-errors-reference) for the complete list. The package predates the current contracts, so a selector it does not know is not necessarily invalid: check the reference.
 </Card>
 
-## Common Issues
+## Common issues
 
-### Missing Revert Data
+### Missing revert data
 
 If you encounter a `Missing revert data` error, verify that you're using the latest `cofhe-contracts` version.
 
@@ -71,58 +71,72 @@ pnpm add @fhenixprotocol/cofhe-contracts@latest
 This section will be expanded over time as new issues arise. If you encounter an issue not documented here, please report it to the Fhenix team.
 </Note>
 
-## Possible Errors from Solidity
+## Possible errors from Solidity
 
-The following table lists common Solidity errors you may encounter when working with CoFHE contracts. Each error includes a description to help you understand what went wrong and how to fix it.
+The errors below are the ones a contract can hit during normal development. Each comes with its selector so you can match it against an `execution reverted: 0x...` message. Admin, upgrade, and signature-parsing errors are listed on the [Error Reference](/fhe-library/reference/cofhe-errors-reference) page only.
+
+### Access control
 
 | Error | Description |
 |-------|-------------|
-| **InvalidInputsAmount** | Operation requires a specific number of inputs. Occurs when an operation receives the wrong number of arguments |
-| **InvalidOperationInputs** | Operation inputs must be valid for the operation. Thrown when inputs violate operation requirements |
-| **TooManyInputs** | Operations have maximum input limits. Error when input count exceeds the operation's maximum |
-| **InvalidBytesLength** | Byte arrays must match expected length. Occurs when byte array length doesn't match the required size |
-| **InvalidTypeOrSecurityZone** | Operations must use compatible types and security zones. Occurs when an operation violates type or security zone constraints |
-| **InvalidInputType** | Input must match the expected type. Error when input type doesn't match function requirements |
-| **InvalidInputForFunction** | Function inputs must match defined parameters. Thrown when a function receives an incompatible input type |
-| **InvalidSecurityZone** | Operations must stay within defined security zones. Error when an operation violates security zone constraints |
-| **InvalidSignature** | Cryptographic signatures must be valid. Occurs with signature verification failures |
-| **InvalidSigner** | Signer must match the expected authorized address. Error when transaction signer doesn't match the required address |
-| **InvalidAddress** | Address must be valid and non-zero. Error when an invalid address is provided |
-| **OnlyOwnerAllowed** | Function restricted to contract owner. Error includes the address of the unauthorized caller |
-| **OnlyAggregatorAllowed** | Function restricted to authorized aggregator. Error includes the address of the unauthorized caller |
-| **AlreadyDelegated** | Delegatee contract is already a delegatee for sender and delegator addresses. Error when attempting duplicate delegation |
-| **SenderCannotBeDelegateeAddress** | Sender cannot be the delegatee address. Error when sender tries to delegate to themselves |
-| **SenderNotAllowed** | Sender address not authorized for allow operations. Error includes the address of the unauthorized sender |
-| **DirectAllowForbidden** | Direct handle allowance not permitted. Must use Task Manager. Error includes the address attempting direct allow |
+| **ACLNotAllowed** `0x4d13139e` | The caller is not allowed to use the handle. Call `FHE.allowThis` or `FHE.allow` on a value before another transaction, or another contract, uses it |
+| **SenderNotAllowed** `0xd0d25976` | The account granting or sharing access does not itself have access to the handle. A contract can only allow what it is allowed to use |
+| **DirectAllowForbidden** `0x3809a243` | The ACL was called directly instead of through the TaskManager. Use the `FHE.allow*` helpers |
+| **NotShared** `0xa70a958e` | A contract tried to receive a shared value that was not passed to it in the same transaction. Pass values between contracts as `sharedEuintXX` |
+| **UnexpectedSharer** `0x3a194b4f` | The shared value came from a different contract than the receiver expected |
+| **NotOnAccessList** `0xb688c6f5` | The TaskManager access list is enabled and the calling contract is not on it. The list is disabled on the public testnets |
 
-### Understanding Error Types
+### Input validation
 
-**Input Validation Errors:**
-- `InvalidInputsAmount`, `InvalidOperationInputs`, `TooManyInputs`, `InvalidBytesLength`
-- These errors indicate problems with how data is passed to FHE operations
-- **Solution**: Verify that you're passing the correct number and type of arguments
+| Error | Description |
+|-------|-------------|
+| **InvalidEncryptedInput** `0x67cf3071` | The encrypted input's type does not match the `FHE.asE*` conversion you called. Raised inside your contract by the FHE library |
+| **InvalidSigner** `0x7ba5ffb5` | An encrypted input was not signed by the ZK Verifier, most often because it was encrypted for a different chain, contract, or account. Also raised when a decryption result was not signed by the Teecryptor |
+| **InvalidSignature** `0x8baa579f` | A signature on an encrypted input batch or decryption result does not recover to any signer |
+| **InvalidInputsAmount** `0x9a84351c` | The operation received the wrong number of encrypted inputs |
+| **InvalidOperationInputs** `0xb31612aa` | The operation received no encrypted inputs, or plaintext extra inputs it does not take |
+| **TooManyInputs** `0x2b0399d5` | The operation received more than three inputs in total |
 
-**Type and Security Zone Errors:**
-- `InvalidTypeOrSecurityZone`, `InvalidInputType`, `InvalidInputForFunction`, `InvalidSecurityZone`
-- These errors occur when encrypted types don't match expected types or security zones
-- **Solution**: Ensure encrypted values use compatible types (e.g., `euint32` matches `euint32`) and are in the correct security zone
+### Types and security zones
 
-**Authentication Errors:**
-- `InvalidSignature`, `InvalidSigner`, `InvalidAddress`
-- These errors relate to cryptographic verification and address validation
-- **Solution**: Verify signatures are valid and addresses are properly formatted
+| Error | Description |
+|-------|-------------|
+| **InvalidTypeOrSecurityZone** `0x52b50ae1` | The two operands differ in type or security zone. Cast one side first |
+| **InvalidInputType** `0x884a0e9d` | The condition passed to `select` is not an `ebool` |
+| **InvalidInputForFunction** `0x91b4b378` | The operation does not accept this type: `eaddress` in arithmetic or comparison, `ebool` in numeric operations, or a plaintext that does not fit the target type in a plaintext conversion such as `FHE.asEuint8` |
+| **InvalidSecurityZone** `0x24cbcf36` | A handle or input's security zone is outside the configured range |
+| **SecurityZoneOutOfBounds** `0x8f568bf8` | A negative security zone was passed to a plaintext conversion. Raised inside your contract by the FHE library |
+| **UnsupportedType** `0xcabe5ce4` | The requested return type or cast target is not a valid encrypted type id |
 
-**Authorization Errors:**
-- `OnlyOwnerAllowed`, `OnlyAggregatorAllowed`, `SenderNotAllowed`, `DirectAllowForbidden`
-- These errors indicate permission or access control violations
-- **Solution**: Ensure the correct account is calling the function and that proper permissions are set
+### Decryption
 
-**Delegation Errors:**
-- `AlreadyDelegated`, `SenderCannotBeDelegateeAddress`
-- These errors occur when delegation operations are invalid
-- **Solution**: Check that delegation hasn't already occurred and that sender and delegatee addresses are different
+| Error | Description |
+|-------|-------------|
+| **DecryptionResultNotReady** `0x70cf6554` | `getDecryptResult` was called before the result was published. Use `FHE.getDecryptResultSafe` to poll without reverting |
+| **DecryptFunctionNotSupported** `0x31a7e7ab` | The `decrypt` function id was submitted as a task. Request decryption through the SDK and verify it onchain with `FHE.verifyDecryptResult` |
+| **RandomFunctionNotSupported** `0x98e08ab0` | The `random` function id was submitted as an ordinary task. Use `FHE.randomEuint32` and the other `randomE*` helpers |
+| **LengthMismatch** `0xff633a38` | The handle, result, and signature arrays passed to a batch decryption call have different lengths |
+| **CofheIsUnavailable** `0xd8aba367` | An admin has disabled the coprocessor. Task creation and result publishing revert until it is re-enabled |
 
-## Troubleshooting Tips
+### Access Control Permissions
+
+These four errors come from the Access Control Permission (ACP) check in the ACL. They surface when an ACP presented for decryption is rejected.
+
+| Error | Description |
+|-------|-------------|
+| **PermissionInvalid_Expired** `0xed0764a1` | The ACP has expired. Create a new one |
+| **PermissionInvalid_IssuerSignature** `0x4c40eccb` | The issuer signature does not verify |
+| **PermissionInvalid_RecipientSignature** `0x8e143bf7` | The recipient signature on a sharing ACP does not verify |
+| **PermissionInvalid_Disabled** `0xcbd3a966` | The revoker contract reports the ACP as revoked |
+
+### Where to look first
+
+- **Access control errors** almost always mean a missing `FHE.allowThis` or `FHE.allow` in an earlier transaction. See [access control](/fhe-library/core-concepts/access-control).
+- **Input validation errors** usually mean the encrypted input was produced for a different contract, account, or chain. Re-encrypt with the consuming contract set.
+- **Type errors** mean the two sides of an operation do not match. Cast with `FHE.asEuintXX` so both operands share a type and zone.
+- **Decryption errors** mean a result was read before it existed, or the wrong entry point was used.
+
+## Troubleshooting tips
 
 When encountering errors:
 
@@ -136,10 +150,10 @@ When encountering errors:
 Many errors can be prevented by following [best practices](/fhe-library/introduction/best-practices) and ensuring proper access control management.
 </Tip>
 
-## Next Steps
+## Next steps
 
 - Use the [CoFHE Errors Package](/fhe-library/reference/cofhe-errors) to decode error selectors
-- View the complete [Error Reference](/fhe-library/reference/cofhe-errors-reference) with all 53 errors
+- View the complete [Error Reference](/fhe-library/reference/cofhe-errors-reference)
 - Review the [Compatibility](/get-started/introduction/compatibility) page for version requirements
 - Learn about [access control](/fhe-library/core-concepts/access-control) to prevent authorization errors
 - Check [best practices](/fhe-library/introduction/best-practices) for secure FHE development
