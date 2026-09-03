@@ -8,7 +8,7 @@ description: "The dual-mode confidential token, a real public ERC-20 and an encr
 `ERC20Confidential` is a **dual-mode** confidential token. Unlike [FHERC20](/fhe-library/confidential-contracts/fherc20/overview), where every balance is encrypted and the public ERC-20 surface is only a decorative shim, `ERC20Confidential` gives each holder **two real balances in the same contract**:
 
 1. A **public ERC-20 balance**, inherited from the standard OpenZeppelin `ERC20`. `balanceOf`, `transfer`, `approve`, `transferFrom`, and `totalSupply` all work exactly as they do on any normal token.
-2. A **confidential, FHE-encrypted balance**, stored as an `euint64` handle. Nobody, not even the contract, can read it without an ACL grant and a decryption permit.
+2. A **confidential, FHE-encrypted balance**, stored as an `euint64` handle. Nobody, not even the contract, can read it without an ACL grant and an [Access Control Permission](/client-sdk/guides/acps) (ACP).
 
 Tokens move between the two layers with **shield** (public to confidential) and **unshield to claim** (confidential to public). Think of it as a normal ERC-20 with a built-in privacy pool baked directly into the token.
 

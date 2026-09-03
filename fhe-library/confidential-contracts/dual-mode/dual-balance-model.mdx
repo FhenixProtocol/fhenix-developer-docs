@@ -36,7 +36,7 @@ Transparent balances tracked in the standard `_balances` mapping. `balanceOf`, `
 <Card title="Confidential Layer" icon="lock">
 **`mapping(address => euint64) _confidentialBalances`**
 
-Encrypted balances stored as `euint64` handles. Readable only by the holder (via ACL grant + permit) and the contract. Operated on entirely under FHE.
+Encrypted balances stored as `euint64` handles. Readable only by the holder (via an ACL grant and an [Access Control Permission](/client-sdk/guides/acps), or ACP) and the contract. Operated on entirely under FHE.
 </Card>
 </CardGroup>
 

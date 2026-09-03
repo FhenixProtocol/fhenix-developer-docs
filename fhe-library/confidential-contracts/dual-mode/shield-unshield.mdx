@@ -118,14 +118,14 @@ Because of [zero-replacement](/fhe-library/confidential-contracts/dual-mode/dual
 
 ### Step 2: Decrypt offchain
 
-`unshield` returns the burned `euint64` handle and calls `FHE.allowPublic(burned)`, so **anyone** can decrypt it, no permit needed. Retrieve the claim's `ctHash` and request decryption:
+`unshield` returns the burned `euint64` handle and calls `FHE.allowPublic(burned)`, so **anyone** can decrypt it, no [Access Control Permission](/client-sdk/guides/acps) (ACP) needed. Retrieve the claim's `ctHash` and request decryption:
 
 ```typescript
 // Find the pending claim's ctHash
 const claims = await token.getUserClaims(user.address);
 const ctHash = claims[claims.length - 1].ctHash;
 
-// Decrypt off-chain — no permit required (allowPublic was called)
+// Decrypt offchain, no ACP required (allowPublic was called)
 const decryptResult = await cofheClient
   .decryptForTx(ctHash)
   .withoutACP()
