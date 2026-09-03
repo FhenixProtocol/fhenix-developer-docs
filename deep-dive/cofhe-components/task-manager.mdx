@@ -68,5 +68,5 @@ While it is disabled, four entry points revert with `CofheIsUnavailable()`:
 Everything else stays open. `batchVerifyInputs` still accepts encrypted inputs, the four `verifyDecryptResult` view functions still check signatures, and results already stored in PlaintextsStorage stay readable. Pending results cannot be published until a pauser enables the contract again.
 
 <Note>
-Neither `enable()` nor `disable()` emits an event. Read the public `isEnabled` getter to learn the current state.
+Both `enable()` and `disable()` emit `EnabledSet(bool)`, so a watcher can follow the switch. The public `isEnabled` getter returns the current state.
 </Note>
