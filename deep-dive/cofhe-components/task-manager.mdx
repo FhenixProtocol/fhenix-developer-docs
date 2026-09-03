@@ -51,3 +51,22 @@ The signed message is a fixed **76-byte** buffer:
 | `ct_hash` | 32 bytes | uint256, big-endian |
 
 The message is hashed with `keccak256` and verified using OpenZeppelin's `ECDSA.tryRecover`. The `enc_type` and `chain_id` are derived onchain, binding each signature to a specific ciphertext type and chain.
+
+## When CoFHE is disabled
+
+The TaskManager carries a kill switch that stops coprocessor intake on one host chain. A holder of `PAUSER_ROLE` calls `disable()` to stop intake and `enable()` to resume it. The switch is the public `isEnabled` flag, which `initialize` sets to `true`, so a deployed TaskManager starts enabled.
+
+While it is disabled, four entry points revert with `CofheIsUnavailable()`:
+
+- `createTask`, the entry point behind every `FHE.sol` operation.
+- `createRandomTask`.
+- `publishDecryptResult`.
+- `publishDecryptResultBatch`.
+
+`createTask` carries no modifier of its own. It reverts inside the private helper that emits `TaskCreated`, after the ACL write, so the whole transaction still reverts.
+
+Everything else stays open. `batchVerifyInputs` still accepts encrypted inputs, the four `verifyDecryptResult` view functions still check signatures, and results already stored in PlaintextsStorage stay readable. Pending results cannot be published until a pauser enables the contract again.
+
+<Note>
+Neither `enable()` nor `disable()` emits an event. Read the public `isEnabled` getter to learn the current state.
+</Note>
