@@ -223,7 +223,7 @@ const ctHash = await myContract.getEncryptedAmount();
 
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 await myContract.publishDecryptResult(ctHash, decryptedValue, signature);

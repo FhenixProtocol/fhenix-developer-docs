@@ -118,17 +118,17 @@ Because of [zero-replacement](/fhe-library/confidential-contracts/dual-mode/dual
 
 ### Step 2: Decrypt offchain
 
-`unshield` returns the burned `euint64` handle and calls `FHE.allowPublic(burned)`, so **anyone** can decrypt it, no permit needed. Retrieve the claim's `ctHash` and request decryption:
+`unshield` returns the burned `euint64` handle and calls `FHE.allowPublic(burned)`, so **anyone** can decrypt it, no [Access Control Permission](/client-sdk/guides/acps) (ACP) needed. Retrieve the claim's `ctHash` and request decryption:
 
 ```typescript
 // Find the pending claim's ctHash
 const claims = await token.getUserClaims(user.address);
 const ctHash = claims[claims.length - 1].ctHash;
 
-// Decrypt off-chain — no permit required (allowPublic was called)
+// Decrypt offchain, no ACP required (allowPublic was called)
 const decryptResult = await cofheClient
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 // decryptResult.decryptedValue → the plaintext confidential amount
@@ -185,7 +185,7 @@ const claims = await token.getUserClaims(user.address);
 const ctHashes = [], amounts = [], proofs = [];
 
 for (const claim of claims) {
-  const r = await cofheClient.decryptForTx(claim.ctHash).withoutPermit().execute();
+  const r = await cofheClient.decryptForTx(claim.ctHash).withoutACP().execute();
   ctHashes.push(r.ctHash);
   amounts.push(r.decryptedValue);
   proofs.push(r.signature);
@@ -262,7 +262,7 @@ await token.unshield(100_000_000n); // burn 100 confidential, create claim
 const claims = await token.getUserClaims(user.address);
 const { ctHash, decryptedValue, signature } = await cofheClient
   .decryptForTx(claims[0].ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 await token.claimUnshielded(ctHash, decryptedValue, signature);

@@ -274,5 +274,5 @@ switch (ValidationUtils.isValid(acp).error) {
 - To share access, use `ACPUtils.export`, which strips the sensitive fields.
 
 <Warning>
-Permits stored by `0.6` are dropped on upgrade. They were signed with EIP-712 types the upgraded ACL no longer accepts, so they cannot verify and are discarded when the store loads. Your users are prompted to sign again. Nothing needs migrating, but it looks like data loss if you are not expecting it.
+ACPs stored by `0.6` are dropped on upgrade. They were signed with EIP-712 types the upgraded ACL no longer accepts, so they cannot verify and are discarded when the store loads. Your users are prompted to sign again. Nothing needs migrating, but it looks like data loss if you are not expecting it.
 </Warning>

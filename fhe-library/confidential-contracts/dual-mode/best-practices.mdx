@@ -5,7 +5,7 @@ description: "Privacy boundaries, backing, zero-replacement, and access-control 
 
 ## Overview
 
-`ERC20Confidential` combines a fully transparent ERC-20 with a confidential layer. That dual nature is powerful but introduces its own footguns: value straddles a public/private boundary, confidential mutations never revert, and encrypted handles change on every update. This page collects the practices that matter most for dual-mode tokens. The confidential-transfer, operator, and callback guidance from [FHERC20 Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) applies here too.
+`ERC20Confidential` combines a fully transparent ERC-20 with a confidential layer. That dual nature introduces its own footguns: value straddles a public/private boundary, confidential mutations never revert, and encrypted handles change on every update. This page collects the practices that matter most for dual-mode tokens. The confidential-transfer, operator, and callback guidance from [FHERC20 Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) applies here too.
 
 ---
 
@@ -21,13 +21,13 @@ The single most important thing to understand about dual-mode: **the public laye
 event TokensShielded(address indexed account, uint256 amount); // amount is plaintext!
 ```
 
-Privacy begins **after** shielding — confidential transfers between holders are opaque. But the act of entering and exiting the pool is on the public record.
+Privacy begins **after** shielding. Confidential transfers between holders are opaque. But the act of entering and exiting the pool is on the public record.
 
 **Recommendation:** if the entry/exit amount itself is sensitive, shield in standardized denominations, or shield more than you need and keep a confidential buffer, so the public shield amount doesn't map 1:1 to a later private action.
 </Accordion>
 
 <Accordion title="The pool balance is a public aggregate" icon="chart-pie" defaultOpen>
-`CONFIDENTIAL_POOL`'s public balance equals the total backing of all confidential balances. `confidentialTotalSupply()` derives directly from it. This is fine — it's an aggregate — but remember it's fully public and cannot be hidden.
+`CONFIDENTIAL_POOL`'s public balance equals the total backing of all confidential balances. `confidentialTotalSupply()` derives directly from it. This is fine, because it is an aggregate, but remember it is fully public and cannot be hidden.
 </Accordion>
 
 <Accordion title="Design where users cross the boundary" icon="bridge" defaultOpen>
@@ -82,7 +82,7 @@ contract MyDualToken is ERC20Confidential, Ownable {
 
 ## Handle Zero-Replacement Correctly
 
-Confidential transfers, unshields, and burns **never revert on insufficient balance** — they move encrypted zero instead. This preserves privacy but breaks any code that assumes the requested amount moved.
+Confidential transfers, unshields, and burns **never revert on insufficient balance**. They move encrypted zero instead. This preserves privacy but breaks any code that assumes the requested amount moved.
 
 ```solidity
 // ❌ Assumes the full amount transferred
@@ -99,7 +99,7 @@ function goodDeposit(address token, InEuint64 memory amount) external {
 ```
 
 <Warning>
-The same applies to `unshield` — unshielding more than your confidential balance creates a claim for **zero**. Verify balances before unshielding when the exact amount matters.
+The same applies to `unshield`. Unshielding more than your confidential balance creates a claim for **zero**. Verify balances before unshielding when the exact amount matters.
 </Warning>
 
 ---
@@ -126,13 +126,13 @@ function grantBalanceAccess(address admin) external onlyOwner {
 ```typescript
 const handle = await token.confidentialBalanceOf(user.address);
 if (handle && handle !== 0n) {
-  const balance = await cofheClient.decryptForView(handle, FheTypes.Uint64).withPermit().execute();
+  const balance = await cofheClient.decryptForView(handle, FheTypes.Uint64).withACP().execute();
 }
 ```
 </Accordion>
 
 <Accordion title="confidentialTotalSupply is not decryptable" icon="triangle-exclamation" defaultOpen>
-`confidentialTotalSupply()` returns a synthetic handle wrapping a plaintext number — it is **not** a registered ciphertext. Never attempt to decrypt it or feed it into FHE operations; read it as informational only.
+`confidentialTotalSupply()` returns a synthetic handle wrapping a plaintext number. It is **not** a registered ciphertext. Never attempt to decrypt it or feed it into FHE operations; read it as informational only.
 </Accordion>
 </AccordionGroup>
 
@@ -140,7 +140,7 @@ if (handle && handle !== 0n) {
 
 ## Operators
 
-The operator guidance is identical to FHERC20 — operators get **full**, all-or-nothing access to a holder's confidential balance until expiry.
+The operator guidance is identical to FHERC20. Operators get **full**, all-or-nothing access to a holder's confidential balance until expiry.
 
 <CardGroup cols={2}>
 <Card title="Prefer short windows" icon="clock">
@@ -148,7 +148,7 @@ Grant `setOperator(spender, block.timestamp + 10 minutes)` for a single interact
 </Card>
 
 <Card title="Revoke by expiring now" icon="ban">
-`setOperator(spender, uint48(block.timestamp))` revokes immediately — no separate revoke function needed.
+`setOperator(spender, uint48(block.timestamp))` revokes immediately, with no separate revoke function needed.
 </Card>
 
 <Card title="Use seconds, not milliseconds" icon="calendar">
@@ -170,8 +170,8 @@ See [Confidential Operations](/fhe-library/confidential-contracts/dual-mode/conf
 
 <AccordionGroup>
 <Accordion title="Constructor vs Upgradeable" icon="code-branch" defaultOpen>
-- **`ERC20Confidential`** — immutable, constructor-based. Simpler, cheaper to deploy, no proxy. Use it when you don't need upgradeability.
-- **`ERC20ConfidentialUpgradeable`** — proxy-safe. No constructor; call `__ERC20Confidential_init(name, symbol, decimals)` from your initializer. State lives in an ERC-7201 namespaced struct to avoid storage-layout collisions across upgrades.
+- **`ERC20Confidential`**: immutable, constructor-based. Simpler, cheaper to deploy, no proxy. Use it when you don't need upgradeability.
+- **`ERC20ConfidentialUpgradeable`**: proxy-safe. No constructor; call `__ERC20Confidential_init(name, symbol, decimals)` from your initializer. State lives in an ERC-7201 namespaced struct to avoid storage-layout collisions across upgrades.
 
 <Warning>
 For the upgradeable variant, initialize **once** behind a proxy and follow OpenZeppelin's upgrade-safety rules (no constructors for logic contracts, no immutables for versioned state, protect the initializer).
@@ -189,8 +189,8 @@ The public token can be 18 decimals to match mainstream ERC-20s, but the confide
 
 ## Related Topics
 
-- [Overview](/fhe-library/confidential-contracts/dual-mode/overview) — what dual-mode is and when to use it
-- [The Dual-Balance Model](/fhe-library/confidential-contracts/dual-mode/dual-balance-model) — pool, rate, and the update engine
-- [Shield & Unshield](/fhe-library/confidential-contracts/dual-mode/shield-unshield) — the bridge between layers
-- [Confidential Operations](/fhe-library/confidential-contracts/dual-mode/confidential-operations) — transfers, operators, callbacks
-- [FHERC20 Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices) — shared confidential-token guidance
+- [Overview](/fhe-library/confidential-contracts/dual-mode/overview): what dual-mode is and when to use it
+- [The Dual-Balance Model](/fhe-library/confidential-contracts/dual-mode/dual-balance-model): pool, rate, and the update engine
+- [Shield & Unshield](/fhe-library/confidential-contracts/dual-mode/shield-unshield): the bridge between layers
+- [Confidential Operations](/fhe-library/confidential-contracts/dual-mode/confidential-operations): transfers, operators, callbacks
+- [FHERC20 Best Practices](/fhe-library/confidential-contracts/fherc20/best-practices): shared confidential-token guidance

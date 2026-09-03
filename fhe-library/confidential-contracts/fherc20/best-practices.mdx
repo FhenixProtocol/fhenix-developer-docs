@@ -383,7 +383,7 @@ const latestClaim = claims[claims.length - 1];
 // 3. Decrypt off-chain to get plaintext + proof
 const decryptResult = await client
   .decryptForTx(latestClaim.ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 // 4. Claim with proof
