@@ -37,7 +37,7 @@ The auctioneer closes the auction and calls `FHE.allowPublic` on the highest bid
 </Step>
 
 <Step title="Decrypt Offchain">
-Anyone can call `decryptForTx` offchain to obtain the plaintext values and Threshold Network signatures for the winning bid and bidder.
+Anyone can call `decryptForTx` offchain to obtain the plaintext values and their signatures from [Teecryptor](/deep-dive/cofhe-components/teecryptor), the component that decrypts CoFHE ciphertexts.
 </Step>
 
 <Step title="Reveal Winner">
@@ -269,7 +269,7 @@ Since `FHE.allowPublic` is used, anyone can request decryption offchain without 
 
 ### Revealing the Winner
 
-The `revealWinner` function accepts the decrypted values and their Threshold Network signatures, then publishes them onchain:
+The `revealWinner` function accepts the decrypted values and their Teecryptor signatures, then publishes them onchain:
 
 ```solidity
 function revealWinner(
@@ -293,7 +293,7 @@ function revealWinner(
 ```
 
 <Note>
-`FHE.publishDecryptResult` verifies the Threshold Network signature before accepting the plaintext. If the signature is invalid, the transaction reverts.
+`FHE.publishDecryptResult` verifies the Teecryptor signature before accepting the plaintext. If the signature is invalid, the transaction reverts.
 </Note>
 
 ---
@@ -373,7 +373,7 @@ Every encrypted value created must have permissions granted via `FHE.allowThis()
 </Card>
 
 <Card title="Decrypt-with-Proof" icon="shield-check">
-Decryption happens offchain via `decryptForTx`, and results are verified onchain via `FHE.publishDecryptResult` with a Threshold Network signature.
+Decryption happens offchain via `decryptForTx`, and results are verified onchain via `FHE.publishDecryptResult` with a Teecryptor signature.
 </Card>
 </CardGroup>
 
