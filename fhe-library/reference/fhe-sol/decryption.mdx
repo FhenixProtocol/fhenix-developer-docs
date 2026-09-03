@@ -15,7 +15,7 @@ Decryption in CoFHE is a two-phase process:
 
 ### publishDecryptResult
 
-Publishes a decrypted result onchain by verifying the signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor), the component that decrypts CoFHE ciphertexts. The plaintext is stored and can be read via `getDecryptResultSafe`.
+Publishes a decrypted result onchain by verifying the signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor). The plaintext is stored and can be read via `getDecryptResultSafe`.
 
 <ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
 Ciphertext handle

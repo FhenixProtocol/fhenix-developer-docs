@@ -9,11 +9,11 @@ Decryption is the process of converting encrypted data back into its original fo
 
 Decryption in CoFHE is a multi-step process that involves both offchain and onchain components:
 
-1. A client requests decryption offchain and receives the plaintext along with a signature from Teecryptor, the component that decrypts CoFHE ciphertexts.
+1. A client requests decryption offchain and receives the plaintext along with a signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor).
 2. The plaintext and signature are submitted onchain, where the contract publishes or verifies the result.
 
 <Tip>
-Teecryptor decrypts inside a hardware-attested Trusted Execution Environment (TEE), and signs each result with a key that never leaves the enclave. See the [Teecryptor](/deep-dive/cofhe-components/teecryptor) guide for the full request path. A Threshold Network that decrypts through multi-party computation is planned to replace it, and is described in [Future Plans](/deep-dive/research/future-plans).
+Learn more about how CoFHE decrypts in the [Teecryptor](/deep-dive/cofhe-components/teecryptor) guide.
 </Tip>
 
 ---
