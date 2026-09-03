@@ -30,6 +30,7 @@ exceptions:
   - TaskManager
   - CommitmentRegistry
   - Threshold Network
+  - FHE Engine
   - JavaScript
   - TypeScript
   - React

@@ -12,20 +12,20 @@
     "tabs": [
       {
         "tab": "Get Started",
-            "global": {
-              "anchors": [
-                {
-                  "anchor": "Website",
-                  "href": "https://www.fhenix.io/",
-                  "icon": "globe"
-                },
-                {
-                  "anchor": "Blog",
-                  "href": "https://www.fhenix.io/blog",
-                  "icon": "newspaper"
-                }
-              ]
+        "global": {
+          "anchors": [
+            {
+              "anchor": "Website",
+              "href": "https://www.fhenix.io/",
+              "icon": "globe"
             },
+            {
+              "anchor": "Blog",
+              "href": "https://www.fhenix.io/blog",
+              "icon": "newspaper"
+            }
+          ]
+        },
         "groups": [
           {
             "group": "Introduction",
@@ -186,7 +186,6 @@
               }
             ]
           },
-
           {
             "group": "Examples",
             "pages": [
@@ -233,21 +232,19 @@
       },
       {
         "tab": "Deep Dive",
-        "groups":[
+        "groups": [
           {
             "group": "CoFHE Components",
             "pages": [
               "deep-dive/cofhe-components/overview",
               "deep-dive/cofhe-components/task-manager",
               "deep-dive/cofhe-components/acl",
-              "deep-dive/cofhe-components/slim-listener",
-              "deep-dive/cofhe-components/result-processor",
               "deep-dive/cofhe-components/plaintext-storage",
-              "deep-dive/cofhe-components/ct-registry",
               "deep-dive/cofhe-components/commitment-registry",
               "deep-dive/cofhe-components/zk-verifier",
-              "deep-dive/cofhe-components/fheos-server",
-              "deep-dive/cofhe-components/threshold-network"
+              "deep-dive/cofhe-components/compute-pipeline",
+              "deep-dive/cofhe-components/teecryptor",
+              "deep-dive/cofhe-components/key-management"
             ]
           },
           {
@@ -255,11 +252,10 @@
             "pages": [
               "deep-dive/data-flows/encryption-request-flow",
               "deep-dive/data-flows/fhe-operation-request-flow",
-              "deep-dive/data-flows/decryption-request-flow",
-              "deep-dive/data-flows/off-chain-decryption-flow"
+              "deep-dive/data-flows/decryption-request-flow"
             ]
           },
-          { 
+          {
             "group": "Research",
             "pages": [
               "deep-dive/research/future-plans",
@@ -290,11 +286,11 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "chatgpt",
-     "claude",
-     "cursor"
-   ]
+      "copy",
+      "chatgpt",
+      "claude",
+      "cursor"
+    ]
   },
   "footer": {
     "socials": {
@@ -311,6 +307,34 @@
     {
       "source": "/client-sdk/guides/permits",
       "destination": "/client-sdk/guides/acps"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/threshold-network",
+      "destination": "/deep-dive/cofhe-components/teecryptor"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/slim-listener",
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/fheos-server",
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/result-processor",
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/ct-registry",
+      "destination": "/deep-dive/cofhe-components/commitment-registry"
+    },
+    {
+      "source": "/deep-dive/data-flows/off-chain-decryption-flow",
+      "destination": "/deep-dive/data-flows/decryption-request-flow"
+    },
+    {
+      "source": "/deep-dive/cofhe-components/fhe-engine",
+      "destination": "/deep-dive/cofhe-components/compute-pipeline"
     },
     {
       "source": "/api-reference/introduction",
@@ -375,7 +399,7 @@
   ],
   "integrations": {
     "ga4": {
-        "measurementId": "G-NKHXME4286"
+      "measurementId": "G-NKHXME4286"
     }
-}
+  }
 }

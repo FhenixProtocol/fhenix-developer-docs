@@ -48,6 +48,7 @@ When an authorized user wants a result, they present a signed [Access Control Pe
 </Steps>
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
     participant User
     participant SDK as "@cofhe/sdk"
@@ -89,11 +90,8 @@ Developers only interact directly with **two** parts of CoFHE; the rest runs beh
 | Component | Role |
 | --- | --- |
 | **Task Manager** | Onchain gateway that validates FHE requests and enforces access control |
-| **Slim Listener** | Watches onchain events and forwards operations to the offchain layer |
-| **FheOS Server** | Verifies incoming work and queues it. It does not execute FHE operations |
-| **FHE Engine** | Executes the FHE operations on encrypted data |
-| **Result Processor** | Publishes verified results back onchain |
-| **Threshold Network** | Decrypts via multi-party computation, no single party holds the key |
+| **FHE Engine** | Picks up onchain task events, validates and orders them, executes the FHE operations on encrypted data, and commits results |
+| **Teecryptor** | Decrypts inside a hardware-attested TEE, after checking permissions and commitments |
 | **Registries** | Track ciphertexts and record result commitments so integrity can be verified before any decryption |
 
 For a component-by-component breakdown, see the [CoFHE Architecture deep dive](/deep-dive/cofhe-components/overview).

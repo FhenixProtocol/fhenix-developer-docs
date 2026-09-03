@@ -1,35 +1,49 @@
 ---
 title: Encryption Request Flow
-description: "Complete flow of the encryption request process using the Client SDK for encrypting data for private computation with smart contracts"
+description: "How a plaintext becomes a verified encrypted input: local encryption, ZK proof, verification, and onchain use"
 ---
 
-## Overview
+This page follows encrypted inputs from the plaintext in your application to handles a smart contract can compute on. Everything sensitive happens client-side: the values are encrypted and proven locally, and only the ciphertexts and their proofs ever leave the user's machine. Inputs travel as one batch, verified with a single signature that is bound to the contract that will consume them.
 
-This document outlines the complete flow of the encryption request process using the `@cofhe/sdk` Client SDK, a TypeScript library designed to help users encrypt data for private computation with smart contracts. Understanding this process is essential for developers who want to enable their users to interact with privacy-preserving smart contracts using encrypted inputs.
-
-## Key Components
+## Key components
 
 | Component | Description |
 |-----------|-------------|
-| **dApp** | The decentralized application that interacts with the user and the contracts |
-| **Client SDK** (`@cofhe/sdk`) | TypeScript package designed for seamless interaction with Fhenix's co-processor |
-| **Threshold Network** | (When applicable) Handles secure decryption operations |
+| **dApp** | The application that interacts with the user and the contracts |
+| **Client SDK** (`@cofhe/sdk`) | TypeScript library that encrypts inputs locally and submits them for verification |
+| **ZK Verifier** | Attested offchain component that verifies the proofs of every encrypted-input batch |
+| **CT Server** | Stores the verified ciphertext bytes for the coprocessor |
+| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Verifies the ZK Verifier's batch signature when the inputs are used onchain |
 
-## Flow Diagram
+## Flow diagram
 
-The following diagram illustrates the complete flow of an Encryption request in the CoFHE ecosystem:
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
+sequenceDiagram
+    participant App as Your app
+    participant SDK as Client SDK
+    participant ZK as ZK Verifier
+    participant CTS as CT Server
+    participant TM as TaskManager
+    participant CR as CommitmentRegistry
 
-<Frame>
-<img src="/images/Encrypt-a-value.svg" alt="End-to-end flow of an Encryption request through the CoFHE system components" />
-</Frame>
+    App->>SDK: encryptInputs([...]).setConsumingContract(addr).execute()
+    SDK->>SDK: encrypt with TFHE, generate zkPoKs
+    SDK->>ZK: ciphertext batch + proofs
+    ZK->>ZK: verify the proofs in the attested TEE
+    ZK->>CTS: store ciphertext bytes
+    ZK-->>SDK: handles + one batch signature
+    SDK-->>App: [handles..., proof]
+    App->>TM: contract call with handles + proof
+    TM->>TM: batchVerifyInputs, emit InputVerified per input
+    TM--)CR: input commitments (relayed by the coprocessor)
+```
 
-*Figure 1: End-to-end flow of an Encryption request through the CoFHE system components*
-
-## Step-by-Step Flow
+## Step-by-step flow
 
 <Steps>
 <Step title="Install and initialize the Client SDK">
-Install, include and initialize the Client SDK in your project (full details [here](/client-sdk/introduction/installation)).
+Install and initialize the Client SDK in your project. Full details are in the [installation guide](/client-sdk/introduction/installation).
 
 ```bash
 npm install @cofhe/sdk
@@ -38,29 +52,36 @@ npm install @cofhe/sdk
 ```javascript
 const { Encryptable, FheTypes } = require("@cofhe/sdk");
 const { createCofheConfig, createCofheClient } = require("@cofhe/sdk/node");
+const { chains } = require("@cofhe/sdk/chains");
+
+const config = createCofheConfig({ supportedChains: [chains.sepolia] });
+const cofheClient = createCofheClient(config);
+await cofheClient.connect(publicClient, walletClient);
 ```
 </Step>
 
-<Step title="Data preparation">
-1️⃣ The data is encrypted locally using the `encrypt` function.
+<Step title="Encrypt and prove locally">
+The application encrypts its values with a single builder call, naming the contract that will consume them:
 
-Under the hood, `encrypt` encrypts the data using the TFHE library and create a zkPoK to prove the encryption is correct.
+```typescript
+const [encryptedInput, proof] = await cofheClient
+  .encryptInputs([Encryptable.uint32(42n)])
+  .setConsumingContract(contractAddress)
+  .execute();
+```
+
+Internally, `encryptInputs` encrypts each value with the TFHE library and generates a zkPoK (zero-knowledge proof of knowledge) that the encryption is correct. It then submits the whole batch to the ZK Verifier. The verifier's signature is bound to the consuming contract, so the batch cannot be replayed into a different one.
 </Step>
 
-<Step title="Encryption verification">
-The zkPoK is verified using the `verify` function. 2️⃣
-
-This verification process ensures that the ciphertext was generated correctly—that it represents a valid encryption of a known plaintext—and that the data has not been tampered with. Upon successful verification, the encrypted data is stored in the Data Availability (DA) layer. 3️⃣ 4️⃣
-
-The function returns a value handle that can be used to reference the encrypted data later, along with a signature. 5️⃣
+<Step title="Verification and storage">
+The ZK Verifier checks each proof inside its attested enclave. A valid proof shows the ciphertext is a correct, untampered encryption of a known plaintext. On success, the verifier stores the ciphertext bytes and returns the handles with one signature covering the batch. The SDK hands your application the tuple `[handles..., proof]`; each handle is an `external` encrypted value such as `externalEuint32`.
 </Step>
 
-<Step title="Using the encrypted data">
-The user can send the value handle to the contract as an encrypted input. This handle represents the ciphertext stored in the DA layer and allows the contract to reference the encrypted value.
+<Step title="Use the encrypted input onchain">
+The application passes the handles and the proof to the contract as encrypted inputs. When the contract consumes them, the TaskManager's `batchVerifyInputs` checks the ZK Verifier's signature over the batch and emits an `InputVerified` event per input. The coprocessor picks those events up and posts a commitment for each input to the CommitmentRegistry, so the ciphertexts are anchored onchain like every computed result.
 </Step>
 </Steps>
 
 <Note>
-Read more about the implementation details [here](/client-sdk/guides/encrypting-inputs)
+Read more about the client-side API in [Encrypting Inputs](/client-sdk/guides/encrypting-inputs).
 </Note>
-

@@ -1,20 +1,24 @@
 ---
 title: CommitmentRegistry
-description: "Registry-chain contract that records FHE computation commitments. The Threshold Network reads it to verify ciphertext integrity before decrypting."
+description: "Registry-chain contract that records FHE computation commitments. Teecryptor verifies ciphertext integrity against it before decrypting."
 ---
 
 | Aspect | Description |
 |--------|-------------|
-| **Type** | UUPS-upgradeable Solidity contract deployed on a **registry chain** (Arbitrum One in production). Distinct from the per-host-chain [CTRegistry](/deep-dive/cofhe-components/ct-registry). |
-| **Function** | Records `(version, handle) → commitHash` entries for every FHE operation result that the coprocessor produces. |
-| **Responsibilities** | • Provide an authoritative source of ciphertext integrity that the Threshold Network checks **before** issuing a decryption.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so off-chain tooling can audit what has been posted. |
-| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. Initialized with `(initialOwner, initialPoster)`. Owner is `Ownable2Step` — transfers require explicit accept. |
+| **Type** | UUPS-upgradeable Solidity contract deployed on a dedicated **registry chain**. |
+| **Function** | Records `(version, handle) → commitHash` entries for every ciphertext the coprocessor produces or verifies, computed results and encrypted inputs alike. |
+| **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
+| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. |
 
-## Why a separate registry chain?
+## What a commitment is
 
-The Threshold Network needs to confirm that the ciphertext it's about to decrypt is **exactly** the one the FHE Engine produced (not a tampered or stale handle). The natural place to anchor that proof is on-chain, but doing it on every host chain would force the network to maintain N RPC paths and pay gas on N chains for every FHE operation. Instead, the coprocessor posts commitments to a **single registry chain** (currently Arbitrum One), and the Threshold Network only watches that one.
+A commitment is the `keccak256` hash of a ciphertext's canonical stored bytes. The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) produces one for every result it computes, and the coprocessor anchors one for every encrypted input it verifies. The engine batches them and writes them to this registry.
 
-This is why the host-chain [CTRegistry](/deep-dive/cofhe-components/ct-registry) (which maps temporary → final ciphertext hashes inside one chain's lifecycle) and `CommitmentRegistry` (which records the canonical commitment for every produced ciphertext, cross-chain) are deliberately distinct components.
+## Why commitments?
+
+The commitment is a safety check in the decryption flow. Before decrypting anything, [Teecryptor](/deep-dive/cofhe-components/teecryptor) confirms that the ciphertext bytes it fetched hash to the commitment anchored onchain. It only ever decrypts a ciphertext the coprocessor actually produced, never a tampered or substituted one.
+
+The registry also makes the coprocessor accountable. Every result it has ever produced is committed publicly, permanently, and write-once, so its computation history is tamper-evident and open to independent audit. Commitments for every host chain land on one dedicated **registry chain**, which gives the decryption path a single place to verify against.
 
 ## Storage shape
 
@@ -29,32 +33,30 @@ mapping(address => bool)                                                  poster
 
 ## Version lifecycle
 
-`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change (see [the FHE Engine `COMMITMENT_VERSION` notes](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05)). Every version moves through a small state machine:
+`version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change, currently the ASCII tag `"2"`. Every version moves through a small state machine:
 
-```
-Unset ─┐
-       ▼
-     Active ─┬──────► Deprecated ──► Revoked
-             └─────────────────────► Revoked
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
+stateDiagram-v2
+    direction LR
+    Unset --> Active
+    Active --> Deprecated
+    Active --> Revoked
+    Deprecated --> Revoked
 ```
 
 | State | Meaning | Allowed transitions |
 |-------|---------|---------------------|
-| `Unset` | Default. No commitments have been posted under this version. | → `Active` |
-| `Active` | Posters may write commitments under this version. The Threshold Network honors lookups. | → `Deprecated`, → `Revoked` |
-| `Deprecated` | New commitments rejected. Existing lookups still resolve. Used during a parameter rollover. | → `Revoked` |
-| `Revoked` | Hard kill. No further transitions; the version is dead. | — (terminal) |
+| `Unset` | Default. No commitments have been posted under this version. | to `Active` |
+| `Active` | Posters may write commitments under this version. Teecryptor honors lookups. | to `Deprecated` or `Revoked` |
+| `Deprecated` | New commitments rejected. Existing lookups still resolve. Used during a parameter rollover. | to `Revoked` |
+| `Revoked` | Hard kill. No further transitions; the version is dead. | none (terminal) |
 
-Owner-only `setVersionStatus(version, newStatus)` enforces these transitions and reverts with `InvalidVersionTransition` otherwise. The transition emits `VersionStatusChanged(version, oldStatus, newStatus)`.
+The admin-only `setVersionStatus(version, newStatus)` enforces these transitions and reverts with `InvalidVersionTransition` otherwise. The transition emits `VersionStatusChanged(version, oldStatus, newStatus)`.
 
-## Roles and write surface
+## Write surface
 
-| Role | How it's set | What it can do |
-|------|--------------|----------------|
-| **Owner** | `initialize(initialOwner, …)`, then `Ownable2Step` transfer. | `addPoster`, `removePoster`, `setVersionStatus`, `_authorizeUpgrade`. |
-| **Poster** | Owner-only `addPoster(address)`. Initial poster supplied to `initialize`. | `postCommitments`, `postCommitmentsSafe`. |
-
-Non-poster posts revert with `OnlyPosterAllowed(caller)`. In production, the [`blockchain-poster`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05) service holds the only poster role and signs through OpenZeppelin Relayer.
+Only accounts holding the **poster** role can write commitments (`postCommitments`, `postCommitmentsSafe`); posts from anyone else revert with `OnlyPosterAllowed(caller)`. Poster management and version transitions are admin-only. In production, the poster role is held by the coprocessor's relayer signer (OpenZeppelin Relayer).
 
 ## Writing commitments
 
@@ -74,20 +76,20 @@ function postCommitmentsSafe(
 
 Both functions batch-write `(version, handle) → commitHash` rows and require:
 
-- `version` is in `Active` state — otherwise reverts with `VersionNotActive(version)`.
-- `handles.length == commitHashes.length` and `> 0` — otherwise `LengthMismatch` / `EmptyBatch`.
-- Each `commitHash != bytes32(0)` — otherwise `ZeroCommitHash(handle)`.
+- `version` is in `Active` state, otherwise the call reverts with `VersionNotActive(version)`.
+- `handles.length == commitHashes.length` and `> 0`, otherwise `LengthMismatch` / `EmptyBatch`.
+- Each `commitHash != bytes32(0)`, otherwise `ZeroCommitHash(handle)`.
 
 The difference is in **how duplicates are handled**:
 
 | Function | Duplicate handle under same version | Use case |
 |----------|-------------------------------------|----------|
-| `postCommitments` | Reverts the whole batch with `CommitmentAlreadyExists(version, handle)`. | Strict integrity — caller knows it's posting unique data. |
+| `postCommitments` | Reverts the whole batch with `CommitmentAlreadyExists(version, handle)`. | Strict integrity: the caller knows it is posting unique data. |
 | `postCommitmentsSafe` | Silently skips the handle; emits `CommitmentsPostedSafe(version, newlyPosted, skipped)`. | Idempotent re-flushes (e.g. when the coprocessor's message broker redelivers a commitment batch). |
 
-`postCommitments` emits `CommitmentsPosted(version, batchSize)`. `postCommitmentsSafe` emits `CommitmentsPostedSafe(version, newlyPosted, skipped)` so the off-chain caller can tell whether the round did real work.
+`postCommitments` emits `CommitmentsPosted(version, batchSize)`. `postCommitmentsSafe` emits `CommitmentsPostedSafe(version, newlyPosted, skipped)` so the offchain caller can tell whether the round did real work.
 
-Both enforce **write-once per (version, handle)** — a commitment can never be overwritten, only superseded by writing the same handle under a new `version`.
+Both enforce **write-once per (version, handle)**: a commitment can never be overwritten, only superseded by writing the same handle under a new `version`.
 
 ## Reading commitments
 
@@ -96,27 +98,23 @@ Both enforce **write-once per (version, handle)** — a commitment can never be 
 | `getCommitment(version, handle)` | `bytes32` | `bytes32(0)` means "not posted". |
 | `getVersionStatus(version)` | `VersionStatus` | `Unset` if never registered. |
 | `getSize(version)` | `uint256` | Number of handles ever committed under `version`. |
-| `getHandleByIndex(version, index)` | `bytes32` | Direct array lookup. Reverts on out-of-range. |
-| `getHandles(version, offset, limit)` | `bytes32[]` | Paginated. Returns an empty array if `offset >= total`; clamps `offset + limit` at `total`. |
-| `isPoster(address)` | `bool` | Useful for off-chain ops dashboards. |
+| <code style={{ whiteSpace: "nowrap" }}>getHandleByIndex(version, index)</code> | `bytes32` | Direct array lookup. Reverts on out-of-range. |
+| <code style={{ whiteSpace: "nowrap" }}>getHandles(version, offset, limit)</code> | `bytes32[]` | Paginated. Returns an empty array if `offset >= total`; clamps `offset + limit` at `total`. |
+| `isPoster(address)` | `bool` | Useful for offchain ops dashboards. |
 
-The paginated `getHandles` is the recommended way to enumerate a version — `getSize` first to compute pages, then `getHandles(version, offset, pageSize)` in a loop.
+The paginated `getHandles` is the recommended way to enumerate a version: `getSize` first to compute pages, then `getHandles(version, offset, pageSize)` in a loop.
 
 ## Events
 
 | Event | Emitted by | Use |
 |-------|-----------|-----|
-| `CommitmentsPosted(bytes32 indexed version, uint256 batchSize)` | `postCommitments` | Confirm a strict batch landed. |
-| `CommitmentsPostedSafe(bytes32 indexed version, uint256 newlyPosted, uint256 skipped)` | `postCommitmentsSafe` | Reconcile "how many were new" in an idempotent flow. |
-| `VersionStatusChanged(bytes32 indexed version, VersionStatus oldStatus, VersionStatus newStatus)` | `setVersionStatus` | Watch for `Active → Deprecated` to know when to stop posting under a version. |
-| `PosterAdded(address indexed poster)` / `PosterRemoved(address indexed poster)` | `addPoster` / `removePoster` | Audit role changes. |
-
-## Upgrades
-
-The contract is `UUPSUpgradeable`. `_authorizeUpgrade` is gated by `onlyOwner`. The constructor calls `_disableInitializers()` so the implementation contract itself can never be initialized — initialization happens through the proxy via `initialize(initialOwner, initialPoster)`.
+| <code style={{ whiteSpace: "nowrap" }}>CommitmentsPosted</code> | `postCommitments` | Confirm a strict batch landed. Carries the version and batch size. |
+| <code style={{ whiteSpace: "nowrap" }}>CommitmentsPostedSafe</code> | `postCommitmentsSafe` | Reconcile "how many were new" in an idempotent flow. Carries newlyPosted and skipped counts. |
+| <code style={{ whiteSpace: "nowrap" }}>VersionStatusChanged</code> | `setVersionStatus` | Watch for the `Active` to `Deprecated` transition to know when to stop posting under a version. |
+| <code style={{ whiteSpace: "nowrap" }}>PosterAdded</code> / <code style={{ whiteSpace: "nowrap" }}>PosterRemoved</code> | `addPoster` / `removePoster` | Audit role changes. |
 
 ## Source
 
 - Solidity: [`contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol`](https://github.com/FhenixProtocol/cofhe-contracts/blob/master/contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol).
-- Off-chain poster service: [`src/services/blockchain-poster/`](https://github.com/FhenixProtocol/cofhe/tree/master/src/services/blockchain-poster) — introduced in [cofhe `0.6.0`](https://github.com/FhenixProtocol/cofhe/blob/master/CHANGELOG.md#060---2026-05-05).
-- FHE Engine commitment-version bumping: [`fhe-engine/src/rabbitmq/handlers.rs`](https://github.com/FhenixProtocol/cofhe/blob/master/fhe-engine/src/rabbitmq/handlers.rs).
+- Offchain: the FHE Engine's commit stage batches the commitments and posts them to this registry.
+- The same stage bumps the commitment version when the FHE parameters change.

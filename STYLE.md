@@ -62,10 +62,10 @@ One name per thing, used consistently. Canonical names:
 | Term | Notes |
 |---|---|
 | CoFHE | The coprocessor as a whole. Not COFHE, not Cofhe. |
-| Teecryptor | The TEE decryption service. Capitalized as a product name. |
-| FHE Engine | The service that executes FHE operations. |
-| FheOS Server | The service that verifies and queues incoming work. It does not execute FHE operations. |
-| ZK Verifier | The input proof verification service. |
+| Teecryptor | The TEE decryption component. Capitalized as a product name. |
+| Compute pipeline | The offchain pipeline that carries a task from onchain event to committed result. Lowercase, except at the start of a sentence. |
+| Slim listener, FheOS, FHE Engine, Blockchain poster | The four components of the compute pipeline, in order. FHE Engine names the component that computes, never the pipeline around it. |
+| ZK Verifier | The TEE input proof verification component. Runs in its own attested enclave, like Teecryptor. |
 | TaskManager, CommitmentRegistry, ACL | Contract names, written as in the source. |
 | ACP | Access Control Permission. Replaces "Permit" from `0.7` onward, so that it is not confused with an ERC-2612 permit. Spell it out before the acronym: a page whose subject is ACPs carries the full term in its `title`, and every other page expands it on first use. Never write "ACP permission". |
 | `FHE.sol` | The Solidity library, in backticks when referring to the file or API. |
@@ -100,6 +100,7 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 
 - Internal links use root-relative paths: `/fhe-library/core-concepts/access-control`, not `../core-concepts/access-control` and not the full `https://cofhe-docs.fhenix.zone/...` URL. Relative paths break when a page moves; absolute URLs break preview deployments.
 - Link text describes the destination. "See [access control](/fhe-library/core-concepts/access-control)", never `"click [here](/...)"` or a bare URL.
+- Never link to a private repository; readers get a 404. Of the FhenixProtocol repos, only `cofhe-contracts` and `cofhesdk` are public. Name a component or path in prose instead, and add the link when the repo goes public.
 - Every image is wrapped in `<Frame>` and carries alt text that says what the image shows, not what it is called. "Sealed output flowing from the FHE Engine to the client", not "diagram".
 - Pick the component that matches the content, and use each one for one job:
 
@@ -118,6 +119,8 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 | `<ParamField>`, `<ResponseField>`, `<Expandable>` | API reference parameters, responses, and nested fields |
 
 A page full of callouts has none.
+
+- Long code identifiers in narrow table columns get chopped mid-word by the table layout. Keep the first column to bare names (no argument lists) and guard each one with `<code style={{ whiteSpace: "nowrap" }}>name</code>`. Full signatures belong in prose above the table or in the description column.
 
 ## Code samples
 
