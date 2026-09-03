@@ -62,7 +62,7 @@ function _confidentialTransfer(address from, address to, euint64 value)
 ```typescript
 import { Encryptable } from '@cofhe/sdk';
 
-// Encrypt the amount off-chain (6 confidential decimals)
+// Encrypt the amount offchain (6 confidential decimals)
 const [enc] = await cofheClient
   .encryptInputs([Encryptable.uint64(100_000_000n)]) // 100 tokens
   .execute();

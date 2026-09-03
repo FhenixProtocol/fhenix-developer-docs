@@ -380,7 +380,7 @@ await tx.wait();
 const claims = await wrapper.getUserClaims(userAddress);
 const latestClaim = claims[claims.length - 1];
 
-// 3. Decrypt off-chain to get plaintext + proof
+// 3. Decrypt offchain to get plaintext + proof
 const decryptResult = await client
   .decryptForTx(latestClaim.ctHash)
   .withoutACP()

@@ -281,7 +281,7 @@ contract StakingPool is IERC7984Receiver {
 ### Basic Usage
 
 ```typescript
-// Off-chain: Prepare encrypted amount
+// Offchain: Prepare encrypted amount
 const [encryptedAmount] = await cofheClient
   .encryptInputs([Encryptable.uint64(1000n)])
   .execute();

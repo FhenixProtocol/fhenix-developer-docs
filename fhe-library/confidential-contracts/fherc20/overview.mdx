@@ -251,7 +251,7 @@ The recommended number of decimals for FHERC20 tokens is **6**. This ensures com
 Using the token:
 
 ```solidity
-// User encrypts amount off-chain, then submits
+// User encrypts amount offchain, then submits
 InEuint64 memory encryptedAmount = cofhe.encrypt(100);
 token.confidentialTransfer(recipient, encryptedAmount);
 

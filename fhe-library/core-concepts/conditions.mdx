@@ -227,7 +227,7 @@ contract EncryptedAuction {
     }
 
     function revealWinner(euint32 ctHash, uint32 plaintext, bytes calldata signature) public {
-        // Verify and publish the decrypted highest bid on-chain
+        // Verify and publish the decrypted highest bid onchain
         FHE.publishDecryptResult(ctHash, plaintext, signature);
     }
 }

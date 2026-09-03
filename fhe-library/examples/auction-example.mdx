@@ -339,7 +339,7 @@ const bidderResult = await client
   .withoutACP()
   .execute();
 
-// Submit the proofs on-chain to reveal the winner
+// Submit the proofs onchain to reveal the winner
 await auction.revealWinner(
   bidResult.ctHash,
   bidResult.decryptedValue,
