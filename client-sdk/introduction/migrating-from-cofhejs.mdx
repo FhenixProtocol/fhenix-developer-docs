@@ -173,7 +173,7 @@ The `Encryptable` factory functions (`Encryptable.uint32(...)`, `Encryptable.boo
 `cofhejs` has a single `unseal` function. `@cofhe/sdk` splits decryption into two purpose-built methods:
 
 - **`decryptForView`**: returns the plaintext for UI display (no onchain signature).
-- **`decryptForTx`**: returns the plaintext **and** a Threshold Network signature for onchain verification.
+- **`decryptForTx`**: returns the plaintext **and** a [Teecryptor](/deep-dive/cofhe-components/teecryptor) signature for onchain verification.
 
 <Accordion title="Changes">
 

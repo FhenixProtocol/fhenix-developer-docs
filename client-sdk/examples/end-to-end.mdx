@@ -196,7 +196,7 @@ describe('ConfidentialVault', () => {
       .withACP()
       .execute();
 
-    // Publish on-chain with Threshold Network proof
+    // Publish on-chain with the Teecryptor signature
     await (await vault.publishBalance(ctHash, decryptedValue, signature)).wait();
   });
 });
