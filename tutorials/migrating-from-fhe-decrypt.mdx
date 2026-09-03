@@ -21,7 +21,7 @@ This guide walks through concrete before/after Solidity examples.
 | **Read result** | `FHE.getDecryptResultSafe(ctHash)` | `FHE.getDecryptResultSafe(ctHash)` (same) |
 
 <Note>
-The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow returns a signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor), the component that decrypts CoFHE ciphertexts inside a hardware-attested TEE. Your contract verifies that signature before it uses the plaintext.
+The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow returns a signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor), which decrypts inside a hardware-attested TEE. Your contract verifies that signature before it uses the plaintext.
 </Note>
 
 ---
