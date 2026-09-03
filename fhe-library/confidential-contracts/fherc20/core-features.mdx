@@ -255,7 +255,7 @@ euint64 doubled = balance + balance;
 const encBalance = await token.confidentialBalanceOf(userAddress);
 const result = await client
   .decryptForView(encBalance)
-  .withPermit()
+  .withACP()
   .execute();
 console.log(`Balance: ${result.decryptedValue}`);
 ```

@@ -252,7 +252,7 @@ const handle = await token.confidentialBalanceOf(user.address);
 if (handle && handle !== 0n) {
   const balance = await cofheClient
     .decryptForView(handle, FheTypes.Uint64)
-    .withPermit()
+    .withACP()
     .execute();
 }
 ```

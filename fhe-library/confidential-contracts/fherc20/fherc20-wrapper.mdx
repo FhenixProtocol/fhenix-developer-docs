@@ -202,7 +202,7 @@ const claimCtHash = claims[0].ctHash;
 // Request decryption off-chain (no permit needed)
 const decryptResult = await client
   .decryptForTx(claimCtHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 // decryptResult.decryptedValue — the plaintext amount
@@ -261,7 +261,7 @@ const proofs = [];
 for (const claim of claims) {
     const result = await client
       .decryptForTx(claim.ctHash)
-      .withoutPermit()
+      .withoutACP()
       .execute();
     ids.push(result.ctHash);
     amounts.push(result.decryptedValue);
@@ -409,7 +409,7 @@ const ctHash = claims[0].ctHash;
 // 3. Decrypt off-chain
 const decryptResult = await client
   .decryptForTx(ctHash)
-  .withoutPermit()
+  .withoutACP()
   .execute();
 
 // 4. Claim with proof
@@ -473,7 +473,7 @@ const ids = [], amounts = [], proofs = [];
 for (const claim of claims) {
     const result = await client
       .decryptForTx(claim.ctHash)
-      .withoutPermit()
+      .withoutACP()
       .execute();
     ids.push(result.ctHash);
     amounts.push(result.decryptedValue);
