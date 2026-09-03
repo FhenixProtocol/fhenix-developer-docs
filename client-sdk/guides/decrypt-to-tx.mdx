@@ -1,9 +1,9 @@
 ---
 title: Decrypt to Transact
-description: "Decrypt with a verifiable Threshold Network signature for onchain use"
+description: "Decrypt with a verifiable Teecryptor signature for onchain use"
 ---
 
-Use `decryptForTx` to reveal a confidential (encrypted) value onchain. It returns the plaintext together with a Threshold Network signature, so a contract can verify the reveal when you publish it in a transaction.
+Use `decryptForTx` to reveal a confidential (encrypted) value onchain. It returns the plaintext together with a [Teecryptor](/deep-dive/cofhe-components/teecryptor) signature, so a contract can verify the reveal when you publish it in a transaction.
 
 Common use cases:
 
@@ -40,7 +40,7 @@ If the ACL policy restricts decryption, you must use `.withACP(...)`.
 
 - `ctHash: bigint | string`: the ciphertext handle you decrypted
 - `decryptedValue: bigint`: the plaintext value (always a `bigint`)
-- `signature: 0x${string}`: the Threshold Network signature as a hex string
+- `signature: 0x${string}`: the Teecryptor signature as a hex string
 
 ## Decrypt (choose ACP mode)
 
@@ -98,11 +98,11 @@ Overrides the account used to resolve the active/stored ACP.
 
 ### `.setChainId(chainId)` (optional)
 
-Overrides the chain used to resolve the Threshold Network URL and ACPs.
+Overrides the chain used to resolve the Teecryptor URL (`thresholdNetworkUrl` in the chain config) and ACPs.
 
 ### `.onPoll(callback)` (optional)
 
-Register a callback that fires once per poll attempt while `decryptForTx` waits for the Threshold Network to return the plaintext. Useful for surfacing progress in a UI.
+Register a callback that fires once per poll attempt while `decryptForTx` waits for Teecryptor to return the plaintext. Useful for surfacing progress in a UI.
 
 ```typescript
 const decryptResult = await client
@@ -118,8 +118,8 @@ The callback receives:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `operation` | `'decrypt' \| 'sealoutput'` | Which Threshold Network flow is polling. For `decryptForTx` this is always `'decrypt'`. |
-| `requestId` | `string` | The Threshold Network request id. **May be the empty string** during submit-time retries, see `.set404RetryTimeout(...)` below. |
+| `operation` | `'decrypt' \| 'sealoutput'` | Which decryption flow is polling. For `decryptForTx` this is always `'decrypt'`. |
+| `requestId` | `string` | The Teecryptor request id. **May be the empty string** during submit-time retries, see `.set404RetryTimeout(...)` below. |
 | `attemptIndex` | `number` | Zero-based poll attempt counter. |
 | `elapsedMs` | `number` | Time since the first submit attempt. |
 | `intervalMs` | `number` | Delay until the next poll. |
@@ -127,7 +127,7 @@ The callback receives:
 
 ### `.set404RetryTimeout(timeoutMs)` (optional)
 
-Configures how long `decryptForTx` keeps retrying when the Threshold Network's submit endpoint responds with `404 Not Found` before a `requestId` is available. This typically happens on slower backends where the ciphertext isn't visible yet at submit time. Defaults to `10_000` ms.
+Configures how long `decryptForTx` keeps retrying when Teecryptor's submit endpoint responds with `404 Not Found` before a `requestId` is available. This typically happens on slower backends where the ciphertext isn't visible yet at submit time. Defaults to `10_000` ms.
 
 ```typescript
 const decryptResult = await client
