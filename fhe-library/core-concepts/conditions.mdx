@@ -234,7 +234,7 @@ contract EncryptedAuction {
 ```
 
 <Note>
-In the example above, the actual bid amounts remain encrypted throughout the auction. To reveal the winner, a client calls `decryptForTx` offchain to obtain the plaintext and a threshold signature, then submits them onchain via `revealWinner` for verification.
+In the example above, the actual bid amounts remain encrypted throughout the auction. To reveal the winner, a client calls `decryptForTx` offchain to obtain the plaintext and its Teecryptor signature, then submits them onchain via `revealWinner` for verification.
 </Note>
 
 ---
