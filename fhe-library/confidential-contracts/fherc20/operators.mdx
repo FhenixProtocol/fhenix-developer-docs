@@ -39,10 +39,10 @@ token.approve(spender, 1000); // Everyone can see you approved 1000 tokens
 ```
 
 This approach has privacy issues for confidential tokens:
-- ❌ Reveals how much you're willing to let someone spend
-- ❌ Requires updating allowances frequently
-- ❌ Can leak information about your balance
-- ❌ Doesn't work well with encrypted amounts
+- Reveals how much you're willing to let someone spend
+- Requires updating allowances frequently
+- Can leak information about your balance
+- Doesn't work well with encrypted amounts
 
 ### The Operator Solution
 
@@ -54,10 +54,10 @@ token.setOperator(spender, block.timestamp + 1 days);
 ```
 
 This approach is privacy-preserving:
-- ✅ No amount information revealed
-- ✅ Time-based expiration is automatic
-- ✅ Simple on/off permission model
-- ✅ Works perfectly with encrypted values
+- No amount information revealed
+- Time-based expiration is automatic
+- Simple on/off permission model
+- Works perfectly with encrypted values
 
 ---
 
@@ -278,12 +278,12 @@ function executeSwap(address tokenIn, uint64 amountIn) external {
 
 | Feature | ERC20 Allowance | FHERC20 Operator |
 |---------|-----------------|------------------|
-| **Privacy** | ❌ Reveals approved amount | ✅ No amount revealed |
-| **Expiration** | ⚠️ Manual revocation required | ✅ Automatic time-based |
-| **Flexibility** | ✅ Can approve specific amounts | ⚠️ All-or-nothing access |
-| **Gas Efficiency** | ⚠️ Multiple approvals costly | ✅ Single approval sufficient |
-| **Complexity** | ✅ Simple amount-based | ✅ Simple time-based |
-| **Use with FHE** | ❌ Doesn't work with encryption | ✅ Designed for FHE |
+| **Privacy** | Reveals the approved amount | No amount revealed |
+| **Expiration** | Manual revocation required | Automatic, time-based |
+| **Flexibility** | Can approve specific amounts | All or nothing access |
+| **Gas efficiency** | Multiple approvals cost more | One approval is enough |
+| **Complexity** | Amount-based | Time-based |
+| **Use with FHE** | Does not work with encryption | Designed for FHE |
 
 ---
 
