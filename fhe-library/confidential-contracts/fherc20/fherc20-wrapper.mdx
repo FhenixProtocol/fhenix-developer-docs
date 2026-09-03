@@ -192,14 +192,14 @@ Due to the [zero-replacement behavior](/fhe-library/confidential-contracts/fherc
 
 ### Step 2: Decrypt Offchain
 
-Retrieve the claim's `ctHash` using `getUserClaims`, then request decryption via `decryptForTx`. Since `FHE.allowPublic` was called, no permit is needed:
+Retrieve the claim's `ctHash` using `getUserClaims`, then request decryption via `decryptForTx`. Since `FHE.allowPublic` was called, no [Access Control Permission](/client-sdk/guides/acps) (ACP) is needed:
 
 ```typescript
 // Get the user's pending claims
 const claims = await wrapper.getUserClaims(myAddress);
 const claimCtHash = claims[0].ctHash;
 
-// Request decryption off-chain (no permit needed)
+// Request decryption offchain (no ACP needed)
 const decryptResult = await client
   .decryptForTx(claimCtHash)
   .withoutACP()
