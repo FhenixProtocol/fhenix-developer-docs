@@ -1,0 +1,73 @@
+---
+title: Mock Contracts
+description: "Inspect plaintext and call mock CoFHE contracts in Hardhat 3 tests"
+---
+
+`conn.cofhe.mocks` exposes Viem contract descriptors for every deployed mock contract and helpers for reading the on-chain plaintext that the mock task manager stores. None of this requires the SDK client — the mocks are reachable from any Viem `publicClient` / `walletClient`.
+
+## Contract descriptors
+
+Each mock is exposed as a synchronous `{ address, abi }` object — spread it directly into Viem's `readContract` / `writeContract`:
+
+```typescript
+cofhe.mocks.MockTaskManager;      // { address: '0x...', abi: [...] }
+cofhe.mocks.MockACL;              // { address: '0x...', abi: [...] }
+cofhe.mocks.MockZkVerifier;       // { address: '0x...', abi: [...] }
+cofhe.mocks.MockThresholdNetwork; // { address: '0x...', abi: [...] }
+cofhe.mocks.TestBed;              // { address: '0x...', abi: [...] }
+```
+
+### Calling a mock directly
+
+```typescript
+const ctHash = await publicClient.readContract({
+  ...cofhe.mocks.TestBed,
+  functionName: 'numberHash',
+});
+
+await walletClient.writeContract({
+  ...cofhe.mocks.MockTaskManager,
+  functionName: 'setSecurityZones',
+  args: [0, 1],
+});
+```
+
+This is the lowest-friction way to assert mock state without going through the SDK.
+
+## Reading plaintext values
+
+Because `MockTaskManager` stores plaintext values on-chain, you can read the underlying plaintext of any encrypted handle directly in tests — no permit needed.
+
+### `getPlaintext(ctHash)`
+
+Returns the plaintext `bigint` for a given ciphertext hash. Accepts either a `bigint` or a hex `string`.
+
+```typescript
+const plaintext = await cofhe.mocks.getPlaintext(ctHash);
+```
+
+### `expectPlaintext(ctHash, expected)`
+
+Assertion shorthand — throws if the on-chain plaintext doesn't match `expected`:
+
+```typescript
+await cofhe.mocks.expectPlaintext(ctHash, 42n);
+```
+
+<Warning>
+`getPlaintext` and `expectPlaintext` only work on the in-process Hardhat network where `MockTaskManager.mockStorage` exists. They will throw on real CoFHE networks.
+</Warning>
+
+## Re-deploying mocks mid-test
+
+Normally you don't need this — mocks are deployed automatically on every `network.connect()`. For advanced scenarios where you want to reset mock state inside a single test:
+
+```typescript
+await cofhe.mocks.deployMocks({ deployTestBed: true, silent: true });
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `deployTestBed` | `boolean` | `true` | Whether to deploy the `TestBed` utility contract. |
+| `gasWarning` | `boolean` | inherits from config | Print the gas-warning line after deployment. |
+| `silent` | `boolean` | `false` | Suppress all deployment output (overrides `mocksDeployVerbosity`). |
