@@ -88,7 +88,9 @@ All produce signed `EncryptedInput` shapes signed for `account()`.
 | `decryptForTx_withACP(bytes32 ctHash, ACP acp)` | `(bytes32, uint256, bytes)` | ACL-gated `decryptForTx`. |
 | `decryptForView(bytes32 ctHash, ACP acp)` | `uint256` | Offchain seal/unseal. **Reverts on deny**, to assert deny use `mockThresholdNetwork.querySealOutput(...)`. |
 
-### Permits
+### ACPs
+
+Access Control Permission (ACP) helpers. See [Access Control Permissions](/client-sdk/guides/acps).
 
 | Function | Description |
 | --- | --- |

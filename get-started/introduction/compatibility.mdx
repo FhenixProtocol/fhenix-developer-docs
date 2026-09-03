@@ -87,7 +87,7 @@ Upgrade to `0.6.1` first, then to `0.7.1`. The `0.7` release changes four things
 - Signing moved from one signature per ciphertext to one signature per batch, which requires a `setConsumingContract()` call.
 - Encrypted values passed between contracts now use the `sharedEuintXX` types instead of bare `euintXX`.
 
-Permits signed under `0.6` stop working. Your users have to sign again after you upgrade.
+ACPs signed under `0.6` stop working. Your users have to sign again after you upgrade.
 
 The [official migration guide](https://cofhesdk.fhenix.io/migrating-to-0-7-0) covers each change with before and after code. It also ships an agent skill that performs most of the mechanical edits for you.
 
