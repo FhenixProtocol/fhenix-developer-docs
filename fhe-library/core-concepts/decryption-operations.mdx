@@ -9,11 +9,11 @@ Decryption is the process of converting encrypted data back into its original fo
 
 Decryption in CoFHE is a multi-step process that involves both offchain and onchain components:
 
-1. A client requests decryption offchain and receives the plaintext along with a Threshold Network signature.
+1. A client requests decryption offchain and receives the plaintext along with a signature from Teecryptor, the component that decrypts CoFHE ciphertexts.
 2. The plaintext and signature are submitted onchain, where the contract publishes or verifies the result.
 
 <Tip>
-Learn more about our unique MPC decryption threshold network in the [Threshold Network](/deep-dive/cofhe-components/threshold-network) guide.
+Teecryptor decrypts inside a hardware-attested Trusted Execution Environment (TEE), and signs each result with a key that never leaves the enclave. See the [Teecryptor](/deep-dive/cofhe-components/teecryptor) guide for the full request path. A Threshold Network that decrypts through multi-party computation is planned to replace it, and is described in [Future Plans](/deep-dive/research/future-plans).
 </Tip>
 
 ---
@@ -24,7 +24,7 @@ CoFHE provides two primary ways to perform decryption, each suited for different
 
 ### 1. Decrypt for Transaction (`decryptForTx`)
 
-The client calls `decryptForTx(ctHash)` offchain to obtain the plaintext and a Threshold Network signature. These are then submitted onchain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`, making the result verifiable by the contract.
+The client calls `decryptForTx(ctHash)` offchain to obtain the plaintext and a Teecryptor signature. These are then submitted onchain via `FHE.publishDecryptResult` or `FHE.verifyDecryptResult`, making the result verifiable by the contract.
 
 **Common examples:**
 - **Unshield a confidential token**: reveal the encrypted amount so the contract can finalize the public transfer.
@@ -44,12 +44,12 @@ Use `decryptForTx` when you need to act on the decrypted value in a smart contra
 
 ### 3. Client-Published Decryption (Signature-Verified)
 
-The client decrypts offchain via `decryptForTx`, receives the plaintext result along with an **ECDSA signature** from the Threshold Network's Dispatcher, and then publishes the result onchain by calling `FHE.publishDecryptResult()`. The TaskManager verifies the signature onchain before storing the result.
+The client decrypts offchain via `decryptForTx`, receives the plaintext result along with an **ECDSA signature** from Teecryptor, and then publishes the result onchain by calling `FHE.publishDecryptResult()`. The TaskManager verifies the signature onchain before storing the result.
 
 This combines the best of both worlds: the client controls when the result lands onchain, while the contract can still use the decrypted value.
 
 <Note>
-The signature cryptographically proves the result came from the authorized Threshold Network. No trust in the publisher is required. Anyone holding a valid signature can submit it.
+The signature proves the result came from Teecryptor, whose address the TaskManager holds as the only authorized `decryptResultSigner`. No trust in the publisher is required. Anyone holding a valid signature can submit it.
 </Note>
 
 ### Comparison Table
@@ -86,7 +86,7 @@ See [Access Control](/fhe-library/core-concepts/access-control) for the full lis
 
 ### Step 2: Request decryption offchain (client-side)
 
-The client calls `decryptForTx(ctHash)` to obtain the plaintext and a Threshold Network signature. Choose the ACP mode that matches the contract's ACL policy:
+The client calls `decryptForTx(ctHash)` to obtain the plaintext and a Teecryptor signature. Choose the ACP mode that matches the contract's ACL policy:
 
 <CodeGroup>
 ```typescript No ACP (allowPublic)
@@ -97,7 +97,7 @@ const decryptResult = await client
 
 // decryptResult.ctHash         is the ciphertext handle
 // decryptResult.decryptedValue is the plaintext (bigint)
-// decryptResult.signature      is the Threshold Network signature
+// decryptResult.signature      is the Teecryptor signature
 ```
 
 ```typescript With ACP (restricted access)
