@@ -7,6 +7,8 @@ description: "Step-by-step guide for migrating Solidity contracts from FHE.decry
 
 The old decryption pattern used `FHE.decrypt(ctHash)` to trigger an asynchronous decryption, followed by `FHE.getDecryptResultSafe(ctHash)` to read the result once available. The new pattern replaces `FHE.decrypt` with an offchain decryption step using the Client SDK, and uses `FHE.publishDecryptResult` to submit the result onchain with a cryptographic proof.
 
+`FHE.decrypt` no longer exists in `FHE.sol`. A contract that still calls it does not compile.
+
 This guide walks through concrete before/after Solidity examples.
 
 ## What changed
@@ -19,12 +21,12 @@ This guide walks through concrete before/after Solidity examples.
 | **Read result** | `FHE.getDecryptResultSafe(ctHash)` | `FHE.getDecryptResultSafe(ctHash)` (same) |
 
 <Note>
-The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow requires a Threshold Network signature, ensuring the plaintext is cryptographically verified before being used onchain.
+The key difference: `FHE.decrypt` triggered decryption without any proof. The new flow returns a signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor), which decrypts inside a hardware-attested TEE. Your contract verifies that signature before it uses the plaintext.
 </Note>
 
 ---
 
-## The New Decryption Flow
+## The new decryption flow
 
 <Steps>
 <Step title="Grant decryption permission (onchain)">
@@ -40,7 +42,7 @@ FHE.allow(encryptedValue, authorizedAddress);
 </Step>
 
 <Step title="Decrypt offchain (client-side)">
-The client requests decryption from the Threshold Network, which returns the plaintext and a signature:
+The client requests decryption from Teecryptor, which returns the plaintext and an ECDSA signature over it:
 
 ```typescript
 const result = await client
@@ -48,8 +50,8 @@ const result = await client
     .withoutACP()  // use .withACP() if FHE.allow was used instead of allowPublic
     .execute();
 
-// result.decryptedValue — the plaintext (bigint)
-// result.signature      — Threshold Network signature
+// result.decryptedValue: the plaintext (bigint)
+// result.signature: Teecryptor's signature over that plaintext
 ```
 </Step>
 
@@ -57,18 +59,20 @@ const result = await client
 The decrypted value and signature are submitted to your contract:
 
 ```solidity
-// Publishes the result on-chain (readable via getDecryptResultSafe)
+// Publishes the result onchain (readable via getDecryptResultSafe)
 FHE.publishDecryptResult(encryptedValue, plaintext, signature);
 
-// Or verify without storing
+// Or verify without storing (reverts on a bad signature)
 FHE.verifyDecryptResult(encryptedValue, plaintext, signature);
 ```
 </Step>
 </Steps>
 
+Teecryptor decrypts today. A multi-party Threshold Network is the planned replacement; see [Future Plans](/deep-dive/research/future-plans).
+
 ---
 
-## Example 1: Simple counter
+## Example 1: Counter contract
 
 A minimal example showing how the reveal pattern changes.
 
@@ -82,7 +86,7 @@ contract Counter {
         FHE.allowThis(counter);
     }
 
-    // Old: trigger async decryption on-chain
+    // Old: trigger async decryption onchain
     function request_reveal() external {
         FHE.decrypt(counter);
     }
@@ -110,7 +114,7 @@ contract Counter {
         FHE.allowPublic(counter);
     }
 
-    // New: accept decrypted value with Threshold Network proof
+    // New: accept the decrypted value with its Teecryptor signature
     function reveal_counter(uint64 _decrypted, bytes memory _signature) external {
         FHE.publishDecryptResult(counter, _decrypted, _signature);
     }
@@ -131,14 +135,14 @@ contract Counter {
 // 1. Allow public decryption
 await counter.allow_counter_publicly();
 
-// 2. Decrypt off-chain
+// 2. Decrypt offchain
 const ctHash = await counter.counter();
 const result = await client
     .decryptForTx(ctHash)
     .withoutACP()
     .execute();
 
-// 3. Publish on-chain with proof
+// 3. Publish onchain with proof
 await counter.reveal_counter(result.decryptedValue, result.signature);
 
 // 4. Read the result
@@ -157,7 +161,7 @@ function unshield(address to, uint64 value) public {
     if (to == address(0)) to = msg.sender;
     euint64 burned = _burn(msg.sender, value);
 
-    // Old: trigger async decryption on-chain
+    // Old: trigger async decryption onchain
     FHE.decrypt(burned);
 
     _createClaim(to, value, burned);
@@ -215,9 +219,9 @@ function claimUnshielded(
 </CodeGroup>
 
 **Key differences:**
-- `FHE.decrypt(burned)` to `FHE.allowPublic(burned)`: no onchain decryption is triggered, just a permission grant
+- `FHE.decrypt(burned)` to `FHE.allowPublic(burned)`: no onchain decryption is triggered, only a permission grant
 - `claimUnshielded(bytes32 ctHash)` to `claimUnshielded(bytes32 ctHash, uint64 decryptedAmount, bytes signature)`: the caller now provides the decrypted value + proof
-- `FHE.getDecryptResultSafe` to `FHE.publishDecryptResult`: the contract verifies the Threshold Network signature instead of polling for a result
+- `FHE.getDecryptResultSafe` to `FHE.publishDecryptResult`: the contract verifies the Teecryptor signature instead of polling for a result
 
 **Client-side flow (new):**
 
@@ -228,7 +232,7 @@ await token.unshield(recipientAddress, 100n);
 // 2. Get the ctHash of the burned amount (from the event or storage)
 const ctHash = /* ... from UnshieldedERC20 event ... */;
 
-// 3. Decrypt off-chain
+// 3. Decrypt offchain
 const result = await client
     .decryptForTx(ctHash)
     .withoutACP()
@@ -236,7 +240,7 @@ const result = await client
 
 // 4. Claim with proof
 await token.claimUnshielded(
-    result.ctHash,
+    ctHash,
     result.decryptedValue,
     result.signature
 );
@@ -246,7 +250,7 @@ await token.claimUnshielded(
 
 ## Example 3: Revealing a vote result
 
-A simple pattern: revealing a single encrypted vote count after a deadline.
+Reveal a single encrypted vote count after a deadline.
 
 <CodeGroup>
 ```solidity Before (FHE.decrypt)
@@ -255,7 +259,7 @@ euint64 public totalVotes;
 function closeVoting() external onlyOwner {
     require(block.timestamp >= deadline, "Not ended");
 
-    // Old: trigger async decryption on-chain
+    // Old: trigger async decryption onchain
     FHE.decrypt(totalVotes);
 }
 
@@ -278,7 +282,7 @@ function closeVoting() external onlyOwner {
 }
 
 function revealResult(uint64 plaintext, bytes calldata signature) external {
-    // New: publish with Threshold Network proof
+    // New: publish the plaintext with its Teecryptor signature
     FHE.publishDecryptResult(totalVotes, plaintext, signature);
 }
 
@@ -300,17 +304,20 @@ function getResult() external view returns (uint256) {
 | `publishDecryptResult` | Yes | Yes, via `getDecryptResultSafe` | Revealing results publicly (auctions, votes, counters) |
 | `verifyDecryptResult` | No | No | One-time verification (transfers, burns) |
 
-Use `verifyDecryptResult` when you only need to confirm the plaintext is authentic and don't need other contracts or future calls to read it:
+`verifyDecryptResult` reverts when the signature is invalid. `verifyDecryptResultSafe` returns `false` instead, so you can choose your own revert message.
+
+Use either one when you only need to confirm the plaintext is authentic and don't need other contracts or future calls to read it:
 
 ```solidity
 function transferToPublic(
+    address recipient,
     bytes32 ctHash,
     uint32 plaintext,
     bytes calldata signature
 ) external {
     // Verify authenticity without publishing
     require(
-        FHE.verifyDecryptResult(euint32.wrap(ctHash), plaintext, signature),
+        FHE.verifyDecryptResultSafe(euint32.wrap(ctHash), plaintext, signature),
         "Invalid decrypt proof"
     );
 
@@ -340,7 +347,7 @@ Add the offchain decryption step using `client.decryptForTx()` between the two o
 </Step>
 </Steps>
 
-## Next Steps
+## Next steps
 
 - Read about [Decryption Operations](/fhe-library/core-concepts/decryption-operations) for the full reference
 - See [Adding FHE to an Existing Contract](/tutorials/adding-fhe-to-existing-contract) for a complete contract migration
