@@ -191,7 +191,7 @@ const [encAmount] = await cofheClient
   .execute();
 await token.confidentialTransfer(recipient.address, encAmount);
 
-// 4. Read your encrypted balance (returns a handle you decrypt off-chain)
+// 4. Read your encrypted balance (returns a handle you decrypt offchain)
 const handle = await token.confidentialBalanceOf(user.address);
 ```
 

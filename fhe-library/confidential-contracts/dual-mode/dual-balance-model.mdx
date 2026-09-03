@@ -243,7 +243,7 @@ uint256 pub = token.balanceOf(user);
 euint64 handle = token.confidentialBalanceOf(user);
 ```
 
-```typescript Decrypt Confidential (off-chain)
+```typescript Decrypt Confidential (offchain)
 import { FheTypes } from '@cofhe/sdk';
 
 const handle = await token.confidentialBalanceOf(user.address);

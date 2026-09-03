@@ -250,7 +250,7 @@ euint64 balance = token.confidentialBalanceOf(user);
 euint64 doubled = balance + balance;
 ```
 
-```typescript Off-Chain (with @cofhe/sdk)
+```typescript Offchain (with @cofhe/sdk)
 // Request decryption for UI display
 const encBalance = await token.confidentialBalanceOf(userAddress);
 const result = await client
@@ -632,7 +632,7 @@ await token.mint(userAddress, 1000);
 const indicator = await token.balanceOf(userAddress);
 console.log(`Indicator: ${indicator}`); // e.g., 7984
 
-// Encrypt amount off-chain
+// Encrypt amount offchain
 const [encryptedAmount] = await cofheClient
   .encryptInputs([Encryptable.uint64(100n)])
   .execute();

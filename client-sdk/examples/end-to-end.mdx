@@ -89,7 +89,7 @@ const balance = await client
 
 console.log('Balance:', balance); // 100n
 
-// 5. Decrypt for on-chain verification
+// 5. Decrypt for onchain verification
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
   .withACP()
@@ -136,7 +136,7 @@ const balance = await client
 
 console.log('Balance:', balance); // 100n
 
-// 5. Decrypt for on-chain verification
+// 5. Decrypt for onchain verification
 const { decryptedValue, signature } = await client
   .decryptForTx(ctHash)
   .withACP()
@@ -178,7 +178,7 @@ describe('ConfidentialVault', () => {
     expect(balance).to.equal(100n);
   });
 
-  it('publishes a decrypt result on-chain', async () => {
+  it('publishes a decrypt result onchain', async () => {
     const Factory = await hre.ethers.getContractFactory('ConfidentialVault');
     const vault = await Factory.deploy();
 
@@ -189,14 +189,14 @@ describe('ConfidentialVault', () => {
       .execute();
     await (await vault.deposit(amountHash, proof)).wait();
 
-    // Decrypt for on-chain verification
+    // Decrypt for onchain verification
     const ctHash = await vault.getBalance();
     const { decryptedValue, signature } = await cofheClient
       .decryptForTx(ctHash)
       .withACP()
       .execute();
 
-    // Publish on-chain with the Teecryptor signature
+    // Publish onchain with the Teecryptor signature
     await (await vault.publishBalance(ctHash, decryptedValue, signature)).wait();
   });
 });

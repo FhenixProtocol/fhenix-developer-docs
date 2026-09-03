@@ -237,7 +237,7 @@ const decryptResult = await client
   .withoutACP()
   .execute();
 
-// 3. Submit the result on-chain
+// 3. Submit the result onchain
 const tx = await auctionContract.revealWinner(
   decryptResult.ctHash,
   decryptResult.decryptedValue,

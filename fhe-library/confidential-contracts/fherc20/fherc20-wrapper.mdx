@@ -406,7 +406,7 @@ await wrapper.unshield(user.address, user.address, amount);
 const claims = await wrapper.getUserClaims(user.address);
 const ctHash = claims[0].ctHash;
 
-// 3. Decrypt off-chain
+// 3. Decrypt offchain
 const decryptResult = await client
   .decryptForTx(ctHash)
   .withoutACP()
