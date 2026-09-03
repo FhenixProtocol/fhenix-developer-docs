@@ -15,7 +15,7 @@ The coprocessor model adds confidentiality without changing how applications are
 
 - **No migration**: CoFHE attaches to existing blockchains. Confidential contracts deploy to the networks already in use, not a dedicated FHE L1.
 - **Familiar code**: contracts pass around lightweight *handles* (references to ciphertexts) rather than the ciphertexts themselves, so they read like normal Solidity. FHE operations add some gas overhead, but the onchain footprint stays small and predictable.
-- **No cryptography to implement**: the heavy FHE math runs offchain on the CoFHE server, which is built to do it efficiently. A contract calls `FHE.add`; CoFHE does the rest.
+- **No cryptography to implement**: the heavy FHE math runs offchain in the [compute pipeline](/deep-dive/cofhe-components/compute-pipeline), which is built to do it efficiently. A contract calls `FHE.add`; CoFHE does the rest.
 - **Keys stay out of reach**: the FHE Engine computes without any decryption key. Only [Teecryptor](/deep-dive/cofhe-components/teecryptor), the decryption component, holds one, and it runs inside a hardware-attested TEE (Trusted Execution Environment).
 
 ## What CoFHE lets you build
@@ -38,7 +38,7 @@ The [`@cofhe/sdk`](/client-sdk/introduction/overview) encrypts the user's plaint
 </Step>
 
 <Step title="Compute (onchain handle, offchain math)">
-The smart contract uses [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted handles, adding, comparing, selecting, as if they were ordinary numbers. Each operation deterministically derives a new result handle and is recorded onchain; the CoFHE server independently computes the matching ciphertext offchain. Nothing returns to the contract, and plaintext is never exposed at any point.
+The smart contract uses [`FHE.sol`](/fhe-library/introduction/overview) to operate on encrypted handles, adding, comparing, selecting, as if they were ordinary numbers. Each operation deterministically derives a new result handle and is recorded onchain. The compute pipeline picks up that record, and the FHE Engine computes the matching ciphertext offchain. Nothing returns to the contract, and plaintext is never exposed at any point.
 </Step>
 
 <Step title="Decrypt (optional, gated by ACPs)">
