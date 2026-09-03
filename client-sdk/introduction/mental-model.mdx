@@ -65,13 +65,13 @@ When a user wants to read their counter value, they use one of the SDK's two dec
 
 1. The user reads the encrypted handle (`ctHash`) from the contract
 2. An ACP authorizes decryption. Created via `client.acp.getOrCreateSelfACP()`
-3. The SDK requests re-encryption from the Threshold Network using the ACP's sealing key
+3. The SDK asks [Teecryptor](/deep-dive/cofhe-components/teecryptor) to decrypt the handle and seal the result to the ACP's sealing key
 4. The plaintext is returned locally for display
 
 **For onchain use (`decryptForTx`):**
 
 1. The user reads the encrypted handle (`ctHash`) from the contract
-2. The SDK requests decryption from the Threshold Network
+2. The SDK requests decryption from Teecryptor
 3. The plaintext and a verifiable signature are returned
 4. The signature can be verified onchain via `FHE.verifyDecryptResult(...)`
 
