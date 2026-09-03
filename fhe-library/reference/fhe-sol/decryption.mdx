@@ -15,7 +15,7 @@ Decryption in CoFHE is a two-phase process:
 
 ### publishDecryptResult
 
-Publishes a decrypted result onchain by verifying the Threshold Network signature. The plaintext is stored and can be read via `getDecryptResultSafe`.
+Publishes a decrypted result onchain by verifying the signature from [Teecryptor](/deep-dive/cofhe-components/teecryptor). The plaintext is stored and can be read via `getDecryptResultSafe`.
 
 <ParamField body="ctHash" type="ebool | euint8 | euint16 | euint32 | euint64 | euint128 | eaddress" required>
 Ciphertext handle
@@ -26,7 +26,7 @@ Decrypted value from `decryptForTx`
 </ParamField>
 
 <ParamField body="signature" type="bytes" required>
-Threshold Network signature
+Teecryptor signature returned by `decryptForTx`
 </ParamField>
 
 <Warning>
@@ -77,7 +77,7 @@ The compiler resolves the overload from the handle array's element type. There i
 
 ### verifyDecryptResult
 
-Verifies a Threshold Network signature **without** storing the plaintext onchain. Returns `bool`.
+Verifies a Teecryptor signature **without** storing the plaintext onchain. Returns `bool`.
 
 <Tip>
 Use this when you only need to act on the decrypted value within the transaction without making it permanently public.
