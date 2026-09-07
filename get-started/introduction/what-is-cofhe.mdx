@@ -50,28 +50,28 @@ When an authorized user wants a result, they present a signed [Access Control Pe
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
-    participant User
-    participant SDK as "@cofhe/sdk"
-    participant Contract as "Smart Contract (FHE.sol)"
-    participant CoFHE as "CoFHE Coprocessor"
+    participant App as Your app
+    participant SDK as Client SDK
+    participant C as Your contract
+    participant CoFHE as CoFHE
 
-    Note over User,CoFHE: Encrypt
-    User->>SDK: plaintext value
+    Note over App,CoFHE: Encrypt
+    App->>SDK: plaintext value
     SDK->>CoFHE: encrypted input + ZK proof
     CoFHE-->>SDK: signed encrypted handle
-    SDK->>Contract: tx with handle
+    SDK->>C: tx with handle
 
-    Note over Contract,CoFHE: Compute
-    Contract->>Contract: FHE.add / FHE.lt / FHE.select ...
-    Contract->>Contract: derive result handle (deterministic)
-    Note over Contract,CoFHE: operation emitted onchain, nothing returns to the contract
+    Note over C,CoFHE: Compute
+    C->>C: FHE.add / FHE.lt / FHE.select ...
+    C->>C: derive result handle (deterministic)
+    Note over C,CoFHE: operation emitted onchain, nothing returns to the contract
     CoFHE->>CoFHE: pick up operation, compute ciphertext for the same handle
 
-    Note over User,CoFHE: Decrypt
-    User->>SDK: read result (+ ACP)
+    Note over App,CoFHE: Decrypt
+    App->>SDK: read result (+ ACP)
     SDK->>CoFHE: decrypt request
     CoFHE-->>SDK: re-encrypted / verifiable plaintext
-    SDK-->>User: revealed value
+    SDK-->>App: revealed value
 ```
 
 ## The pieces
