@@ -80,7 +80,7 @@ Internally, `encryptInputs` encrypts each value with the TFHE library and genera
 </Step>
 
 <Step title="Verification and storage">
-The ZK Verifier checks each proof inside its attested enclave. A valid proof shows the ciphertext is a correct, untampered encryption of a known plaintext. On success, the verifier stores the ciphertext bytes and returns the handles with one signature covering the batch. The SDK hands your application the tuple `[handles..., proof]`; each handle is an `external` encrypted value such as `externalEuint32`.
+The ZK Verifier checks each proof inside its attested enclave. A valid proof shows the ciphertext is a correct, untampered encryption of a known plaintext. On success, the verifier stores the ciphertext bytes in the CT Server and returns the handles with one signature covering the batch. The SDK hands your application the tuple `[handles..., proof]`; each handle is an `external` encrypted value such as `externalEuint32`.
 </Step>
 
 <Step title="Use the encrypted input onchain">

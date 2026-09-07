@@ -50,7 +50,7 @@ The request goes to Teecryptor with the handle, the host chain id, and the ACP. 
 </Step>
 
 <Step title="Teecryptor verifies and decrypts">
-Teecryptor runs two onchain checks at the same time. It reads the ACL grant on the host chain, and the handle's commitment in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry) on the registry chain. The two live on different chains, so neither check waits for the other. Teecryptor then fetches the ciphertext exactly as stored, checks that the bytes hash to that commitment, and decrypts inside the attested enclave. See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
+Teecryptor runs two onchain checks at the same time. It reads the ACL grant on the host chain, and the handle's commitment in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry) on the registry chain. The two live on different chains, so neither check waits for the other. Teecryptor then fetches the ciphertext from the CT Server, exactly as stored, checks that the bytes hash to that commitment, and decrypts inside the attested enclave. See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
 </Step>
 
 </Steps>

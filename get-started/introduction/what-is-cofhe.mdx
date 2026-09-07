@@ -70,7 +70,7 @@ sequenceDiagram
     Note over App,CoFHE: Decrypt
     App->>SDK: read result (+ ACP)
     SDK->>CoFHE: decrypt request
-    CoFHE-->>SDK: re-encrypted / verifiable plaintext
+    CoFHE-->>SDK: sealed result, or a signed plaintext
     SDK-->>App: revealed value
 ```
 

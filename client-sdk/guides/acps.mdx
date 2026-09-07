@@ -5,7 +5,7 @@ description: "Create and manage the EIP-712 signatures that authorize decryption
 
 An Access Control Permission (ACP) is an EIP-712 signature that authorizes decryption of confidential data. The `issuer` field identifies who is reading the data, and that address must already have been granted access onchain with `FHE.allow(handle, address)`. When you use an ACP, CoFHE validates it against the ACL contract to confirm the issuer really holds that access.
 
-Every ACP carries a sealing keypair. The public key goes to CoFHE so it can re-encrypt the result for the holder. The private key stays on the client and unseals the value when it comes back.
+Every ACP carries a sealing keypair. The public key goes to CoFHE so it can seal the result to the holder. The private key stays on the client and unseals the value when it comes back.
 
 <Note>
 ACPs were called permits before `0.7`. The name changed so they are not confused with an ERC-2612 permit, which is a different thing entirely. If you are upgrading, see [migrating to 0.7](/client-sdk/introduction/migrating-to-0-7). This page uses "ACP" throughout.
