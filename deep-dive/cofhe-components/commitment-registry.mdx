@@ -12,7 +12,29 @@ description: "Registry-chain contract that records FHE computation commitments. 
 
 ## What a commitment is
 
-A commitment is the `keccak256` hash of a ciphertext's canonical stored bytes. The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) produces one for every result it computes, and the coprocessor anchors one for every encrypted input it verifies. The engine batches them and writes them to this registry.
+A commitment is the `keccak256` hash of a ciphertext's canonical stored bytes. The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) produces one for every result it computes, and anchors one for every encrypted input the [ZK Verifier](/deep-dive/cofhe-components/zk-verifier) approves. It batches them and writes them to this registry.
+
+## Who writes and who reads
+
+One component writes commitments, and one component reads them. The write happens when a ciphertext is produced; the read happens later, whenever someone asks to decrypt it.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
+sequenceDiagram
+    participant Pipe as Compute pipeline
+    participant TEE as Teecryptor
+    participant CTS as CT Server
+    participant CR as CommitmentRegistry
+
+    Pipe->>CTS: store ciphertext bytes
+    Pipe->>CR: postCommitments (batched)
+    Note over Pipe,CR: later, when someone asks to decrypt that handle
+    TEE->>CR: getCommitment(version, handle)
+    CR-->>TEE: expected hash
+    TEE->>CTS: GetStoredCt(handle)
+    CTS-->>TEE: ciphertext bytes
+    TEE->>TEE: check the bytes hash to the commitment
+```
 
 ## Why commitments?
 
@@ -116,5 +138,5 @@ The paginated `getHandles` is the recommended way to enumerate a version: `getSi
 ## Source
 
 - Solidity: [`contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol`](https://github.com/FhenixProtocol/cofhe-contracts/blob/master/contracts/internal/registry-chain/contracts/commitment-registry/CommitmentRegistry.sol).
-- Offchain: the FHE Engine's commit stage batches the commitments and posts them to this registry.
-- The same stage bumps the commitment version when the FHE parameters change.
+- Offchain: the compute pipeline's blockchain poster batches the commitments and posts them to this registry.
+- The pipeline sets the commitment version, and bumps it when the FHE parameters change.
