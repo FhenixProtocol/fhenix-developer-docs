@@ -17,7 +17,7 @@ STYLE.md is binding for all content. Read it before writing or editing any page.
 
 - Navigation lives in `docs.json`. A page not referenced there is invisible; check it when adding, renaming, or removing pages.
 - Renaming or removing a page requires a redirect entry.
-- Diagrams are Mermaid blocks in the page (see STYLE.md, Diagrams). Do not add or edit SVGs; designed SVGs come from the design pass and keep their Mermaid source in the repo.
+- Diagrams are Mermaid blocks in the page (see STYLE.md, Diagrams). Sequence diagrams use the fixed lane order and zone bands in STYLE.md, "Sequence diagram lanes". Do not add or edit SVGs; designed SVGs come from the design pass and keep their Mermaid source in the repo.
 - Code samples must compile or run against the currently published versions before they ship.
 - Mintlify renders the page H1 from the frontmatter `title`. Body headings start at `##` and never skip a level.
 - Internal links are root-relative: `/fhe-library/core-concepts/access-control`, never `../` and never the full site URL.
