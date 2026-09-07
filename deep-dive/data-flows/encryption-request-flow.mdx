@@ -9,11 +9,14 @@ This page follows encrypted inputs from the plaintext in your application to han
 
 | Component | Description |
 |-----------|-------------|
-| **dApp** | The application that interacts with the user and the contracts |
+| **Your app** | The application that interacts with the user and the contracts |
 | **Client SDK** (`@cofhe/sdk`) | TypeScript library that encrypts inputs locally and submits them for verification |
-| **ZK Verifier** | Attested offchain component that verifies the proofs of every encrypted-input batch |
-| **CT Server** | Stores the verified ciphertext bytes for the coprocessor |
+| **Your contract** | Consumes the handles and the proof, and forwards them to the TaskManager |
 | **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Verifies the ZK Verifier's batch signature when the inputs are used onchain |
+| **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)** | Attested offchain component that verifies the proofs of every encrypted-input batch |
+| **CT Server** | Stores the verified ciphertext bytes for the coprocessor |
+| **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | Picks up each `InputVerified` event and posts the commitment |
+| **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Records a commitment for every verified input |
 
 ## Flow diagram
 
@@ -22,9 +25,11 @@ This page follows encrypted inputs from the plaintext in your application to han
 sequenceDiagram
     participant App as Your app
     participant SDK as Client SDK
-    participant ZK as ZK Verifier
-    participant CTS as CT Server
+    participant C as Your contract
     participant TM as TaskManager
+    participant ZK as ZK Verifier
+    participant Pipe as Compute pipeline
+    participant CTS as CT Server
     participant CR as CommitmentRegistry
 
     App->>SDK: encryptInputs([...]).setConsumingContract(addr).execute()
@@ -34,9 +39,11 @@ sequenceDiagram
     ZK->>CTS: store ciphertext bytes
     ZK-->>SDK: handles + one batch signature
     SDK-->>App: [handles..., proof]
-    App->>TM: contract call with handles + proof
-    TM->>TM: batchVerifyInputs, emit InputVerified per input
-    TM--)CR: input commitments (relayed by the coprocessor)
+    App->>C: contract call with handles + proof
+    C->>TM: batchVerifyInputs
+    TM->>TM: verify the batch signature
+    TM--)Pipe: InputVerified per input
+    Pipe->>CR: postCommitments (batched)
 ```
 
 ## Step-by-step flow
@@ -78,7 +85,7 @@ The ZK Verifier checks each proof inside its attested enclave. A valid proof sho
 </Step>
 
 <Step title="Use the encrypted input onchain">
-The application passes the handles and the proof to the contract as encrypted inputs. When the contract consumes them, the TaskManager's `batchVerifyInputs` checks the ZK Verifier's signature over the batch and emits an `InputVerified` event per input. The coprocessor picks those events up and posts a commitment for each input to the CommitmentRegistry, so the ciphertexts are anchored onchain like every computed result.
+The application passes the handles and the proof to the contract as encrypted inputs. When the contract consumes them, the TaskManager's `batchVerifyInputs` checks the ZK Verifier's signature over the batch and emits an `InputVerified` event per input. The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) picks those events up and posts a commitment for each input to the CommitmentRegistry. Inputs are anchored onchain the same way every computed result is.
 </Step>
 </Steps>
 
