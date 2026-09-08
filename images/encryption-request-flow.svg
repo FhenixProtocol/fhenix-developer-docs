@@ -42,13 +42,6 @@
       --toolbar-text:     #e2e8f0;
       --toolbar-hover:    rgba(15, 23, 42, 0.95);
       --toolbar-menu-bg:  #0f172a;}
-html[data-motion="still"] .guided-view-chapter,
-    html[data-motion="still"] svg [data-node-id],
-    html[data-motion="still"] svg [data-edge-from],
-    html[data-motion="still"] svg [data-detail],
-    html[data-motion="still"] svg [data-detail-anchor],
-    html[data-motion="still"] svg [data-legend-hit],
-    html[data-motion="still"] svg{transition: none !important;}
 svg{width: 100%;
       min-width: min(900px, 100%);
       display: block;
@@ -137,9 +130,6 @@ svg[data-focus-active] [data-focus-match] [data-detail-anchor],
 .m-emphasis{fill: var(--arrow-emphasis);}
 .m-security{fill: var(--security-stroke);}
 .m-dashed{fill: var(--database-stroke);}
-/* Stable semantic exploration hooks emitted by every renderer. */
-    svg [data-node-id]{cursor: pointer;
-      transition: opacity 0.18s ease, filter 0.18s ease;}
 svg [data-edge-from]{transition: opacity 0.18s ease, filter 0.18s ease;}
 svg [data-node-id]:hover,
     svg [data-node-id]:focus-visible{filter: drop-shadow(0 0 7px var(--frontend-stroke));
@@ -243,10 +233,6 @@ svg[data-preset="blueprint"] [data-intent-trace-selected],
       stroke-linecap: square;}
 svg[data-preset="editorial"] [data-intent-trace-selected],
     svg[data-preset="editorial"] .intent-trace-flow{filter: none;}
-/* Route Probe separates a durable two-point query from selection and
-       one-hop hover. Only the chosen shortest directed path stays prominent;
-       the traveling signal is cloned viewer geometry and never authored SVG. */
-    svg[data-route-picking="target"] [data-node-id]{opacity: 0.24;}
 svg[data-route-picking="target"] [data-route-candidate],
     svg[data-route-picking="target"] [data-route-start]{opacity: 1;}
 svg[data-route-picking] [data-node-id]{cursor: crosshair;}
@@ -355,14 +341,6 @@ svg[data-preset="editorial"][data-animation="trace"] [data-animate="edge"]{filte
       animation-duration: 2.2s;}
 svg[data-preset="editorial"][data-animation="trace"] [data-animate="node"]{animation-name: archify-editorial-node-pulse;
       animation-duration: 3.5s;}
-svg text, svg tspan{font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;}
-
-/* interaction: a light touch, hover only */
-g[data-node-id]{cursor:default}
-g[data-node-id] rect,g[data-edge-id] path,g[data-edge-id] text{transition:all .12s ease-out}
-g[data-node-id]:hover rect{filter:brightness(1.45)}
-g[data-edge-id]:hover path{stroke-width:2.4}
-g[data-edge-id]:hover text{fill:#ffffff}
 svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important}
 
 ]]></style>
@@ -425,7 +403,6 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
           <rect x="76.55000000000001" y="166" width="256.4" height="16" rx="3" class="c-mask"/>
           <text x="204.75" y="176" class="t-backend" font-size="9" text-anchor="middle">encryptInputs([...]).setConsumingContract(addr)</text>
         </g>
-        <text data-detail="fine" x="144.5" y="204" class="t-dim" font-size="7">The SDK encrypts each value with TFHE and generates a zkPoK for it, locally. The plaintext never leaves the machine.</text>
         </g>
 
         <g data-edge-from="sdk" data-edge-to="zkverifier" data-edge-label="ciphertext batch + proofs" data-edge-key="1" data-edge-id="submit-batch">
@@ -434,7 +411,6 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
           <rect x="450.75" y="216" width="142" height="16" rx="3" class="c-mask"/>
           <text x="521.75" y="226" class="t-backend" font-size="9" text-anchor="middle">ciphertext batch + proofs</text>
         </g>
-        <text data-detail="fine" x="303" y="254" class="t-dim" font-size="7">Inputs travel as one batch, not one request per value.</text>
         </g>
 
         <g data-edge-from="zkverifier" data-edge-to="sdk" data-edge-label="handles + one batch signature" data-edge-key="2" data-edge-id="batch-signature">
@@ -443,7 +419,6 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
           <rect x="440.35" y="266" width="162.8" height="16" rx="3" class="c-mask"/>
           <text x="521.75" y="276" class="t-muted" font-size="9" text-anchor="middle">handles + one batch signature</text>
         </g>
-        <text data-detail="fine" x="303" y="304" class="t-dim" font-size="7">The enclave verifies every proof, stores the ciphertext bytes in the CT Server, then signs one digest covering the whole batch.</text>
         </g>
 
         <g data-edge-from="sdk" data-edge-to="app" data-edge-label="[handles..., proof]" data-edge-key="3" data-edge-id="handles-to-app">
@@ -468,7 +443,6 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
           <rect x="471.55" y="408" width="100.4" height="16" rx="3" class="c-mask"/>
           <text x="521.75" y="418" class="t-security" font-size="9" text-anchor="middle">batchVerifyInputs</text>
         </g>
-        <text data-detail="fine" x="461.5" y="446" class="t-dim" font-size="7">TaskManager recovers the signer from the batch signature and rejects anything not signed by verifierSigner.</text>
         </g>
 
         <g data-edge-from="taskmanager" data-edge-to="pipeline" data-edge-label="InputVerified per input" data-edge-key="6" data-edge-id="input-verified">
@@ -477,7 +451,6 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
           <rect x="693.7" y="458" width="131.60000000000002" height="16" rx="3" class="c-mask"/>
           <text x="759.5" y="468" class="t-messagebus" font-size="9" text-anchor="middle">InputVerified per input</text>
         </g>
-        <text data-detail="fine" x="620" y="496" class="t-dim" font-size="7">Asynchronous. Nothing returns to the contract.</text>
         </g>
 
         <g data-edge-from="pipeline" data-edge-to="registry" data-edge-label="postCommitments (batched)" data-edge-key="7" data-edge-id="post-commitments">
