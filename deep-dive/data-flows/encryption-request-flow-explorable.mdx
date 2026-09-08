@@ -4857,10 +4857,19 @@ export const diagram = `<!DOCTYPE html>
     }
   </style>
 <style id="embed-chrome-off">
+/* Embedded view: the diagram, a zoom control, nothing else. */
 .toolbar,.header,.guided-views,.cards{display:none!important}
-html,body{margin:0!important;padding:0!important;background:#020617!important}
+html,body{margin:0!important;padding:0!important;background:#020617!important;overflow:hidden!important}
 .container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
-.diagram-container{margin:0!important;border-radius:0!important;border:none!important}
+/* the 4.25rem bottom reserve existed for the full dock we just removed */
+.diagram-container{--archify-nav-reserve:0px!important;margin:0!important;border:none!important;
+  border-radius:0!important;box-shadow:none!important;padding:8px!important;overflow:hidden!important}
+/* fit to the column instead of rendering at natural width */
+.diagram-container>svg{width:100%!important;height:auto!important;max-width:100%!important}
+/* keep only zoom out / reset / zoom in */
+#btn-route-probe,#btn-overview-map,#btn-semantic-lens,#btn-node-finder,#btn-diagram-guide{display:none!important}
+.diagram-nav{right:8px!important;bottom:8px!important;opacity:.85}
+.diagram-nav:hover{opacity:1}
 </style>
 </head>
 <body>
@@ -14892,5 +14901,5 @@ html,body{margin:0!important;padding:0!important;background:#020617!important}
   srcDoc={diagram}
   title="Encryption request flow, explorable diagram"
   loading="lazy"
-  style={{ width: "100%", height: "660px", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
+  style={{ width: "100%", height: "470px", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
 />
