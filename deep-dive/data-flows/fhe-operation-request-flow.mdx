@@ -8,32 +8,24 @@ This page follows a single FHE operation from the contract call that requests it
 
 ## Key components
 
-| Component | Description |
-|-----------|-------------|
-| **Your contract** | Requests FHE operations through the FHE.sol library |
-| **FHE.sol** | The Solidity library providing FHE operation functions |
-| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Validates requests, checks the [ACL](/deep-dive/cofhe-components/acl), and emits task events |
-| **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | Picks up task events, validates and orders the work, executes it, and commits the result |
-| **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Records a hash commitment for every result ciphertext |
+| Component | Runs in | Description |
+|-----------|---------|-------------|
+| **Your contract** | Host chain | Requests FHE operations through the FHE.sol library |
+| **FHE.sol** | Host chain | The Solidity library providing FHE operation functions |
+| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Host chain | Validates requests, checks the [ACL](/deep-dive/cofhe-components/acl), and emits task events |
+| **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | CoFHE, offchain | Picks up task events, validates and orders the work, executes it, and commits the result |
+| **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Registry chain | Records a hash commitment for every result ciphertext |
 
 ## Flow diagram
 
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
-sequenceDiagram
-    participant C as Your contract
-    participant TM as TaskManager
-    participant Pipe as Compute pipeline
-    participant CR as CommitmentRegistry
+{/* Diagram source: fhe-operation-request-flow.mmd, beside this page. Edit it first, then re-run the archify build. */}
+<Frame>
+<img src="/images/fhe-operation-request-flow.svg" alt="Sequence diagram of the fhe operation flow" />
+</Frame>
 
-    C->>TM: FHE.add(lhs, rhs) calls createTask
-    TM->>TM: validate inputs, check ACL
-    TM-->>C: result handle (synchronous)
-    TM--)Pipe: TaskCreated event
-    Pipe->>Pipe: validate and order the task
-    Pipe->>Pipe: execute the op, store ciphertext under the handle
-    Pipe->>CR: postCommitments (batched)
-```
+<Tip>
+Each colour is one zone from the table above. Hover any component or message in the [explorable version](/deep-dive/data-flows/fhe-operation-request-flow-explorable).
+</Tip>
 
 ## Step-by-step flow
 

@@ -177,7 +177,7 @@ Colour marks **where a component runs**, never what kind of component it is. A r
 
 CT Server is not in the table because it is never a column; it is named inside a self-message. Components in one zone share one colour, including those a given flow does not use. Teecryptor is the same colour on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change colour between diagrams.
 
-The reader-facing key is the page's own "Key components" table, which carries a **Runs in** column naming each component's zone. That is the legend: no swatches, no hex values in prose, and nothing to drift when a preset changes. Every page with a diagram carries that column.
+The reader-facing key is the page's own "Key components" table, which carries a **Runs in** column naming each component's zone. That is the legend: no swatches, no hex values in prose, and nothing to drift when a preset changes. A page that has such a table carries the column; a page without one names the zones in the tip under its diagram instead.
 
 Do not colour by component type. That is the tool's default, and it produces one accent per participant, encoding a distinction the reader cannot act on.
 
