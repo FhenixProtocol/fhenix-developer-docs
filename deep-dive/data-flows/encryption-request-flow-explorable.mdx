@@ -4868,9 +4868,14 @@ html,body{margin:0!important;padding:0!important;background:#020617!important;ov
 html:focus,body:focus,.container:focus,.diagram-container:focus,
 .diagram-container:focus-visible,svg:focus,svg:focus-visible{outline:none!important;box-shadow:none!important}
 html{cursor:zoom-in}
-html:fullscreen{cursor:zoom-out}
-html:fullscreen .diagram-container{padding:24px!important;height:100vh!important}
-html:fullscreen .diagram-container>svg{max-height:100vh!important}
+/* enlarged: a floating card on a dimmed ground, not an edge-to-edge fullscreen */
+html:fullscreen{cursor:zoom-out;background:rgba(2,6,23,.97)!important}
+html:fullscreen body,html:fullscreen .container{height:100vh!important;display:flex!important;
+  align-items:center!important;justify-content:center!important}
+html:fullscreen .diagram-container{width:min(92vw,1560px)!important;max-height:88vh!important;
+  padding:22px!important;background:#0b1424!important;border:1px solid #24405f!important;
+  border-radius:16px!important;box-shadow:0 40px 120px rgba(0,0,0,.7)!important}
+html:fullscreen .diagram-container>svg{width:100%!important;height:auto!important;max-height:84vh!important}
 </style>
 </head>
 <body>
