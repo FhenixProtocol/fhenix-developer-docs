@@ -27,9 +27,9 @@ The check says nothing about plaintexts. You never learn what any value decrypts
 | --- | --- |
 | TaskManager | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9`, the same address on every supported chain |
 | Host chain RPC | Any endpoint for the chain your contract runs on |
-| CommitmentRegistry | Address pending, see [Pending values](#pending-values) |
+| CommitmentRegistry | One address for every host chain, pending, see [Pending values](#pending-values) |
 | Verified input archive | Base URL pending |
-| Public key material | Base URL pending, plus `GetNetworkPublicKey` and `GetCrs` for the two artifacts served over HTTP |
+| Key store | Base URL pending, a separate store from the input archive. `GetNetworkPublicKey` and `GetCrs` already serve two of its three artifacts over HTTP |
 | tfhe-rs | `1.5.1` |
 | Tools | Foundry's `cast`, and a Rust toolchain for the recomputation |
 
@@ -41,7 +41,9 @@ Three values are not published yet. Everything else on this page works today.
 | --- | --- |
 | CommitmentRegistry address | The registry chain is not fixed yet. The contract, its interface, and the version tag are settled; only the deployment target is open. |
 | Verified input archive base URL | The archive exists and its object layout is stable. The public read endpoint is not published yet. |
-| Public key material base URL | Same archive question. The public key and the CRS are already reachable over HTTP; the evaluation key is not. |
+| Key store base URL | A different store from the input archive, with its own read endpoint. The public key and the CRS are already reachable over HTTP; the evaluation key is not. |
+
+You need one CommitmentRegistry address, not one per chain. A handle is derived from the ciphertext bytes, or from the operation and its input handles, and neither derivation mixes in a chain id. So handles are global, one registry records them all, and your host chain never appears in the lookup.
 
 <Note>
 Step 1 works today and does not depend on any of the three. The computation graph and every input commitment come from the host chain alone.
@@ -145,7 +147,7 @@ Keep `limit` small. See [CommitmentRegistry](/deep-dive/cofhe-components/commitm
 
 ## Fetch the inputs
 
-The [ZK Verifier](/deep-dive/cofhe-components/zk-verifier) archives every input it verifies, together with the proof that covered it. Objects are laid out by chain and security zone, sharded by the first four hex characters of the handle:
+The [ZK Verifier](/deep-dive/cofhe-components/zk-verifier) archives every input it verifies, together with the proof that covered it. This store holds inputs and proofs only, not the keys. Objects are laid out by chain and security zone, sharded by the first four hex characters of the handle:
 
 ```text
 cofhe/v1/chain/{chainId}/security-zone/{zone}/verified-inputs/{shard}/{handle}
@@ -160,11 +162,11 @@ The metadata also gives you the proof id, which is where you find the matching o
 
 ## Fetch the public key material
 
-Recomputation needs three artifacts, all public and all specific to a security zone.
+Recomputation needs three artifacts, all public and all specific to a security zone. They live in the key store, which is separate from the verified input archive and has its own base URL.
 
-| Artifact | tfhe-rs type | Where |
+| Artifact | tfhe-rs type | Object in the key store |
 | --- | --- | --- |
-| Evaluation key | `CompressedServerKey` | `keys/versionized/{zone}/computation_key` in the archive |
+| Evaluation key | `CompressedServerKey` | `keys/versionized/{zone}/computation_key` |
 | Network public key | `CompactPublicKey` | `keys/versionized/{zone}/public_key`, or `GetNetworkPublicKey` |
 | CRS | `CompactPkeCrs` | `keys/versionized/{zone}/crs`, or `GetCrs` |
 
@@ -185,7 +187,7 @@ curl -s -X POST $COFHE_URL/GetCrs \
 ```
 
 <Note>
-Neither HTTP endpoint serves the evaluation key, and you cannot compute without it. Only the archive has it. Until that base URL is published, this is the step that blocks a full recomputation.
+Neither HTTP endpoint serves the evaluation key, and you cannot compute without it. Only the key store has it. Until that base URL is published, this is the step that blocks a full recomputation.
 </Note>
 
 ## Re-run the operation
