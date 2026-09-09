@@ -2000,7 +2000,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <!-- Messages -->
         <g data-edge-from="contract" data-edge-to="taskmanager" data-edge-label="FHE.add(lhs, rhs) calls createTask" data-edge-key="0" data-edge-id="create">
-          <path data-composition-edge-from="contract" data-composition-edge-to="taskmanager" data-composition-edge-id="create" data-composition-points="144,178;319.33333333333337,178" d="M 144 178 L 319.33333333333337 178" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-composition-edge-from="contract" data-composition-edge-to="taskmanager" data-composition-edge-id="create" data-composition-points="137.0,178.0;321.33333333333337,178.0" d="M 137.0 178.0 L 321.33333333333337 178.0" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
           <rect x="137.26666666666668" y="158" width="188.8" height="16" rx="3" class="c-mask"/>
           <text x="231.66666666666669" y="168" class="t-backend" font-size="9" text-anchor="middle">FHE.add(lhs, rhs) calls createTask</text>
@@ -2008,7 +2008,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </g>
 
         <g data-edge-from="taskmanager" data-edge-to="contract" data-edge-label="result handle, immediately" data-edge-key="1" data-edge-id="handle">
-          <path data-composition-edge-from="taskmanager" data-composition-edge-to="contract" data-composition-edge-id="handle" data-composition-points="319.33333333333337,228;144,228" d="M 319.33333333333337 228 L 144 228" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+          <path data-composition-edge-from="taskmanager" data-composition-edge-to="contract" data-composition-edge-id="handle" data-composition-points="321.33333333333337,228.0;137.0,228.0" d="M 321.33333333333337 228.0 L 137.0 228.0" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
           <rect x="158.06666666666666" y="208" width="147.20000000000002" height="16" rx="3" class="c-mask"/>
           <text x="231.66666666666669" y="218" class="t-muted" font-size="9" text-anchor="middle">result handle, immediately</text>
@@ -2016,7 +2016,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </g>
 
         <g data-edge-from="taskmanager" data-edge-to="pipeline" data-edge-label="TaskCreated event" data-edge-key="2" data-edge-id="event">
-          <path data-composition-edge-from="taskmanager" data-composition-edge-to="pipeline" data-composition-edge-id="event" data-composition-points="333.33333333333337,278;508.66666666666674,278" d="M 333.33333333333337 278 L 508.66666666666674 278" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+          <path data-composition-edge-from="taskmanager" data-composition-edge-to="pipeline" data-composition-edge-id="event" data-composition-points="331.33333333333337,278.0;510.66666666666674,278.0" d="M 331.33333333333337 278.0 L 510.66666666666674 278.0" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
         <g data-detail="context">
           <rect x="370.80000000000007" y="258" width="100.4" height="16" rx="3" class="c-mask"/>
           <text x="421.00000000000006" y="268" class="t-messagebus" font-size="9" text-anchor="middle">TaskCreated event</text>
@@ -2024,7 +2024,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </g>
 
         <g data-edge-from="pipeline" data-edge-to="registry" data-edge-label="postCommitments (batched)" data-edge-key="3" data-edge-id="commit">
-          <path data-composition-edge-from="pipeline" data-composition-edge-to="registry" data-composition-edge-id="commit" data-composition-points="522.6666666666667,384;698,384" d="M 522.6666666666667 384 L 698 384" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-composition-edge-from="pipeline" data-composition-edge-to="registry" data-composition-edge-id="commit" data-composition-points="520.6666666666667,384.0;705.0,384.0" d="M 520.6666666666667 384.0 L 705.0 384.0" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
           <rect x="539.3333333333334" y="364" width="142" height="16" rx="3" class="c-mask"/>
           <text x="610.3333333333334" y="374" class="t-backend" font-size="9" text-anchor="middle">postCommitments (batched)</text>

@@ -5077,7 +5077,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
 
         <!-- Messages -->
         <g data-edge-from="app" data-edge-to="sdk" data-edge-label="encrypt the inputs, one zkPoK each" data-edge-key="0" data-edge-id="encrypt">
-          <path data-composition-edge-from="app" data-composition-edge-to="sdk" data-composition-edge-id="encrypt" data-composition-points="132.5,178;277,178" d="M 132.5 178 L 277 178" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+          <path data-composition-edge-from="app" data-composition-edge-to="sdk" data-composition-edge-id="encrypt" data-composition-points="125.5,178.0;284.0,178.0" d="M 125.5 178.0 L 284.0 178.0" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
           <rect x="110.35" y="158" width="188.8" height="16" rx="3" class="c-mask"/>
           <text x="204.75" y="168" class="t-backend" font-size="9" text-anchor="middle">encrypt the inputs, one zkPoK each</text>
@@ -5085,7 +5085,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="sdk" data-edge-to="zkverifier" data-edge-label="verifyBatch (ciphertexts + proofs)" data-edge-key="1" data-edge-id="verify">
-          <path data-composition-edge-from="sdk" data-composition-edge-to="zkverifier" data-composition-edge-id="verify" data-composition-points="291,228;752.5,228" d="M 291 228 L 752.5 228" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-composition-edge-from="sdk" data-composition-edge-to="zkverifier" data-composition-edge-id="verify" data-composition-points="289.0,228.0;754.5,228.0" d="M 289.0 228.0 L 754.5 228.0" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
           <rect x="427.35" y="208" width="188.8" height="16" rx="3" class="c-mask"/>
           <text x="521.75" y="218" class="t-backend" font-size="9" text-anchor="middle">verifyBatch (ciphertexts + proofs)</text>
@@ -5093,7 +5093,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="zkverifier" data-edge-to="sdk" data-edge-label="handles + one batch signature" data-edge-key="2" data-edge-id="signed">
-          <path data-composition-edge-from="zkverifier" data-composition-edge-to="sdk" data-composition-edge-id="signed" data-composition-points="752.5,286;291,286" d="M 752.5 286 L 291 286" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+          <path data-composition-edge-from="zkverifier" data-composition-edge-to="sdk" data-composition-edge-id="signed" data-composition-points="754.5,286.0;289.0,286.0" d="M 754.5 286.0 L 289.0 286.0" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
           <rect x="440.35" y="266" width="162.8" height="16" rx="3" class="c-mask"/>
           <text x="521.75" y="276" class="t-muted" font-size="9" text-anchor="middle">handles + one batch signature</text>
@@ -5101,7 +5101,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="sdk" data-edge-to="app" data-edge-label="[handles..., proof]" data-edge-key="3" data-edge-id="handles">
-          <path data-composition-edge-from="sdk" data-composition-edge-to="app" data-composition-edge-id="handles" data-composition-points="277,326;132.5,326" d="M 277 326 L 132.5 326" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
+          <path data-composition-edge-from="sdk" data-composition-edge-to="app" data-composition-edge-id="handles" data-composition-points="279.0,326.0;125.5,326.0" d="M 279.0 326.0 L 125.5 326.0" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
         <g data-detail="context">
           <rect x="149.35" y="306" width="110.8" height="16" rx="3" class="c-mask"/>
           <text x="204.75" y="316" class="t-muted" font-size="9" text-anchor="middle">[handles..., proof]</text>
@@ -5109,7 +5109,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="app" data-edge-to="contract" data-edge-label="contract call with handles + proof" data-edge-key="4" data-edge-id="call">
-          <path data-composition-edge-from="app" data-composition-edge-to="contract" data-composition-edge-id="call" data-composition-points="132.5,376;435.5,376" d="M 132.5 376 L 435.5 376" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-composition-edge-from="app" data-composition-edge-to="contract" data-composition-edge-id="call" data-composition-points="125.5,376.0;437.5,376.0" d="M 125.5 376.0 L 437.5 376.0" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
           <rect x="189.6" y="356" width="188.8" height="16" rx="3" class="c-mask"/>
           <text x="284" y="366" class="t-backend" font-size="9" text-anchor="middle">contract call with handles + proof</text>
@@ -5117,7 +5117,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="contract" data-edge-to="taskmanager" data-edge-label="batchVerifyInputs" data-edge-key="5" data-edge-id="batch">
-          <path data-composition-edge-from="contract" data-composition-edge-to="taskmanager" data-composition-edge-id="batch" data-composition-points="449.5,424;594,424" d="M 449.5 424 L 594 424" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+          <path data-composition-edge-from="contract" data-composition-edge-to="taskmanager" data-composition-edge-id="batch" data-composition-points="447.5,424.0;596.0,424.0" d="M 447.5 424.0 L 596.0 424.0" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
         <g data-detail="context">
           <rect x="471.55" y="404" width="100.4" height="16" rx="3" class="c-mask"/>
           <text x="521.75" y="414" class="t-security" font-size="9" text-anchor="middle">batchVerifyInputs</text>
@@ -5125,7 +5125,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="taskmanager" data-edge-to="pipeline" data-edge-label="InputVerified per input" data-edge-key="6" data-edge-id="event">
-          <path data-composition-edge-from="taskmanager" data-composition-edge-to="pipeline" data-composition-edge-id="event" data-composition-points="608,482;911,482" d="M 608 482 L 911 482" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+          <path data-composition-edge-from="taskmanager" data-composition-edge-to="pipeline" data-composition-edge-id="event" data-composition-points="606.0,482.0;913.0,482.0" d="M 606.0 482.0 L 913.0 482.0" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
         <g data-detail="context">
           <rect x="693.7" y="462" width="131.60000000000002" height="16" rx="3" class="c-mask"/>
           <text x="759.5" y="472" class="t-messagebus" font-size="9" text-anchor="middle">InputVerified per input</text>
@@ -5133,7 +5133,7 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
         </g>
 
         <g data-edge-from="pipeline" data-edge-to="registry" data-edge-label="postCommitments (batched)" data-edge-key="7" data-edge-id="commit">
-          <path data-composition-edge-from="pipeline" data-composition-edge-to="registry" data-composition-edge-id="commit" data-composition-points="925,518;1069.5,518" d="M 925 518 L 1069.5 518" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-composition-edge-from="pipeline" data-composition-edge-to="registry" data-composition-edge-id="commit" data-composition-points="923.0,518.0;1076.5,518.0" d="M 923.0 518.0 L 1076.5 518.0" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <g data-detail="context">
           <rect x="926.25" y="498" width="142" height="16" rx="3" class="c-mask"/>
           <text x="997.25" y="508" class="t-backend" font-size="9" text-anchor="middle">postCommitments (batched)</text>
