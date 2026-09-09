@@ -4864,6 +4864,9 @@ html,body{margin:0!important;padding:0!important;background:#020617!important;ov
 .diagram-container>svg{width:100%!important;height:auto!important;max-width:100%!important}
 /* the type sigils in each participant tile add nothing here */
 .semantic-sigil{display:none!important}
+/* no focus ring on the frame itself; keyboard focus on components still shows */
+html:focus,body:focus,.container:focus,.diagram-container:focus,
+.diagram-container:focus-visible,svg:focus,svg:focus-visible{outline:none!important;box-shadow:none!important}
 html{cursor:zoom-in}
 html:fullscreen{cursor:zoom-out}
 html:fullscreen .diagram-container{padding:24px!important;height:100vh!important}
@@ -14912,5 +14915,5 @@ html:fullscreen .diagram-container>svg{max-height:100vh!important}
   allow="fullscreen"
   allowFullScreen
   loading="lazy"
-  style={{ width: "100%", height: "460px", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
+  style={{ width: "100%", aspectRatio: "1180 / 712", display: "block", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
 />
