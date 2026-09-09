@@ -251,7 +251,6 @@
             "group": "Data Flows",
             "pages": [
               "deep-dive/data-flows/encryption-request-flow",
-              "deep-dive/data-flows/encryption-request-flow-explorable",
               "deep-dive/data-flows/fhe-operation-request-flow",
               "deep-dive/data-flows/decryption-request-flow"
             ]
