@@ -164,6 +164,23 @@ CT Server is the deliberate second case. It stores and serves ciphertext bytes f
 
 Never declare a column the flow does not use. Mermaid draws it at full strength with no messages, and a reader takes that for a mistake. Mermaid also cannot dim a single column, so there is no way to show one as inactive: leave it out instead.
 
+### Diagram colour
+
+Colour marks **where a component runs**, never what kind of component it is. A reader should be able to answer "is this mine, is this onchain, is this Fhenix's" from the colour alone, and get the same answer on every page.
+
+| Zone | Components | Archify type |
+|---|---|---|
+| Client side | Your app, Client SDK | `external` |
+| Host chain | Your contract, TaskManager | `backend` |
+| CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor, CT Server | `cloud` |
+| Registry chain | CommitmentRegistry | `database` |
+
+Components in one zone share one colour, including those a given flow does not use. Teecryptor is the same colour on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change colour between diagrams.
+
+Do not colour by component type. That is the tool's default, and it produces one accent per participant, encoding a distinction the reader cannot act on.
+
+The key management ceremony sits outside this table, like its actors: the keygen ceremony and the component enclave run inside CoFHE, but the partners are independent custodians and must not read as CoFHE's.
+
 One action gets one phrase, in every diagram that shows it:
 
 | Action | Phrase |
