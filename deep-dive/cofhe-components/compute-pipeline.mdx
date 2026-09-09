@@ -13,16 +13,13 @@ The compute pipeline is the computation side of CoFHE. Contracts never call it. 
 
 Four components make up the pipeline. Each one owns a single step, and work moves in one direction.
 
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
-flowchart LR
-    TM["TaskManager<br/>host chain"] --> SL["Slim listener<br/>reads chain events"]
-    SL --> FO["FheOS<br/>validates and orders"]
-    FO --> FE["FHE Engine<br/>computes on ciphertexts"]
-    FE --> BP["Blockchain poster<br/>batches commitments"]
-    BP --> CR["CommitmentRegistry<br/>registry chain"]
-    FE <--> CTS[("Ciphertext store")]
-```
+<Frame>
+<img src="/images/compute-pipeline.svg" alt="The compute pipeline: TaskManager feeds the slim listener, FheOS, the FHE Engine and the blockchain poster, which posts commitments to the registry chain" />
+</Frame>
+
+<Tip>
+Colour marks the zone. The four pipeline components run offchain inside CoFHE; the TaskManager is on the host chain and the CommitmentRegistry on the registry chain.
+</Tip>
 
 ## Slim listener
 
