@@ -181,6 +181,8 @@ The reader-facing key is the page's own "Key components" table, which carries a 
 
 Do not colour by component type. That is the tool's default, and it produces one accent per participant, encoding a distinction the reader cannot act on.
 
+Architecture and lifecycle diagrams name their legend entries after the renderer's own component or state kinds, which say nothing a reader can use: a contract labelled "Database", a deliberate end state labelled "failure". Relabel those entries to the zone or the state's real meaning. Sequence legends describe arrow kinds and already read correctly.
+
 The key management ceremony sits outside this table, like its actors: the keygen ceremony and the component enclave run inside CoFHE, but the partners are independent custodians and must not read as CoFHE's.
 
 One action gets one phrase, in every diagram that shows it:

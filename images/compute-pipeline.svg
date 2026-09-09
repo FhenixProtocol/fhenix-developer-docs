@@ -2089,17 +2089,17 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         <!-- Legend -->
         <g data-legend="" data-legend-bridge="">
           <text x="40" y="484" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Backend" data-legend-x="40" data-legend-baseline="504" data-legend-width="78">
+          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Host chain" data-legend-x="40" data-legend-baseline="504" data-legend-width="93">
             <rect x="40" y="495" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
-            <text x="62" y="504" class="t-muted" font-size="10" font-weight="500">Backend</text>
+            <text x="62" y="504" class="t-muted" font-size="10" font-weight="500">Host chain</text>
           </g>
-          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="140" data-legend-baseline="504" data-legend-width="83">
-            <rect x="140" y="495" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
-            <text x="162" y="504" class="t-muted" font-size="10" font-weight="500">Database</text>
+          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Registry chain" data-legend-x="155" data-legend-baseline="504" data-legend-width="113">
+            <rect x="155" y="495" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
+            <text x="177" y="504" class="t-muted" font-size="10" font-weight="500">Registry chain</text>
           </g>
-          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud" data-legend-x="245" data-legend-baseline="504" data-legend-width="68">
-            <rect x="245" y="495" width="16" height="10" rx="2.5" class="c-cloud" stroke-width="1"/>
-            <text x="267" y="504" class="t-muted" font-size="10" font-weight="500">Cloud</text>
+          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="CoFHE, offchain" data-legend-x="290" data-legend-baseline="504" data-legend-width="118">
+            <rect x="290" y="495" width="16" height="10" rx="2.5" class="c-cloud" stroke-width="1"/>
+            <text x="312" y="504" class="t-muted" font-size="10" font-weight="500">CoFHE, offchain</text>
           </g>
         </g>
       </svg>
