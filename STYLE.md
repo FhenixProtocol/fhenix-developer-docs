@@ -164,9 +164,9 @@ CT Server is the deliberate second case. It stores and serves ciphertext bytes f
 
 Never declare a column the flow does not use. Mermaid draws it at full strength with no messages, and a reader takes that for a mistake. Mermaid also cannot dim a single column, so there is no way to show one as inactive: leave it out instead.
 
-### Diagram colour
+### Diagram color
 
-Colour marks **where a component runs**, never what kind of component it is. A reader should be able to answer "is this mine, is this onchain, is this Fhenix's" from the colour alone, and get the same answer on every page.
+Color marks **where a component runs**, never what kind of component it is. A reader should be able to answer "is this mine, is this onchain, is this Fhenix's" from the color alone, and get the same answer on every page.
 
 | Zone | Components | Archify type |
 |---|---|---|
@@ -175,11 +175,11 @@ Colour marks **where a component runs**, never what kind of component it is. A r
 | CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor | `cloud` |
 | Registry chain | CommitmentRegistry | `database` |
 
-CT Server is not in the table because it is never a column; it is named inside a self-message. Components in one zone share one colour, including those a given flow does not use. Teecryptor is the same colour on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change colour between diagrams.
+CT Server is not in the table because it is never a column; it is named inside a self-message. Components in one zone share one color, including those a given flow does not use. Teecryptor is the same color on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change color between diagrams.
 
 The reader-facing key is the page's own "Key components" table, which carries a **Runs in** column naming each component's zone. That is the legend: no swatches, no hex values in prose, and nothing to drift when a preset changes. A page that has such a table carries the column; a page without one names the zones in the tip under its diagram instead.
 
-Do not colour by component type. That is the tool's default, and it produces one accent per participant, encoding a distinction the reader cannot act on.
+Do not color by component type. That is the tool's default, and it produces one accent per participant, encoding a distinction the reader cannot act on.
 
 Architecture and lifecycle diagrams name their legend entries after the renderer's own component or state kinds, which say nothing a reader can use: a contract labelled "Database", a deliberate end state labelled "failure". Relabel those entries to the zone or the state's real meaning. Sequence legends describe arrow kinds and already read correctly.
 
