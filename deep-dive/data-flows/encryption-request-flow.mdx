@@ -7,16 +7,16 @@ This page follows encrypted inputs from the plaintext in your application to han
 
 ## Key components
 
-| Component | Description |
-|-----------|-------------|
-| **Your app** | The application that interacts with the user and the contracts |
-| **Client SDK** (`@cofhe/sdk`) | TypeScript library that encrypts inputs locally and submits them for verification |
-| **Your contract** | Consumes the handles and the proof, and forwards them to the TaskManager |
-| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Verifies the ZK Verifier's batch signature when the inputs are used onchain |
-| **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)** | Attested offchain component that verifies the proofs of every encrypted-input batch |
-| **CT Server** | Stores the verified ciphertext bytes for the coprocessor |
-| **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | Picks up each `InputVerified` event and posts the commitment |
-| **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Records a commitment for every verified input |
+| Component | Runs in | Description |
+|-----------|---------|-------------|
+| **Your app** | Client side | The application that interacts with the user and the contracts |
+| **Client SDK** (`@cofhe/sdk`) | Client side | TypeScript library that encrypts inputs locally and submits them for verification |
+| **Your contract** | Host chain | Consumes the handles and the proof, and forwards them to the TaskManager |
+| **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Host chain | Verifies the ZK Verifier's batch signature when the inputs are used onchain |
+| **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)** | CoFHE, offchain | Attested offchain component that verifies the proofs of every encrypted-input batch |
+| **CT Server** | CoFHE, offchain | Stores the verified ciphertext bytes. Named inside a message rather than drawn as its own column |
+| **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | CoFHE, offchain | Picks up each `InputVerified` event and posts the commitment |
+| **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Registry chain | Records a commitment for every verified input |
 
 ## Flow diagram
 
@@ -26,7 +26,7 @@ This page follows encrypted inputs from the plaintext in your application to han
 </Frame>
 
 <Tip>
-Colour marks where each component runs: client side, host chain, CoFHE offchain, and registry chain. Hover any component or message in the [explorable version](/deep-dive/data-flows/encryption-request-flow-explorable).
+Each colour in the diagram is one zone from the table above. Hover any component or message in the [explorable version](/deep-dive/data-flows/encryption-request-flow-explorable).
 </Tip>
 
 ## Step-by-step flow
