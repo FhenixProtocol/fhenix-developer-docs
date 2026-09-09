@@ -4856,11 +4856,14 @@ export const diagram = `<!DOCTYPE html>
 <style id="embed-chrome-off">
 /* Embedded view: the diagram and nothing else. */
 .toolbar,.header,.guided-views,.cards,.diagram-nav{display:none!important}
-html,body{margin:0!important;padding:0!important;background:#020617!important;overflow:hidden!important}
+html,body{margin:0!important;padding:0!important;background:var(--bg)!important;overflow:hidden!important}
 .container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
 /* the bottom reserve existed for the dock we just removed */
 .diagram-container{--archify-nav-reserve:0px!important;margin:0!important;border:none!important;
   border-radius:0!important;box-shadow:none!important;padding:6px!important;overflow:hidden!important}
+/* the corner brackets are a container decoration a standalone SVG cannot carry;
+   drop them so the two renderings are the same picture */
+.diagram-container::before,.diagram-container::after{display:none!important}
 /* fit the column instead of rendering at natural width */
 .diagram-container>svg{width:100%!important;height:auto!important;max-width:100%!important}
 /* the type sigils in each participant tile add nothing here */
@@ -14896,5 +14899,5 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
   srcDoc={diagram}
   title="Encryption request flow, explorable diagram"
   loading="lazy"
-  style={{ width: "100%", aspectRatio: "1180 / 600", display: "block", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
+  style={{ width: "100%", aspectRatio: "1180 / 600", display: "block", border: "1px solid #1e293b", borderRadius: "10px", background: "#06131f" }}
 />
