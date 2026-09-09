@@ -14,15 +14,15 @@ CoFHE's security rests on a small set of keys, and none of them is ever held who
 
 ## The ceremony
 
-The keys are born inside a TEE. A one-shot key-generation component runs in its own hardware-attested enclave and generates the network keyset there. The secret material is split with Shamir secret sharing into six shares; any three reconstruct it (3-of-6).
+The keys are born inside a TEE. A one-shot keygen ceremony runs in its own hardware-attested enclave and generates the network keyset there. The secret material is split with Shamir secret sharing into six shares; any three reconstruct it (3-of-6).
 
 Each share goes to one **partner**: an independent custodian with its own share store. A partner's store accepts writes only from the attested ceremony image, so nobody can slip in a substitute share. The public material is published for clients. The ceremony enclave then terminates; the assembled key is never persisted anywhere.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
-    participant Ceremony as Keygen ceremony (TEE)
-    participant Partners as Partners (custodians)
+    participant Ceremony as Keygen ceremony
+    participant Partners as Partners
     participant Pub as Public material
     participant Enclave as Component enclave
 
@@ -43,6 +43,6 @@ At rest, the key exists only as shares held by independent partners. No partner 
 
 ## Release at boot
 
-When Teecryptor or the ZK Verifier starts, the TEE hardware produces an attestation of the exact code image it is running. Each partner independently verifies that attestation and releases its share only to the approved image digest. The enclave reconstructs the key in memory, zeroizes the transit material, and never persists it. Restarting the component repeats the whole handshake.
+When Teecryptor or the ZK Verifier starts, the TEE hardware produces an attestation of the exact code image it is running. Each partner independently verifies that attestation and releases its share only to the approved image digest. That component enclave reconstructs the key in memory, zeroizes the transit material, and never persists it. Restarting the component repeats the whole handshake.
 
 The guarantee this chain yields: from generation through every reconstruction, the key exists only inside hardware-attested enclaves running reviewed code.

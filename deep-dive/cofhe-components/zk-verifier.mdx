@@ -55,12 +55,12 @@ sequenceDiagram
 
 The process of sending inputs to a smart contract:
 
-1. The user encrypts the inputs and generates a ZK proof of knowledge for them.
-2. The user sends the ciphertexts and proofs to the ZK Verifier, as one batch.
+1. Your app encrypts the inputs through the Client SDK, which generates a ZK proof of knowledge for each one.
+2. The Client SDK sends the ciphertexts and proofs to the ZK Verifier, as one batch.
 3. The ZK Verifier verifies each proof. If all are valid, it stores the encrypted values in the CT Server and signs one message approving the whole batch.
-4. The ZK Verifier returns the handles and the batch approval to the user.
-5. The user sends the handles and the approval as inputs to a contract call.
-6. The contract verifies the batch signature, approving the inputs and emitting `InputVerified` per input, which anchors a commitment so each input becomes decryptable later.
+4. The ZK Verifier returns the handles and the batch approval to your app.
+5. Your app sends the handles and the approval as inputs to a contract call.
+6. The TaskManager verifies the batch signature and emits `InputVerified` per input. The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) picks those events up and posts a commitment for each input to the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry), so the input becomes decryptable later.
 7. The contract performs the actual logic.
 
 Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK and library calls, while step 7 (the actual logic) is up to you to write.
