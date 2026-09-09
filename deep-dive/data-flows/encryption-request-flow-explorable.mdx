@@ -1,11 +1,7 @@
 ---
 title: Encryption Flow, Explorable
-description: "The encryption request flow as an explorable diagram: pan, zoom, focus a component, and trace one message end to end"
+description: "The encryption request flow as an explorable diagram: hover a component to highlight it, click the background to enlarge"
 ---
-
-Drag to pan, scroll to zoom, and click a component to focus everything it touches.
-The same flow is explained step by step on the
-[Encryption Request Flow](/deep-dive/data-flows/encryption-request-flow) page.
 
 export const diagram = `<!DOCTYPE html>
 <html lang="en" data-theme="dark" data-preset="blueprint">
@@ -4857,19 +4853,21 @@ export const diagram = `<!DOCTYPE html>
     }
   </style>
 <style id="embed-chrome-off">
-/* Embedded view: the diagram, a zoom control, nothing else. */
-.toolbar,.header,.guided-views,.cards{display:none!important}
+/* Embedded view: the diagram and nothing else. */
+.toolbar,.header,.guided-views,.cards,.diagram-nav{display:none!important}
 html,body{margin:0!important;padding:0!important;background:#020617!important;overflow:hidden!important}
 .container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
-/* the 4.25rem bottom reserve existed for the full dock we just removed */
+/* the bottom reserve existed for the dock we just removed */
 .diagram-container{--archify-nav-reserve:0px!important;margin:0!important;border:none!important;
-  border-radius:0!important;box-shadow:none!important;padding:8px!important;overflow:hidden!important}
-/* fit to the column instead of rendering at natural width */
+  border-radius:0!important;box-shadow:none!important;padding:6px!important;overflow:hidden!important}
+/* fit the column instead of rendering at natural width */
 .diagram-container>svg{width:100%!important;height:auto!important;max-width:100%!important}
-/* keep only zoom out / reset / zoom in */
-#btn-route-probe,#btn-overview-map,#btn-semantic-lens,#btn-node-finder,#btn-diagram-guide{display:none!important}
-.diagram-nav{right:8px!important;bottom:8px!important;opacity:.85}
-.diagram-nav:hover{opacity:1}
+/* the type sigils in each participant tile add nothing here */
+.semantic-sigil{display:none!important}
+html{cursor:zoom-in}
+html:fullscreen{cursor:zoom-out}
+html:fullscreen .diagram-container{padding:24px!important;height:100vh!important}
+html:fullscreen .diagram-container>svg{max-height:100vh!important}
 </style>
 </head>
 <body>
@@ -14893,6 +14891,17 @@ html,body{margin:0!important;padding:0!important;background:#020617!important;ov
       }
     });
   </script>
+<script>
+(function () {
+  document.addEventListener('click', function (e) {
+    // let the diagram keep its own click behaviour on nodes and messages
+    if (e.target.closest && e.target.closest('[data-node-id],[data-edge-id],button,a')) return;
+    if (document.fullscreenElement) { document.exitFullscreen(); return; }
+    var el = document.documentElement;
+    if (el.requestFullscreen) { el.requestFullscreen().catch(function () {}); }
+  });
+})();
+</script>
 </body>
 </html>
 `;
@@ -14900,6 +14909,8 @@ html,body{margin:0!important;padding:0!important;background:#020617!important;ov
 <iframe
   srcDoc={diagram}
   title="Encryption request flow, explorable diagram"
+  allow="fullscreen"
+  allowFullScreen
   loading="lazy"
-  style={{ width: "100%", height: "470px", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
+  style={{ width: "100%", height: "460px", border: "1px solid #1e293b", borderRadius: "10px", background: "#020617" }}
 />
