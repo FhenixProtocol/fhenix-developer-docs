@@ -1979,7 +1979,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </defs>
 
         <!-- Background Grid -->
-        <rect width="100%" height="100%" fill="var(--bg)" /><rect width="100%" height="100%" fill="var(--panel)" /><rect width="100%" height="100%" fill="url(#grid)" />
+        <rect x="0" y="50" width="900" height="438" fill="var(--bg)" /><rect x="0" y="50" width="900" height="438" fill="var(--panel)" /><rect x="0" y="50" width="900" height="438" fill="url(#grid)" />
 
         <!-- Time Segments -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="48" y="158" width="804" height="96" rx="10" class="c-lane" stroke-width="1"/>
