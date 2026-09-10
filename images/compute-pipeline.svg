@@ -1993,7 +1993,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         <!-- Components -->
         <g id="node-taskmanager" data-node-id="taskmanager" data-node-label="TaskManager" tabindex="0" role="button" aria-label="Focus TaskManager, host chain, Architecture component" aria-pressed="false" data-node-kind="backend" data-node-sublabel="host chain" data-node-context="Architecture component">
           <title>TaskManager · host chain · Architecture component</title>
-          <rect x="60" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="60" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="60.0" y="176.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="60.0" y1="176.0" x2="180.0" y2="176.0" stroke="var(--backend-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="60" y="140" width="120" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(66 146) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
@@ -2004,7 +2004,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-slim" data-node-id="slim" data-node-label="Slim listener" tabindex="0" role="button" aria-label="Focus Slim listener, reads chain events, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="reads chain events" data-node-context="Compute pipeline, offchain">
           <title>Slim listener · reads chain events · Compute pipeline, offchain</title>
-          <rect x="250" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="250" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="250.0" y="176.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="250.0" y1="176.0" x2="370.0" y2="176.0" stroke="var(--cloud-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="250" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(256 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
@@ -2015,7 +2015,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-fheos" data-node-id="fheos" data-node-label="FheOS" tabindex="0" role="button" aria-label="Focus FheOS, validates and orders, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="validates and orders" data-node-context="Compute pipeline, offchain">
           <title>FheOS · validates and orders · Compute pipeline, offchain</title>
-          <rect x="440" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="440" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="440.0" y="176.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="440.0" y1="176.0" x2="560.0" y2="176.0" stroke="var(--cloud-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="440" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(446 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
@@ -2026,7 +2026,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-engine" data-node-id="engine" data-node-label="FHE Engine" tabindex="0" role="button" aria-label="Focus FHE Engine, computes on ciphertexts, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="computes on ciphertexts" data-node-context="Compute pipeline, offchain">
           <title>FHE Engine · computes on ciphertexts · Compute pipeline, offchain</title>
-          <rect x="630" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="630" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="630.0" y="176.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="630.0" y1="176.0" x2="750.0" y2="176.0" stroke="var(--cloud-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="630" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(636 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
@@ -2037,7 +2037,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-poster" data-node-id="poster" data-node-label="Blockchain poster" tabindex="0" role="button" aria-label="Focus Blockchain poster, batches commitments, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="batches commitments" data-node-context="Compute pipeline, offchain">
           <title>Blockchain poster · batches commitments · Compute pipeline, offchain</title>
-          <rect x="820" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="820" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="820.0" y="176.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="820.0" y1="176.0" x2="940.0" y2="176.0" stroke="var(--cloud-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="820" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(826 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
@@ -2048,7 +2048,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-registry" data-node-id="registry" data-node-label="CommitmentRegistry" tabindex="0" role="button" aria-label="Focus CommitmentRegistry, registry chain, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="registry chain" data-node-context="Architecture component">
           <title>CommitmentRegistry · registry chain · Architecture component</title>
-          <rect x="1010" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="1010" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="1010.0" y="176.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="1010.0" y1="176.0" x2="1130.0" y2="176.0" stroke="var(--database-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="1010" y="140" width="120" height="60" rx="6" class="c-database" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1016 146) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
@@ -2060,7 +2060,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-store" data-node-id="store" data-node-label="Ciphertext store" tabindex="0" role="button" aria-label="Focus Ciphertext store, fronted by the CT Server, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="fronted by the CT Server" data-node-context="Architecture component">
           <title>Ciphertext store · fronted by the CT Server · Architecture component</title>
-          <rect x="630" y="288" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="630" y="288" width="120" height="60" rx="6" class="c-mask"/><rect x="630.0" y="324.0" width="120.0" height="24.0" fill="rgba(2,6,23,0.35)"/><line x1="630.0" y1="324.0" x2="750.0" y2="324.0" stroke="var(--cloud-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="630" y="288" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(636 294) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
