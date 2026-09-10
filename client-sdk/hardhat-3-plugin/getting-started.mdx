@@ -1,0 +1,140 @@
+---
+title: Getting Started
+description: "Set up @cofhe/hardhat-3-plugin for local FHE contract development under Hardhat 3"
+---
+
+`@cofhe/hardhat-3-plugin` is the Hardhat 3 counterpart to [`@cofhe/hardhat-plugin`](/client-sdk/hardhat-plugin/getting-started). It deploys the CoFHE mock contracts to an in-process Hardhat network on every `network.connect()` call and exposes a `cofhe` namespace on the connection object — ready to use immediately, no boilerplate required.
+
+<Note>
+Use this plugin if you've adopted the [Hardhat 3 plugin/hook model](https://hardhat.org). For Hardhat v2 projects, use [`@cofhe/hardhat-plugin`](/client-sdk/hardhat-plugin/getting-started) instead.
+</Note>
+
+## What the plugin provides
+
+- **Auto-deploys mocks** on every `network.connect()` — `MockTaskManager`, `MockACL`, `MockZkVerifier`, `MockThresholdNetwork`, and `TestBed`.
+- **`conn.cofhe` namespace** on the Hardhat 3 connection object (sits alongside `conn.viem` from `@nomicfoundation/hardhat-viem`).
+- **`cofhe.createClientWithBatteries()`** — one-call SDK client setup with a pre-signed self permit.
+- **Mock helpers** — Viem contract descriptors for every mock, plaintext inspection (`getPlaintext` / `expectPlaintext`), and logging control.
+
+## Installation
+
+<Steps>
+
+<Step title="Install the package">
+
+<CodeGroup>
+
+```bash npm
+npm install @cofhe/hardhat-3-plugin @cofhe/sdk @fhenixprotocol/cofhe-contracts
+```
+
+```bash pnpm
+pnpm add @cofhe/hardhat-3-plugin @cofhe/sdk @fhenixprotocol/cofhe-contracts
+```
+
+```bash yarn
+yarn add @cofhe/hardhat-3-plugin @cofhe/sdk @fhenixprotocol/cofhe-contracts
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Register the plugin">
+
+```typescript hardhat.config.ts
+import { defineConfig } from 'hardhat/config';
+import cofhePlugin from '@cofhe/hardhat-3-plugin';
+import hardhatViem from '@nomicfoundation/hardhat-viem';
+import hardhatNodeTestRunner from '@nomicfoundation/hardhat-node-test-runner';
+
+export default defineConfig({
+  plugins: [cofhePlugin, hardhatViem, hardhatNodeTestRunner],
+});
+```
+
+</Step>
+
+</Steps>
+
+## Configuration
+
+The plugin adds an optional `cofhe` key to your Hardhat 3 config. All values shown below are their defaults:
+
+```typescript hardhat.config.ts
+export default defineConfig({
+  plugins: [cofhePlugin, hardhatViem, hardhatNodeTestRunner],
+
+  cofhe: {
+    gasWarning: true,           // warn that mock gas costs differ from live FHE
+    logMocks: true,             // enable event-based logging in mock contracts
+    mocksDeployVerbosity: 'v',  // '' silent | 'v' summary | 'vv' full per-contract
+  },
+});
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `gasWarning` | `boolean` | `true` | Print a one-line warning after mock deployment reminding that mock gas costs differ from live FHE. |
+| `logMocks` | `boolean` | `true` | Enable event-based logging inside mock contracts. |
+| `mocksDeployVerbosity` | `'' \| 'v' \| 'vv'` | `'v'` | How much output to print while deploying mocks. `''` silent, `'v'` one summary line per mock, `'vv'` full per-contract deployment log. |
+
+## How auto-deployment works
+
+Every call to `network.connect()` automatically:
+
+1. Deploys all CoFHE mock contracts to the fresh in-process EVM.
+2. Attaches a `cofhe` namespace to the returned connection object.
+
+Because `network.connect()` is awaitable at the top level of an `async describe`, you can set everything up without lifecycle hooks:
+
+```typescript
+import { describe, it } from 'node:test';
+import { network } from 'hardhat';
+
+describe('My FHE contract', async () => {
+  const { viem, cofhe } = await network.connect();
+  const publicClient = await viem.getPublicClient();
+  const [walletClient] = await viem.getWalletClients();
+
+  it('encrypts and decrypts a value', async () => {
+    const client = await cofhe.createClientWithBatteries(walletClient);
+    // ... test logic
+  });
+});
+```
+
+<Tip>
+**Why `async describe`?** Hardhat 3's `node:test` runner supports top-level `await` inside the describe callback. This lets you resolve the connection (and deploy mocks) exactly once per test file without needing a `before()` hook.
+</Tip>
+
+## Mock contracts deployed
+
+| Contract | Address | Description |
+| --- | --- | --- |
+| `MockTaskManager` | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9` | Coordinates FHE operations and ACL |
+| `MockACL` | dynamic | Access Control List — address resolved from TaskManager |
+| `MockZkVerifier` | `0x0000000000000000000000000000000000005001` | Verifies ZK proofs for encrypted inputs |
+| `MockThresholdNetwork` | `0x0000000000000000000000000000000000005002` | Simulates the threshold decryption network |
+| `TestBed` | `0x0000000000000000000000000000000000005003` | Utility contract for storing and retrieving encrypted values in tests |
+
+Fixed-address contracts are deployed via `hardhat_setCode`, so they are always at the same address regardless of deployment order. `MockACL` is deployed as a normal contract (so its EIP-712 domain constructor runs correctly) and its address is registered in `MockTaskManager`.
+
+## Differences from `@cofhe/hardhat-plugin`
+
+| Concern | `@cofhe/hardhat-plugin` (v2) | `@cofhe/hardhat-3-plugin` |
+| --- | --- | --- |
+| Entry point | `hre.cofhe` (global) | `conn.cofhe` (per `network.connect()` call) |
+| Lifecycle | Pre-task hook (`npx hardhat test` / `node`) | `network.connect()` returns a fresh deployment |
+| Test runner expectation | Mocha-style (`before`, `it`) | `node:test` with `async describe` |
+| Mock compilation for custom-error decoding | Overrides `TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS` | Runs `hre.solidity.build()` during the `hre.created` hook |
+| Bytecode sourcing | `hre.artifacts.readArtifact()` | `hre.artifacts.readArtifact()` (same — for variable-address mocks like `MockACL`) |
+
+The Solidity surface (mock contracts, plaintext semantics, `FHE.verifyDecryptResult` acceptance) is **identical** between the two plugins; the differences are all in how Hardhat hosts the plugin.
+
+## Next steps
+
+- [Client](/client-sdk/hardhat-3-plugin/client) — `conn.cofhe.createConfig`, `createClient`, `createClientWithBatteries`.
+- [Mock Contracts](/client-sdk/hardhat-3-plugin/mock-contracts) — Viem contract descriptors and plaintext inspection helpers.
+- [Logging](/client-sdk/hardhat-3-plugin/logging) — `enableLogs`, `disableLogs`, `withLogs`.
+- [Testing](/client-sdk/hardhat-3-plugin/testing) — end-to-end test patterns.
