@@ -4854,6 +4854,16 @@ export const diagram = `<!DOCTYPE html>
     }
   </style>
 <style id="embed-chrome-off">
+/* the house palette; the preset defines these at [data-preset][data-theme],
+   so the override needs at least that specificity */
+html[data-preset][data-theme]{
+  --bg:#122531; --panel:rgba(18,37,49,0.92); --grid:#1e3d52;
+  --external-stroke:#0466A2; --external-fill:rgba(4,102,162,0.18);
+  --backend-stroke:#F37A49;  --backend-fill:rgba(243,122,73,0.15);
+  --cloud-stroke:#0AD9DC;    --cloud-fill:rgba(10,217,220,0.13);
+  --database-stroke:#BF90F8; --database-fill:rgba(191,144,248,0.15);
+}
+
 .toolbar,.header,.guided-views,.cards,.diagram-nav{display:none!important}
 html,body{margin:0!important;padding:0!important;background:var(--bg)!important;overflow:hidden!important}
 .container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
@@ -14805,5 +14815,5 @@ html:focus,body:focus,.container:focus,.diagram-container:focus,
   srcDoc={diagram}
   title="FHE Operation Flow, Explorable"
   loading="lazy"
-  style={{ width: "100%", aspectRatio: "820 / 480", display: "block", border: "1px solid #1e293b", borderRadius: "10px", background: "#06131f" }}
+  style={{ width: "100%", aspectRatio: "784 / 430", display: "block", border: "1px solid #1e293b", borderRadius: "10px", background: "#06131f" }}
 />
