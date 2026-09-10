@@ -27,31 +27,14 @@ Requiring a ZKPoK for each encrypted input is what makes it safe to run an encry
 
 When providing ciphertexts as an input to a smart contract, users have to generate a ZKPoK and get a verification approval first. The Client SDK (`@cofhe/sdk`) and `FHE.sol` handle most of this work; the mechanism is described here end to end (also in the diagram below).
 
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
-sequenceDiagram
-    participant App as Your app
-    participant SDK as Client SDK
-    participant C as Your contract
-    participant TM as TaskManager
-    participant ZK as ZK Verifier
-    participant Pipe as Compute pipeline
-    participant CR as CommitmentRegistry
+{/* Diagram source: zk-verifier.mmd, beside this page. Edit it first, then re-run the archify build. */}
+<Frame>
+<img src="/images/zk-verifier.svg" alt="Sequence diagram of the zk verifier path" />
+</Frame>
 
-    App->>SDK: encrypt the inputs, generate a zkPoK for each
-    SDK->>ZK: verifyBatch (ciphertexts + proofs)
-    ZK->>ZK: verify every proof in the attested TEE
-    ZK->>ZK: store the ciphertext bytes in CT Server
-    ZK->>ZK: archive the inputs and proofs for public audit
-    ZK->>ZK: sign one digest over the whole batch
-    ZK-->>SDK: handles + batch signature
-    SDK-->>App: [handles..., proof]
-    App->>C: contract call with handles + proof
-    C->>TM: batchVerifyInputs
-    TM->>TM: ecrecover against verifierSigner
-    TM--)Pipe: InputVerified per input
-    Pipe->>CR: postCommitments (batched)
-```
+<Tip>
+Color marks the zone. Your app and the Client SDK run client side, your contract and the TaskManager on the host chain. The ZK Verifier and compute pipeline run offchain inside CoFHE, and the CommitmentRegistry sits on the registry chain. Hover any component or message in the [explorable version](/deep-dive/cofhe-components/zk-verifier-explorable).
+</Tip>
 
 The process of sending inputs to a smart contract:
 
