@@ -169,12 +169,15 @@ Never declare a column the flow does not use. Mermaid draws it at full strength 
 
 Color marks **where a component runs**, never what kind of component it is. A reader should be able to answer "is this mine, is this onchain, is this Fhenix's" from the color alone, and get the same answer on every page.
 
-| Zone | Components | Archify type |
+| Zone | Components | Color |
 |---|---|---|
-| Client side | Your app, Client SDK | `external` |
-| Host chain | Your contract, TaskManager | `backend` |
-| CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor | `cloud` |
-| Registry chain | CommitmentRegistry | `database` |
+| Client side, and independent parties | Your app, Client SDK, Partners | `#0466A2` |
+| Host chain | Your contract, TaskManager | `#F37A49` |
+| CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor | `#0AD9DC` |
+| Registry chain | CommitmentRegistry | `#BF90F8` |
+
+The dark ground is `#122531`. These values live in the export script, not in each
+diagram, so one edit changes every diagram.
 
 CT Server is not in the table because it is never a column; it is named inside a self-message. Components in one zone share one color, including those a given flow does not use. Teecryptor is the same color on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change color between diagrams.
 

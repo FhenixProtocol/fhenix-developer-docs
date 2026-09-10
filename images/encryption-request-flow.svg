@@ -1953,6 +1953,14 @@ svg[data-preset="blueprint"][data-animation="trace"] [data-animate="edge"]{strok
       animation-duration: 2.15s;}
 svg[data-preset="blueprint"][data-animation="trace"] [data-animate="node"]{animation-name: archify-blueprint-node-pulse;
       animation-duration: 3.8s;}
+svg[data-preset][data-theme]{
+  --bg:#122531; --panel:rgba(18,37,49,0.92); --grid:#1e3d52;
+  --external-stroke:#0466A2; --external-fill:rgba(4,102,162,0.18);
+  --backend-stroke:#F37A49;  --backend-fill:rgba(243,122,73,0.15);
+  --cloud-stroke:#0AD9DC;    --cloud-fill:rgba(10,217,220,0.13);
+  --database-stroke:#BF90F8; --database-fill:rgba(191,144,248,0.15);
+}
+
 svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace!important}
 .semantic-sigil{display:none!important}
 
