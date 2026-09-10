@@ -1,47 +1,38 @@
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
-flowchart TB
-    subgraph Yours["Your code (outside CoFHE)"]
-        FHEC["Your contract<br/>uses FHE.sol"]
-    end
-
+flowchart LR
     subgraph App["Application"]
-        SDK["Client SDK<br/>client-side library"]
+        SDK["Client SDK<br/>encrypts inputs, unseals results"]
     end
 
     subgraph Host["Host chain"]
-        TM["TaskManager + ACL<br/>tasks, permissions"]
-        PS["PlaintextsStorage<br/>decrypted results"]
+        FS["FHE.sol<br/>your contract's FHE library"]
+        TM["TaskManager<br/>gateway for FHE requests"]
+        ACL["ACL<br/>who may use each handle"]
+        PS["PlaintextsStorage<br/>published decrypted results"]
     end
 
+    PRT["Partners<br/>independent key custodians"]
+
     subgraph CoFHE["CoFHE"]
-        TEE["Teecryptor<br/>TEE enclave, key shares"]
-        ZK["ZK Verifier<br/>TEE enclave, signing key"]
-        PRT["Partners<br/>key custodians"]
-        CTS[("Ciphertext store")]
-        subgraph ENG["Compute pipeline"]
-            direction TB
-            L["subscribe to task events"] --> X["process FHE computation"] --> P["post commitments to registry"]
-        end
+        ZK["ZK Verifier<br/>verifies input proofs in a TEE"]
+        TEE["Teecryptor<br/>decrypts inside a TEE"]
+        CTS[("Ciphertext store<br/>every ciphertext, via the CT Server")]
+        ENG["Compute pipeline<br/>runs and commits FHE operations"]
     end
 
     subgraph Registry["Registry chain"]
-        CR["CommitmentRegistry<br/>op commitments"]
+        CR["CommitmentRegistry<br/>a commitment per ciphertext"]
     end
 
-    FHEC --> TM
-    SDK -- "encrypt" --> ZK
-    SDK -- "decrypt" --> TEE
-    SDK -- "publish result" --> TM
+    SDK --> FS
+    FS --> TM
+    TM --> ACL
     TM --> PS
-    TM --> L
-    TEE -- "ACL check" --> TM
-    TEE --> CTS
-    TEE -- "verify commitment" --> CR
-    ZK --> CTS
-    ENG <--> CTS
-    P --> CR
-    PRT --> TEE
+    TM --> ENG
     PRT --> ZK
-
-    style Yours stroke-dasharray: 6 4
-    style PRT stroke-dasharray: 6 4
+    PRT --> TEE
+    ZK --> CTS
+    TEE --> CTS
+    ENG --> CTS
+    ENG --> CR
+    TEE --> CR

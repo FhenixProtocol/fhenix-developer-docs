@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" data-theme="dark" width="1440" height="796" viewBox="0 58 1172 648" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="blueprint" data-quality-profile="showcase"><style type="text/css"><![CDATA[
+<svg xmlns="http://www.w3.org/2000/svg" data-theme="dark" width="1462" height="648" viewBox="0 58 1462 648" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="blueprint" data-quality-profile="showcase"><style type="text/css"><![CDATA[
 svg,
     [data-theme="dark"]{--bg: #020617;
       --grid: #1e293b;
@@ -1985,175 +1985,143 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </defs>
 
         <!-- Background Grid -->
-        <rect x="0" y="58" width="1172" height="648" fill="var(--bg)" /><rect x="0" y="58" width="1172" height="648" fill="var(--panel)" /><rect x="0" y="58" width="1172" height="648" fill="url(#grid)" />
+        <rect x="0" y="58" width="1462" height="648" fill="var(--bg)" /><rect x="0" y="58" width="1462" height="648" fill="var(--panel)" /><rect x="0" y="58" width="1462" height="648" fill="url(#grid)" />
 
         <!-- Boundaries (behind everything) -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="Application" x="10" y="80" width="270" height="112" rx="12" class="c-region" style="stroke:var(--external-stroke);stroke-opacity:.8" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="Application" x="10" y="80" width="560" height="120" rx="12" class="c-region" style="stroke:var(--external-stroke);stroke-opacity:.8" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="Host chain" x="10" y="186" width="270" height="430" rx="12" class="c-region" style="stroke:var(--backend-stroke);stroke-opacity:.8" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="Host chain" x="10" y="220" width="560" height="400" rx="12" class="c-region" style="stroke:var(--backend-stroke);stroke-opacity:.8" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="2" data-composition-frame-label="CoFHE" x="300" y="80" width="560" height="430" rx="12" class="c-region" style="stroke:var(--cloud-stroke);stroke-opacity:.8" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="2" data-composition-frame-label="CoFHE" x="590" y="220" width="560" height="400" rx="12" class="c-region" style="stroke:var(--cloud-stroke);stroke-opacity:.8" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="3" data-composition-frame-label="Compute pipeline" x="300" y="292" width="560" height="218" rx="12" class="c-region" style="stroke:var(--cloud-stroke);stroke-opacity:.8" stroke-width="1"/>
-
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="4" data-composition-frame-label="Registry chain" x="880" y="398" width="270" height="112" rx="12" class="c-region" style="stroke:var(--database-stroke);stroke-opacity:.8" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="3" data-composition-frame-label="Registry chain" x="1170" y="360" width="270" height="120" rx="12" class="c-region" style="stroke:var(--database-stroke);stroke-opacity:.8" stroke-width="1"/>
 
         <!-- Connection paths (before components for correct z-order) -->
-        <path data-edge-from="sdk" data-edge-to="fhesol" data-edge-key="0" data-composition-points="145,172;145,216" d="M 145 172 L 145 216" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="fhesol" data-edge-to="taskmanager" data-edge-key="1" data-composition-points="145,278;145,322" d="M 145 278 L 145 322" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="taskmanager" data-edge-to="acl" data-edge-key="2" data-composition-points="145,384;145,428" d="M 145 384 L 145 428" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="taskmanager" data-edge-to="plaintexts" data-edge-key="3" data-composition-points="40,353;16,353;16,565;40,565" d="M 40 353 L 24 353 Q 16 353 16 361 L 16 557 Q 16 565 24 565 L 40 565" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="taskmanager" data-edge-to="slim" data-edge-key="4" data-composition-points="250,353;330,353" d="M 250 353 L 330 353" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="slim" data-edge-to="fheos" data-edge-key="5" data-composition-points="540,346;620,346" d="M 540 346 L 620 346" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="fheos" data-edge-to="engine" data-edge-key="6" data-composition-points="620,360;580,360;580,452;540,452" d="M 620 360 L 588 360 Q 580 360 580 368 L 580 444 Q 580 452 572 452 L 540 452" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="engine" data-edge-to="poster" data-edge-key="7" data-composition-points="540,466;620,466" d="M 540 466 L 620 466" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="poster" data-edge-to="registry" data-edge-key="8" data-composition-points="830,459;910,459" d="M 830 459 L 910 459" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="partners" data-edge-to="teecryptor" data-edge-key="9" data-composition-points="540,141;620,141" d="M 540 141 L 620 141" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="partners" data-edge-to="zkverifier" data-edge-key="10" data-composition-points="435,172;435,216" d="M 435 172 L 435 216" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="zkverifier" data-edge-to="ctstore" data-edge-key="11" data-composition-points="540,247;620,247" d="M 540 247 L 620 247" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="sdk" data-edge-to="fhesol" data-edge-key="0" data-composition-points="290,180;290,250" d="M 290 180 L 290 250" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="fhesol" data-edge-to="taskmanager" data-edge-key="1" data-composition-points="290,320;290,390" d="M 290 320 L 290 390" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="taskmanager" data-edge-to="acl" data-edge-key="2" data-composition-points="283,460;283,495;145,495;145,530" d="M 283 460 L 283 487 Q 283 495 275 495 L 153 495 Q 145 495 145 503 L 145 530" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="taskmanager" data-edge-to="plaintexts" data-edge-key="3" data-composition-points="297,460;297,495;435,495;435,530" d="M 297 460 L 297 487 Q 297 495 305 495 L 427 495 Q 435 495 435 503 L 435 530" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="taskmanager" data-edge-to="pipeline" data-edge-key="4" data-composition-points="540,425;580,425;580,565;620,565" d="M 540 425 L 572 425 Q 580 425 580 433 L 580 557 Q 580 565 588 565 L 620 565" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="partners" data-edge-to="zkverifier" data-edge-key="5" data-composition-points="863,180;863,215;725,215;725,250" d="M 863 180 L 863 207 Q 863 215 855 215 L 733 215 Q 725 215 725 223 L 725 250" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="partners" data-edge-to="teecryptor" data-edge-key="6" data-composition-points="877,180;877,215;1015,215;1015,250" d="M 877 180 L 877 207 Q 877 215 885 215 L 1007 215 Q 1015 215 1015 223 L 1015 250" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="zkverifier" data-edge-to="ctstore" data-edge-key="7" data-composition-points="725,320;725,355;863,355;863,390" d="M 725 320 L 725 347 Q 725 355 733 355 L 855 355 Q 863 355 863 363 L 863 390" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="teecryptor" data-edge-to="ctstore" data-edge-key="8" data-composition-points="1015,320;1015,355;877,355;877,390" d="M 1015 320 L 1015 347 Q 1015 355 1007 355 L 885 355 Q 877 355 877 363 L 877 390" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="pipeline" data-edge-to="ctstore" data-edge-key="9" data-composition-points="870,530;870,460" d="M 870 530 L 870 460" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="pipeline" data-edge-to="registry" data-edge-key="10" data-composition-points="1120,565;1160,565;1160,432;1200,432" d="M 1120 565 L 1152 565 Q 1160 565 1160 557 L 1160 440 Q 1160 432 1168 432 L 1200 432" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="teecryptor" data-edge-to="registry" data-edge-key="11" data-composition-points="1120,285;1160,285;1160,418;1200,418" d="M 1120 285 L 1152 285 Q 1160 285 1160 293 L 1160 410 Q 1160 418 1168 418 L 1200 418" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
         <!-- Components -->
         <g id="node-sdk" data-node-id="sdk" data-node-label="Client SDK" tabindex="0" role="button" aria-label="Focus Client SDK, Application" aria-pressed="false" data-node-kind="external" data-node-context="Application">
           <title>Client SDK · Application</title>
-          <rect x="40" y="110" width="210" height="62" rx="6" class="c-mask"/><rect x="41.0" y="111.0" width="208.0" height="37.0" rx="5" fill="var(--external-stroke)"/><rect x="41.0" y="143.0" width="208.0" height="5" fill="var(--external-stroke)"/><text x="145.0" y="163.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Encrypts inputs, unseals results</text>
-          <rect x="40" y="110" width="210" height="62" rx="6" class="c-external" stroke-width="1.5"/>
+          <rect x="40" y="110" width="500" height="70" rx="6" class="c-mask"/><rect x="41.0" y="111.0" width="498.0" height="42.0" rx="5" fill="var(--external-stroke)"/><rect x="41.0" y="148.0" width="498.0" height="5" fill="var(--external-stroke)"/><text x="290.0" y="170.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Encrypts inputs, unseals results</text>
+          <rect x="40" y="110" width="500" height="70" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(46 116) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" x="145" y="145" style="fill:#ffffff" font-size="11" font-weight="600" text-anchor="middle">Client SDK</text>
+          <text data-node-label="" x="290" y="149" style="fill:#ffffff" font-size="11" font-weight="600" text-anchor="middle">Client SDK</text>
+        </g>
+
+        <g id="node-partners" data-node-id="partners" data-node-label="Partners" tabindex="0" role="button" aria-label="Focus Partners, Architecture component" aria-pressed="false" data-node-kind="external" data-node-context="Architecture component">
+          <title>Partners · Architecture component</title>
+          <rect x="629.0" y="119.0" width="500.0" height="70.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.35" stroke-width="1"/><rect x="625.0" y="115.0" width="500.0" height="70.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.55" stroke-width="1"/><rect x="620" y="110" width="500" height="70" rx="6" class="c-mask"/><rect x="621.0" y="111.0" width="498.0" height="42.0" rx="5" fill="var(--external-stroke)"/><rect x="621.0" y="148.0" width="498.0" height="5" fill="var(--external-stroke)"/><text x="870.0" y="170.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Independent key custodians</text>
+          <rect x="620" y="110" width="500" height="70" rx="6" class="c-external" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(626 116) scale(0.6875)">
+            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+          </g>
+          <text data-node-label="" x="870" y="149" style="fill:#ffffff" font-size="11" font-weight="600" text-anchor="middle">Partners</text>
         </g>
 
         <g id="node-fhesol" data-node-id="fhesol" data-node-label="FHE.sol" tabindex="0" role="button" aria-label="Focus FHE.sol, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
           <title>FHE.sol · Host chain</title>
-          <rect x="40" y="216" width="210" height="62" rx="6" class="c-mask"/><rect x="41.0" y="217.0" width="208.0" height="37.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="249.0" width="208.0" height="5" fill="var(--backend-stroke)"/><text x="145.0" y="269.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Your contract's FHE library</text>
-          <rect x="40" y="216" width="210" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 222) scale(0.6875)">
+          <rect x="40" y="250" width="500" height="70" rx="6" class="c-mask"/><rect x="41.0" y="251.0" width="498.0" height="42.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="288.0" width="498.0" height="5" fill="var(--backend-stroke)"/><text x="290.0" y="310.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Your contract's FHE library</text>
+          <rect x="40" y="250" width="500" height="70" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 256) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="145" y="251" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">FHE.sol</text>
-        </g>
-
-        <g id="node-taskmanager" data-node-id="taskmanager" data-node-label="TaskManager" tabindex="0" role="button" aria-label="Focus TaskManager, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
-          <title>TaskManager · Host chain</title>
-          <rect x="40" y="322" width="210" height="62" rx="6" class="c-mask"/><rect x="41.0" y="323.0" width="208.0" height="37.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="355.0" width="208.0" height="5" fill="var(--backend-stroke)"/><text x="145.0" y="375.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Gateway for FHE requests</text>
-          <rect x="40" y="322" width="210" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 328) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" x="145" y="357" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">TaskManager</text>
-        </g>
-
-        <g id="node-acl" data-node-id="acl" data-node-label="ACL" tabindex="0" role="button" aria-label="Focus ACL, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
-          <title>ACL · Host chain</title>
-          <rect x="40" y="428" width="210" height="62" rx="6" class="c-mask"/><rect x="41.0" y="429.0" width="208.0" height="37.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="461.0" width="208.0" height="5" fill="var(--backend-stroke)"/><text x="145.0" y="481.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Who may use each handle</text>
-          <rect x="40" y="428" width="210" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 434) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" x="145" y="463" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">ACL</text>
-        </g>
-
-        <g id="node-plaintexts" data-node-id="plaintexts" data-node-label="PlaintextsStorage" tabindex="0" role="button" aria-label="Focus PlaintextsStorage, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
-          <title>PlaintextsStorage · Host chain</title>
-          <rect x="40" y="534" width="210" height="62" rx="6" class="c-mask"/><rect x="41.0" y="535.0" width="208.0" height="37.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="567.0" width="208.0" height="5" fill="var(--backend-stroke)"/><text x="145.0" y="587.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Published decrypted results</text>
-          <rect x="40" y="534" width="210" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 540) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" x="145" y="569" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">PlaintextsStorage</text>
-        </g>
-
-        <g id="node-partners" data-node-id="partners" data-node-label="Partners" tabindex="0" role="button" aria-label="Focus Partners, CoFHE" aria-pressed="false" data-node-kind="external" data-node-context="CoFHE">
-          <title>Partners · CoFHE</title>
-          <rect x="339.0" y="119.0" width="210.0" height="62.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.35" stroke-width="1"/><rect x="335.0" y="115.0" width="210.0" height="62.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.55" stroke-width="1"/><rect x="330" y="110" width="210" height="62" rx="6" class="c-mask"/><rect x="331.0" y="111.0" width="208.0" height="37.0" rx="5" fill="var(--external-stroke)"/><rect x="331.0" y="143.0" width="208.0" height="5" fill="var(--external-stroke)"/><text x="435.0" y="163.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Independent key custodians</text>
-          <rect x="330" y="110" width="210" height="62" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(336 116) scale(0.6875)">
-            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
-            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
-          </g>
-          <text data-node-label="" x="435" y="145" style="fill:#ffffff" font-size="11" font-weight="600" text-anchor="middle">Partners</text>
-        </g>
-
-        <g id="node-teecryptor" data-node-id="teecryptor" data-node-label="Teecryptor" tabindex="0" role="button" aria-label="Focus Teecryptor, CoFHE" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE">
-          <title>Teecryptor · CoFHE</title>
-          <rect x="620" y="110" width="210" height="62" rx="6" class="c-mask"/><rect x="621.0" y="111.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="143.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="725.0" y="163.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Decrypts inside a TEE</text>
-          <rect x="620" y="110" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 116) scale(0.6875)">
-            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
-          </g>
-          <text data-node-label="" x="725" y="145" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Teecryptor</text>
-        </g>
-
-        <g id="node-ctstore" data-node-id="ctstore" data-node-label="Ciphertext store" tabindex="0" role="button" aria-label="Focus Ciphertext store, CoFHE" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE">
-          <title>Ciphertext store · CoFHE</title>
-          <rect x="620" y="216" width="210" height="62" rx="6" class="c-mask"/><rect x="621.0" y="217.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="249.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="725.0" y="269.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Every ciphertext</text>
-          <rect x="620" y="216" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 222) scale(0.6875)">
-            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
-          </g>
-          <text data-node-label="" x="725" y="251" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Ciphertext store</text>
+          <text data-node-label="" x="290" y="289" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">FHE.sol</text>
         </g>
 
         <g id="node-zkverifier" data-node-id="zkverifier" data-node-label="ZK Verifier" tabindex="0" role="button" aria-label="Focus ZK Verifier, CoFHE" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE">
           <title>ZK Verifier · CoFHE</title>
-          <rect x="330" y="216" width="210" height="62" rx="6" class="c-mask"/><rect x="331.0" y="217.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="331.0" y="249.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="435.0" y="269.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Verifies input proofs in a TEE</text>
-          <rect x="330" y="216" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(336 222) scale(0.6875)">
+          <rect x="620" y="250" width="210" height="70" rx="6" class="c-mask"/><rect x="621.0" y="251.0" width="208.0" height="42.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="288.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="725.0" y="310.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Verifies input proofs in a TEE</text>
+          <rect x="620" y="250" width="210" height="70" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 256) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" x="435" y="251" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">ZK Verifier</text>
+          <text data-node-label="" x="725" y="289" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">ZK Verifier</text>
         </g>
 
-        <g id="node-slim" data-node-id="slim" data-node-label="Slim listener" tabindex="0" role="button" aria-label="Focus Slim listener, CoFHE › Compute pipeline" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE › Compute pipeline">
-          <title>Slim listener · CoFHE › Compute pipeline</title>
-          <rect x="330" y="322" width="210" height="62" rx="6" class="c-mask"/><rect x="331.0" y="323.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="331.0" y="355.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="435.0" y="375.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Subscribes to task events</text>
-          <rect x="330" y="322" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(336 328) scale(0.6875)">
+        <g id="node-teecryptor" data-node-id="teecryptor" data-node-label="Teecryptor" tabindex="0" role="button" aria-label="Focus Teecryptor, CoFHE" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE">
+          <title>Teecryptor · CoFHE</title>
+          <rect x="910" y="250" width="210" height="70" rx="6" class="c-mask"/><rect x="911.0" y="251.0" width="208.0" height="42.0" rx="5" fill="var(--cloud-stroke)"/><rect x="911.0" y="288.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="1015.0" y="310.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Decrypts inside a TEE</text>
+          <rect x="910" y="250" width="210" height="70" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(916 256) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" x="435" y="357" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Slim listener</text>
+          <text data-node-label="" x="1015" y="289" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Teecryptor</text>
         </g>
 
-        <g id="node-fheos" data-node-id="fheos" data-node-label="FheOS" tabindex="0" role="button" aria-label="Focus FheOS, CoFHE › Compute pipeline" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE › Compute pipeline">
-          <title>FheOS · CoFHE › Compute pipeline</title>
-          <rect x="620" y="322" width="210" height="62" rx="6" class="c-mask"/><rect x="621.0" y="323.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="355.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="725.0" y="375.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Validates and orders tasks</text>
-          <rect x="620" y="322" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 328) scale(0.6875)">
-            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+        <g id="node-taskmanager" data-node-id="taskmanager" data-node-label="TaskManager" tabindex="0" role="button" aria-label="Focus TaskManager, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
+          <title>TaskManager · Host chain</title>
+          <rect x="40" y="390" width="500" height="70" rx="6" class="c-mask"/><rect x="41.0" y="391.0" width="498.0" height="42.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="428.0" width="498.0" height="5" fill="var(--backend-stroke)"/><text x="290.0" y="450.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Gateway for FHE requests</text>
+          <rect x="40" y="390" width="500" height="70" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 396) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" x="725" y="357" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">FheOS</text>
+          <text data-node-label="" x="290" y="429" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">TaskManager</text>
         </g>
 
-        <g id="node-engine" data-node-id="engine" data-node-label="FHE Engine" tabindex="0" role="button" aria-label="Focus FHE Engine, CoFHE › Compute pipeline" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE › Compute pipeline">
-          <title>FHE Engine · CoFHE › Compute pipeline</title>
-          <rect x="330" y="428" width="210" height="62" rx="6" class="c-mask"/><rect x="331.0" y="429.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="331.0" y="461.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="435.0" y="481.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Computes on encrypted data</text>
-          <rect x="330" y="428" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(336 434) scale(0.6875)">
+        <g id="node-ctstore" data-node-id="ctstore" data-node-label="Ciphertext store" tabindex="0" role="button" aria-label="Focus Ciphertext store, CoFHE" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE">
+          <title>Ciphertext store · CoFHE</title>
+          <rect x="620" y="390" width="500" height="70" rx="6" class="c-mask"/><rect x="621.0" y="391.0" width="498.0" height="42.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="428.0" width="498.0" height="5" fill="var(--cloud-stroke)"/><text x="870.0" y="450.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Every ciphertext, via the CT Server</text>
+          <rect x="620" y="390" width="500" height="70" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 396) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" x="435" y="463" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">FHE Engine</text>
-        </g>
-
-        <g id="node-poster" data-node-id="poster" data-node-label="Blockchain poster" tabindex="0" role="button" aria-label="Focus Blockchain poster, CoFHE › Compute pipeline" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE › Compute pipeline">
-          <title>Blockchain poster · CoFHE › Compute pipeline</title>
-          <rect x="620" y="428" width="210" height="62" rx="6" class="c-mask"/><rect x="621.0" y="429.0" width="208.0" height="37.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="461.0" width="208.0" height="5" fill="var(--cloud-stroke)"/><text x="725.0" y="481.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Batches and posts commitments</text>
-          <rect x="620" y="428" width="210" height="62" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 434) scale(0.6875)">
-            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
-          </g>
-          <text data-node-label="" x="725" y="463" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Blockchain poster</text>
+          <text data-node-label="" x="870" y="429" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Ciphertext store</text>
         </g>
 
         <g id="node-registry" data-node-id="registry" data-node-label="CommitmentRegistry" tabindex="0" role="button" aria-label="Focus CommitmentRegistry, Registry chain" aria-pressed="false" data-node-kind="database" data-node-context="Registry chain">
           <title>CommitmentRegistry · Registry chain</title>
-          <rect x="910" y="428" width="210" height="62" rx="6" class="c-mask"/><rect x="911.0" y="429.0" width="208.0" height="37.0" rx="5" fill="var(--database-stroke)"/><rect x="911.0" y="461.0" width="208.0" height="5" fill="var(--database-stroke)"/><text x="1015.0" y="481.5" text-anchor="middle" font-size="9.5" fill="#a9c0d0">A commitment per ciphertext</text>
-          <rect x="910" y="428" width="210" height="62" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(916 434) scale(0.6875)">
+          <rect x="1200" y="390" width="210" height="70" rx="6" class="c-mask"/><rect x="1201.0" y="391.0" width="208.0" height="42.0" rx="5" fill="var(--database-stroke)"/><rect x="1201.0" y="428.0" width="208.0" height="5" fill="var(--database-stroke)"/><text x="1305.0" y="450.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">A commitment per ciphertext</text>
+          <rect x="1200" y="390" width="210" height="70" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1206 396) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" x="1015" y="463" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">CommitmentRegistry</text>
+          <text data-node-label="" x="1305" y="429" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">CommitmentRegistry</text>
+        </g>
+
+        <g id="node-acl" data-node-id="acl" data-node-label="ACL" tabindex="0" role="button" aria-label="Focus ACL, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
+          <title>ACL · Host chain</title>
+          <rect x="40" y="530" width="210" height="70" rx="6" class="c-mask"/><rect x="41.0" y="531.0" width="208.0" height="42.0" rx="5" fill="var(--backend-stroke)"/><rect x="41.0" y="568.0" width="208.0" height="5" fill="var(--backend-stroke)"/><text x="145.0" y="590.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Who may use each handle</text>
+          <rect x="40" y="530" width="210" height="70" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 536) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" x="145" y="569" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">ACL</text>
+        </g>
+
+        <g id="node-plaintexts" data-node-id="plaintexts" data-node-label="PlaintextsStorage" tabindex="0" role="button" aria-label="Focus PlaintextsStorage, Host chain" aria-pressed="false" data-node-kind="backend" data-node-context="Host chain">
+          <title>PlaintextsStorage · Host chain</title>
+          <rect x="330" y="530" width="210" height="70" rx="6" class="c-mask"/><rect x="331.0" y="531.0" width="208.0" height="42.0" rx="5" fill="var(--backend-stroke)"/><rect x="331.0" y="568.0" width="208.0" height="5" fill="var(--backend-stroke)"/><text x="435.0" y="590.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Published decrypted results</text>
+          <rect x="330" y="530" width="210" height="70" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(336 536) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" x="435" y="569" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">PlaintextsStorage</text>
+        </g>
+
+        <g id="node-pipeline" data-node-id="pipeline" data-node-label="Compute pipeline" tabindex="0" role="button" aria-label="Focus Compute pipeline, CoFHE" aria-pressed="false" data-node-kind="cloud" data-node-context="CoFHE">
+          <title>Compute pipeline · CoFHE</title>
+          <rect x="620" y="530" width="500" height="70" rx="6" class="c-mask"/><rect x="621.0" y="531.0" width="498.0" height="42.0" rx="5" fill="var(--cloud-stroke)"/><rect x="621.0" y="568.0" width="498.0" height="5" fill="var(--cloud-stroke)"/><text x="870.0" y="590.0" text-anchor="middle" font-size="9.5" fill="#a9c0d0">Runs and commits FHE operations</text>
+          <rect x="620" y="530" width="500" height="70" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(626 536) scale(0.6875)">
+            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+          </g>
+          <text data-node-label="" x="870" y="569" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Compute pipeline</text>
         </g>
 
         <!-- Connection labels -->
@@ -2172,28 +2140,23 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
         <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="Application">
-          <rect data-graph-role="structural-frame-label-mask" x="14" y="90" width="69.4" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="18" y="103" style="fill:var(--external-stroke)" font-size="9" font-weight="600">Application</text>
+          <rect data-graph-role="structural-frame-label-mask" x="14" y="89" width="72.59355498709675" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="18" y="102.48387196774193" style="fill:var(--external-stroke)" font-size="9.483871967741933" font-weight="600">Application</text>
         </g>
 
         <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="Host chain">
-          <rect data-graph-role="structural-frame-label-mask" x="14" y="196" width="64" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="18" y="209" style="fill:var(--backend-stroke)" font-size="9" font-weight="600">Host chain</text>
+          <rect data-graph-role="structural-frame-label-mask" x="14" y="229" width="66.9032318064516" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="18" y="242.48387196774195" style="fill:var(--backend-stroke)" font-size="9.483871967741933" font-weight="600">Host chain</text>
         </g>
 
         <g data-graph-role="structural-frame-label" data-composition-frame-id="2" data-composition-frame-kind="region" data-composition-frame-label="CoFHE">
-          <rect data-graph-role="structural-frame-label-mask" x="304" y="90" width="37" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="308" y="103" style="fill:var(--cloud-stroke)" font-size="9" font-weight="600">CoFHE</text>
+          <rect data-graph-role="structural-frame-label-mask" x="594" y="229" width="38.4516159032258" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="598" y="242.48387196774195" style="fill:var(--cloud-stroke)" font-size="9.483871967741933" font-weight="600">CoFHE</text>
         </g>
 
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="3" data-composition-frame-kind="region" data-composition-frame-label="Compute pipeline">
-          <rect data-graph-role="structural-frame-label-mask" x="304" y="302" width="96.39999999999999" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="308" y="315" style="fill:var(--cloud-stroke)" font-size="9" font-weight="600">Compute pipeline</text>
-        </g>
-
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="4" data-composition-frame-kind="region" data-composition-frame-label="Registry chain">
-          <rect data-graph-role="structural-frame-label-mask" x="884" y="408" width="85.6" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="888" y="421" style="fill:var(--database-stroke)" font-size="9" font-weight="600">Registry chain</text>
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="3" data-composition-frame-kind="region" data-composition-frame-label="Registry chain">
+          <rect data-graph-role="structural-frame-label-mask" x="1174" y="369" width="89.66452452903224" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="1178" y="382.48387196774195" style="fill:var(--database-stroke)" font-size="9.483871967741933" font-weight="600">Registry chain</text>
         </g>
 
         <!-- Legend -->
