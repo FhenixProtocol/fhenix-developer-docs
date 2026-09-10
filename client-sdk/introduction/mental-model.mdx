@@ -13,21 +13,21 @@ Imagine a smart contract called **Counter** where each user has their own privat
 
 - **Public Key** = A lock that anyone can use to seal data
 - **Private Key** = The unique key to unlock sealed data
-- **CoFHE Co-Processor** = Fhenix's offchain service that handles FHE operations
+- **CoFHE** = Fhenix's offchain coprocessor, which runs the FHE operations
 - **Ciphertext** = Encrypted data that can be computed on without decryption
 
 <Steps>
 
 <Step title="Encrypting Input Data">
 
-When a user wants to add `5` to their counter, the data must first be encrypted before being sent to the smart contract.
+When a user wants to add `5` to their counter, your app encrypts the data before it is sent to the contract.
 
 **What happens:**
 
 1. The user's plaintext value `5` is encrypted using `client.encryptInputs([Encryptable.uint32(5n)]).setConsumingContract(address).execute()`
-2. The SDK generates a ZK proof and submits the encrypted value to the CoFHE verifier's batch endpoint
+2. The SDK generates a ZK proof and submits the encrypted value to CoFHE for verification
 3. The returned ciphertext handle and its batch signature are sent to the smart contract onchain
-4. The blockchain sees only encrypted data, never the actual value `5`
+4. The host chain sees only encrypted data, never the actual value `5`
 
 ### The "Locked Box" Analogy
 
@@ -45,7 +45,7 @@ Once the encrypted data reaches the smart contract, FHE magic happens. The smart
 2. It retrieves the user's encrypted counter from storage (also encrypted)
 3. Using FHE operations, it adds the encrypted values together
 4. The result is stored as encrypted data
-5. **Critical**: At no point does the smart contract, blockchain, or anyone else see the actual numbers
+5. **Critical**: At no point does your contract, the host chain, or anyone else see the actual numbers
 
 ### FHE Computation Magic
 
@@ -91,46 +91,47 @@ This is like exchanging locks on the box:
 ## The Complete Flow
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
-    participant User
-    participant SDK as "@cofhe/sdk (Client)"
-    participant Contract as "Smart Contract"
-    participant CoFHE as "CoFHE Co-Processor"
-    participant Blockchain as "Blockchain"
+    participant App as Your app
+    participant SDK as Client SDK
+    participant C as Your contract
+    participant Chain as Host chain
+    participant CoFHE as CoFHE
 
-    Note over User,SDK: Step 1: Encrypting Input Data
-    User->>SDK: Add value 5 to counter
+    Note over App,SDK: Step 1: Encrypting Input Data
+    App->>SDK: Add value 5 to counter
     SDK->>SDK: encryptInputs([Encryptable.uint32(5n)])
     SDK->>CoFHE: Submit ZK proof + encrypted value
     CoFHE-->>SDK: Ciphertext handle + batch signature
-    SDK->>Blockchain: Send transaction with handle and proof
-    Blockchain->>Contract: increment(handle, proof)
+    SDK->>Chain: Send transaction with handle and proof
+    Chain->>C: increment(handle, proof)
 
-    Note over Contract,Blockchain: Step 2: Performing Computations
-    Contract->>Contract: Retrieve encrypted counter
-    Contract->>Contract: FHE.add(encryptedCounter, encryptedValue)
-    Contract->>Blockchain: Store encrypted result
-    Blockchain-->>Contract: Transaction confirmed
+    Note over C,Chain: Step 2: Performing Computations
+    C->>C: Retrieve encrypted counter
+    C->>C: FHE.add(encryptedCounter, encryptedValue)
+    C->>Chain: Store encrypted result
+    Chain-->>C: Transaction confirmed
 
-    Note over User,CoFHE: Step 3: Retrieving Encrypted Output
-    User->>SDK: Read counter value
-    SDK->>Blockchain: Request encrypted counter
-    Blockchain->>Contract: getCounter(userAddress)
-    Contract-->>SDK: ctHash (encrypted handle)
+    Note over App,CoFHE: Step 3: Retrieving Encrypted Output
+    App->>SDK: Read counter value
+    SDK->>Chain: Request encrypted counter
+    Chain->>C: getCounter(userAddress)
+    C-->>SDK: ctHash (encrypted handle)
 
-    SDK->>SDK: Use ACP with sealing key
+    SDK->>SDK: Build an ACP carrying the sealing key
     SDK->>CoFHE: decryptForView(ctHash, FheTypes.Uint32)
-    CoFHE->>CoFHE: Re-encrypt with user's sealing key
-    CoFHE-->>SDK: Re-encrypted data
-    SDK->>SDK: Unseal with private key
-    SDK-->>User: Counter value: 5
+    CoFHE->>CoFHE: Seal the result to the ACP's sealing key
+    CoFHE-->>SDK: Sealed result
+    SDK->>SDK: Unseal locally
+    SDK-->>App: Counter value: 5
 ```
 
 ## Key Takeaways
 
-1. **Encryption happens client-side**: The SDK encrypts data with ZK proofs before it reaches the blockchain
+1. **Encryption happens client-side**: The SDK encrypts data with ZK proofs before it reaches the host chain
 2. **Computation happens onchain**: Smart contracts perform operations on encrypted data via `FHE.sol`
-3. **FHE enables privacy-preserving computation**: The blockchain never sees plaintext values
+3. **FHE enables privacy-preserving computation**: The host chain never sees plaintext values
 4. **ACPs enable access control**: EIP-712 signed ACPs authorize who can decrypt specific data
 5. **Two decryption paths**: `decryptForView` for UI display, `decryptForTx` for onchain verification
 

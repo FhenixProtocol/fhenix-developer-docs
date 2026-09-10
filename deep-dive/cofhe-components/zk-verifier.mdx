@@ -27,18 +27,40 @@ Requiring a ZKPoK for each encrypted input is what makes it safe to run an encry
 
 When providing ciphertexts as an input to a smart contract, users have to generate a ZKPoK and get a verification approval first. The Client SDK (`@cofhe/sdk`) and `FHE.sol` handle most of this work; the mechanism is described here end to end (also in the diagram below).
 
-<Frame>
-<img src="/images/zk-pok.svg" alt="ZK Proof of Knowledge Flow" />
-</Frame>
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
+sequenceDiagram
+    participant App as Your app
+    participant SDK as Client SDK
+    participant C as Your contract
+    participant TM as TaskManager
+    participant ZK as ZK Verifier
+    participant Pipe as Compute pipeline
+    participant CR as CommitmentRegistry
+
+    App->>SDK: encrypt the inputs, generate a zkPoK for each
+    SDK->>ZK: verifyBatch (ciphertexts + proofs)
+    ZK->>ZK: verify every proof in the attested TEE
+    ZK->>ZK: store the ciphertext bytes in CT Server
+    ZK->>ZK: archive the inputs and proofs for public audit
+    ZK->>ZK: sign one digest over the whole batch
+    ZK-->>SDK: handles + batch signature
+    SDK-->>App: [handles..., proof]
+    App->>C: contract call with handles + proof
+    C->>TM: batchVerifyInputs
+    TM->>TM: ecrecover against verifierSigner
+    TM--)Pipe: InputVerified per input
+    Pipe->>CR: postCommitments (batched)
+```
 
 The process of sending inputs to a smart contract:
 
-1. The user encrypts the inputs and generates a ZK proof of knowledge for them.
-2. The user sends the ciphertexts and proofs to the ZK Verifier, as one batch.
-3. The ZK Verifier verifies each proof. If all are valid, it stores the encrypted values in the ciphertext database and signs one message approving the whole batch.
-4. The ZK Verifier returns the handles and the batch approval to the user.
-5. The user sends the handles and the approval as inputs to a contract call.
-6. The contract verifies the batch signature, approving the inputs and emitting `InputVerified` per input, which anchors a commitment so each input becomes decryptable later.
+1. Your app encrypts the inputs through the Client SDK, which generates a ZK proof of knowledge for each one.
+2. The Client SDK sends the ciphertexts and proofs to the ZK Verifier, as one batch.
+3. The ZK Verifier verifies each proof. If all are valid, it stores the encrypted values in the CT Server and signs one message approving the whole batch.
+4. The ZK Verifier returns the handles and the batch approval to your app.
+5. Your app sends the handles and the approval as inputs to a contract call.
+6. The TaskManager verifies the batch signature and emits `InputVerified` per input. The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) picks those events up and posts a commitment for each input to the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry), so the input becomes decryptable later.
 7. The contract performs the actual logic.
 
 Most of this process is abstracted away. Steps 1 to 6 all happen behind the SDK and library calls, while step 7 (the actual logic) is up to you to write.

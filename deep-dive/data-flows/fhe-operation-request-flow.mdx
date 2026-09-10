@@ -21,18 +21,18 @@ This page follows a single FHE operation from the contract call that requests it
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
 sequenceDiagram
-    participant Contract as Your contract (FHE.sol)
+    participant C as Your contract
     participant TM as TaskManager
-    participant Engine as FHE Engine
+    participant Pipe as Compute pipeline
     participant CR as CommitmentRegistry
 
-    Contract->>TM: FHE.add(lhs, rhs) calls createTask
+    C->>TM: FHE.add(lhs, rhs) calls createTask
     TM->>TM: validate inputs, check ACL
-    TM-->>Contract: result handle (synchronous)
-    TM->>Engine: TaskCreated event
-    Engine->>Engine: validate and order the task
-    Engine->>Engine: execute op, store ciphertext under the handle
-    Engine->>CR: postCommitments (batched)
+    TM-->>C: result handle (synchronous)
+    TM--)Pipe: TaskCreated event
+    Pipe->>Pipe: validate and order the task
+    Pipe->>Pipe: execute the op, store ciphertext under the handle
+    Pipe->>CR: postCommitments (batched)
 ```
 
 ## Step-by-step flow
@@ -79,20 +79,20 @@ The TaskManager is the gateway for all FHE operation requests. It:
 5. Emits a `TaskCreated` event with the operation details for the offchain components.
 </Step>
 
-<Step title="FHE Engine pickup">
+<Step title="Compute pipeline pickup">
 The [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) subscribes to TaskManager events on every host chain and picks up the `TaskCreated` event. It checks that the operation is well formed and that the inputs it references exist. An operation that arrives before its inputs finish computing is deferred and released once they land.
 </Step>
 
 <Step title="Execution">
-The engine then:
+The pipeline then:
 
 1. Executes the requested operation on the encrypted data.
-2. Stores the result ciphertext in the ciphertext database, keyed by the handle.
+2. Stores the result ciphertext in the ciphertext store, keyed by the handle.
 3. Releases any dependent operations that were deferred while waiting for this result.
 </Step>
 
 <Step title="Commitment posting">
-The engine produces a commitment for the result, the hash of the stored ciphertext bytes, and posts it in a batch to the CommitmentRegistry on the registry chain. The commitment anchors the result. Teecryptor will only decrypt ciphertext bytes that hash to a registered commitment.
+The pipeline produces a commitment for the result, the hash of the stored ciphertext bytes, and posts it in a batch to the CommitmentRegistry on the registry chain. The commitment anchors the result. Teecryptor will only decrypt ciphertext bytes that hash to a registered commitment.
 
 At this point the operation cycle is complete, and the confidentiality of every encrypted value is preserved.
 </Step>

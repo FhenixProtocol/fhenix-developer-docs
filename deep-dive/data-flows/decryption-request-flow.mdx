@@ -50,7 +50,7 @@ The request goes to Teecryptor with the handle, the host chain id, and the ACP. 
 </Step>
 
 <Step title="Teecryptor verifies and decrypts">
-Teecryptor authorizes the request against the onchain ACL, fetches the ciphertext exactly as stored, verifies it against the onchain commitment, and decrypts it inside the attested enclave. See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
+Teecryptor runs two onchain checks at the same time. It reads the ACL grant on the host chain, and the handle's commitment in the [CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry) on the registry chain. The two live on different chains, so neither check waits for the other. Teecryptor then fetches the ciphertext from the CT Server, exactly as stored, checks that the bytes hash to that commitment, and decrypts inside the attested enclave. See the [Teecryptor page](/deep-dive/cofhe-components/teecryptor) for the full pipeline.
 </Step>
 
 </Steps>
@@ -93,19 +93,29 @@ For `decryptForView`, Teecryptor never returns a bare plaintext. It encrypts the
 sequenceDiagram
     participant App as Your app
     participant SDK as Client SDK
-    participant Teecryptor
-    participant Chain as Host chain
+    participant C as Your contract
+    participant TM as TaskManager
+    participant TEE as Teecryptor
+    participant CR as CommitmentRegistry
 
     App->>SDK: decryptForTx / decryptForView (ctHash)
-    SDK->>Teecryptor: decrypt or sealoutput request (handle, chain id, acp?)
-    Teecryptor->>Chain: ACL check (isAllowedWithPermission / isPubliclyAllowed)
-    Teecryptor->>Teecryptor: verify commitment, decrypt in enclave
+    SDK->>TEE: decrypt / sealoutput (handle, chain id, acp?)
+    par ACL check
+        TEE->>TM: isAllowedWithPermission / isPubliclyAllowed
+    and Commitment lookup
+        TEE->>CR: getCommitment(version, handle)
+    end
+    TEE->>TEE: fetch the ciphertext from CT Server
+    TEE->>TEE: check the bytes hash to the commitment
+    TEE->>TEE: decrypt in the enclave
     alt decryptForTx
-        Teecryptor-->>SDK: plaintext + signature
+        TEE-->>SDK: plaintext + signature
         SDK-->>App: { ctHash, decryptedValue, signature }
-        App->>Chain: FHE.publishDecryptResult(ctHash, result, signature)
+        App->>C: submit the signed result
+        C->>TM: FHE.publishDecryptResult(ctHash, result, signature)
+        TM->>TM: recover the signer, store in PlaintextsStorage
     else decryptForView
-        Teecryptor-->>SDK: result sealed to the ACP's sealing key
+        TEE-->>SDK: result sealed to the ACP's sealing key
         SDK->>SDK: unseal locally
         SDK-->>App: plaintext
     end
