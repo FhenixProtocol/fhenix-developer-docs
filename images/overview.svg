@@ -1998,7 +1998,8 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         <path data-edge-from="engine" data-edge-to="poster" data-edge-key="6" data-composition-points="638,457;706,457" d="M 638 457 L 706 457" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="poster" data-edge-to="registry" data-edge-key="7" data-composition-points="838.5,478;838.5,528" d="M 838.5 478 L 838.5 528" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="partners" data-edge-to="teecryptor" data-edge-key="8" data-composition-points="638,132;706,132" d="M 638 132 L 706 132" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="zkverifier" data-edge-to="ctstore" data-edge-key="9" data-composition-points="638,238;706,238" d="M 638 238 L 706 238" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="partners" data-edge-to="zkverifier" data-edge-key="9" data-composition-points="505.5,160;505.5,210" d="M 505.5 160 L 505.5 210" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="zkverifier" data-edge-to="ctstore" data-edge-key="10" data-composition-points="638,238;706,238" d="M 638 238 L 706 238" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
         <!-- Components -->
         <g id="node-sdk" data-node-id="sdk" data-node-label="Client SDK" tabindex="0" role="button" aria-label="Focus Client SDK, Encrypts inputs, manages ACPs, unseals results, Architecture component" aria-pressed="false" data-node-kind="external" data-node-sublabel="Encrypts inputs, manages ACPs, unseals results" data-node-context="Architecture component">
@@ -2059,7 +2060,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-partners" data-node-id="partners" data-node-label="Partners" tabindex="0" role="button" aria-label="Focus Partners, Independent custodians of the key shares, CoFHE" aria-pressed="false" data-node-kind="external" data-node-sublabel="Independent custodians of the key shares" data-node-context="CoFHE">
           <title>Partners · Independent custodians of the key shares · CoFHE</title>
-          <rect x="373" y="104" width="265" height="56" rx="6" class="c-mask"/><rect x="373.0" y="135.0" width="265.0" height="25.0" fill="rgba(2,6,23,0.35)"/><line x1="373.0" y1="135.0" x2="638.0" y2="135.0" stroke="var(--external-stroke)" stroke-opacity="0.45" stroke-width="1"/>
+          <rect x="382.0" y="113.0" width="265.0" height="56.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.35" stroke-width="1"/><rect x="378.0" y="109.0" width="265.0" height="56.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.55" stroke-width="1"/><rect x="373" y="104" width="265" height="56" rx="6" class="c-mask"/><rect x="373.0" y="135.0" width="265.0" height="25.0" fill="rgba(2,6,23,0.35)"/><line x1="373.0" y1="135.0" x2="638.0" y2="135.0" stroke="var(--external-stroke)" stroke-opacity="0.45" stroke-width="1"/>
           <rect x="373" y="104" width="265" height="56" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(379 110) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
@@ -2159,6 +2160,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </g>
 
         <!-- Connection labels -->
+
 
 
 

@@ -2056,7 +2056,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-partners" data-node-id="partners" data-node-label="Partners" tabindex="0" role="button" aria-label="Focus Partners, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-context="Sequence participant">
           <title>Partners · Sequence participant</title>
-          <rect x="271.33333333333337" y="72" width="170" height="54" rx="6" class="c-mask"/>
+          <rect x="280.33333333333337" y="81.0" width="170.0" height="54.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.35" stroke-width="1"/><rect x="276.33333333333337" y="77.0" width="170.0" height="54.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.55" stroke-width="1"/><rect x="271.33333333333337" y="72" width="170" height="54" rx="6" class="c-mask"/>
           <rect x="271.33333333333337" y="72" width="170" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(277.33333333333337 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
