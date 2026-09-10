@@ -20,7 +20,7 @@ One component writes commitments, and one component reads them. The write happen
 
 {/* Diagram source: commitment-registry.mmd, beside this page. Edit it first, then re-run the archify build. */}
 <Frame>
-<img src="/images/commitment-registry.svg" alt="Sequence diagram of the commitment write and read" />
+<img src="/images/commitment-registry.svg" alt="Sequence diagram of the commitment write and read" style={{ width: "100%" }} />
 </Frame>
 
 <Tip>
@@ -49,7 +49,7 @@ mapping(address => bool)                                                  poster
 `version` is an opaque `bytes32` tag chosen by the coprocessor when FHE parameters change. The current tag is the number 2 encoded as `bytes32`. Every version moves through a small state machine:
 
 <Frame>
-<img src="/images/commitment-version.svg" alt="State machine for a commitment version: Unset to Active to Deprecated, with Revoked as the terminal state" />
+<img src="/images/commitment-version.svg" alt="State machine for a commitment version: Unset to Active to Deprecated, with Revoked as the terminal state" style={{ width: "100%" }} />
 </Frame>
 
 <Tip>
