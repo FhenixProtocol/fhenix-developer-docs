@@ -17,7 +17,7 @@ So the audit is a recomputation:
 4. Re-run the operation with those inputs.
 5. Hash your result and compare it to the recorded commitment.
 
-A match means the coprocessor ran the operation the contract asked for, and did not substitute a result. A mismatch means it did not.
+A match means the coprocessor ran the operation the contract asked for, and did not substitute a result. A mismatch means it did not, but read [When the hashes do not match](#when-the-hashes-do-not-match) before you draw that conclusion.
 
 The check says nothing about plaintexts. You never learn what any value decrypts to, because you never hold a decryption key. That is the point: the computation is auditable while the data stays confidential.
 
@@ -57,7 +57,7 @@ A handle is not the commitment, and the two relate differently depending on wher
 
 | Ciphertext | Handle | Where its commitment lives |
 | --- | --- | --- |
-| Encrypted input | The commitment with its last two bytes replaced by metadata: byte 30 carries the type, byte 31 carries the security zone | `InputVerified` on the host chain, and the registry |
+| Encrypted input | The commitment with its last two bytes replaced by metadata: byte 30 carries the type and the trivial-encrypt flag, byte 31 carries the security zone | `InputVerified` on the host chain, and the registry |
 | Computed result | A placeholder the TaskManager derives from the operation and its inputs, before the result exists | The registry only |
 
 That difference is why the registry exists. A result's handle is fixed onchain the moment the task is created, so it cannot carry a hash of bytes nobody has computed yet.
@@ -95,7 +95,7 @@ One real event from Arbitrum Sepolia, decoded:
 | `input2` | `0x4765f9b1760b9612da755387f067d04051c2821bb4defc33ba58cbf940f00500` |
 | `ctHash` | `0xf0a73bae25878afcc52cf176616b3e3aa93f3ef6fa701ed61282cdd17df70500` |
 
-Operation names come from `Utils.functionIdToString` in [`ICofhe.sol`](https://github.com/FhenixProtocol/cofhe-contracts/blob/master/contracts/ICofhe.sol), which also defines the type constants you need to read byte 30. Here every handle ends in `05 00`, which is `EUINT64_TFHE` in security zone 0.
+Operation names come from `Utils.functionIdToString` in [`ICofhe.sol`](https://github.com/FhenixProtocol/cofhe-contracts/blob/master/contracts/ICofhe.sol), which also defines the type constants. Byte 30 holds the type in its low seven bits. Its high bit is set when the value was [trivially encrypted](/fhe-library/core-concepts/trivial-encryption), so mask the byte with `0x7f` before you compare it to those constants. Here every handle ends in `05 00`, which is `EUINT64_TFHE` in security zone 0. The same type, trivially encrypted, ends `85 00` and matches no constant until you mask it.
 
 An input handle is either another task's result, in which case you follow it and recurse, or an encrypted input. Encrypted inputs terminate the graph, and each one has its commitment onchain:
 
@@ -112,7 +112,7 @@ handle      0x1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed350500
 commitment  0x1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed35c582
 ```
 
-The first 30 bytes are identical, and the handle's last two are the type and the zone. That relation is worth checking as you go, because it catches a mistyped handle before you spend a recomputation on it.
+The first 30 bytes are identical, and the handle's last two are the type byte and the zone. That relation is worth checking as you go, because it catches a mistyped handle before you spend a recomputation on it.
 
 ## Read the commitment
 
@@ -131,6 +131,14 @@ cast call $REGISTRY "getCommitment(bytes32,bytes32)(bytes32)" \
 <Warning>
 The version tag is the number 2 encoded as `bytes32`, so `0x00...02`. It is not the ASCII character `2`. `cast format-bytes32-string "2"` returns `0x3200...00`, and every lookup under that value comes back zero.
 </Warning>
+
+A recorded hash on its own is not enough. Every version carries a status, and the registry accepts new commitments only while that status is `Active`. Read the status before you trust a match:
+
+```bash
+cast call $REGISTRY "getVersionStatus(bytes32)(uint8)" $VERSION --rpc-url $REGISTRY_RPC
+```
+
+The answer is `0` for Unset, `1` for Active, `2` for Deprecated, and `3` for Revoked. A status only moves forward: Active to Deprecated or Revoked, and Deprecated to Revoked. `Deprecated` means the version was superseded and its commitments stay readable. `Revoked` means the opposite. Do not trust a match under a revoked version.
 
 A zero answer is not proof of tampering. A result that is still being computed has no commitment yet, because the coprocessor posts the commitment after the compute stage finishes.
 
@@ -212,7 +220,7 @@ use tfhe::safe_serialization::{safe_deserialize, safe_serialize};
 use tfhe::{CompressedFheUint64, CompressedServerKey};
 use tiny_keccak::{Hasher, Keccak};
 
-const SIZE_LIMIT: u64 = 1 << 32;
+const SIZE_LIMIT: u64 = 1 << 30;
 
 fn recompute_add(computation_key: &[u8], input1: &[u8], input2: &[u8]) -> Result<[u8; 32], String> {
     let server_key: CompressedServerKey = safe_deserialize(computation_key, SIZE_LIMIT)?;
@@ -249,6 +257,18 @@ You do not need these to recompute, because the evaluation key carries them. The
 | Compute keys | `PARAM_MESSAGE_2_CARRY_2_KS_PBS` |
 | Compact public key | <code style={{ whiteSpace: "nowrap" }}>V0_11_PARAM_PKE_MESSAGE_2_CARRY_2_KS_PBS_TUNIFORM_2M64</code> |
 | Key switching | <code style={{ whiteSpace: "nowrap" }}>V0_11_PARAM_KEYSWITCH_MESSAGE_2_CARRY_2_KS_PBS_TUNIFORM_2M64</code> |
+
+## When the hashes do not match
+
+A mismatch is a serious claim, and the first ones are almost always a setup problem rather than a dishonest coprocessor. Work through these before you conclude anything:
+
+- **The type.** Mask byte 30 of the handle with `0x7f`, and confirm it matches the type you deserialized as. Reading a `euint32` handle as a `CompressedFheUint64` gives bytes that hash to something else.
+- **The security zone.** Byte 31 names the zone. The evaluation key, the public key, and the CRS are all per zone, so a keyset from the wrong zone produces a plausible result with the wrong bytes.
+- **The serialized form.** Hash `safe_serialize` of the compressed value. The expanded value and the compressed one are the same ciphertext and different bytes. The size limit you pass is only a guard, and never reaches the hash.
+- **The version and the task.** Confirm `getVersionStatus` returns `Active`, and that `getCommitment` returned a non-zero hash. A result still in the compute stage has no commitment yet.
+- **The tfhe-rs version.** Confirm your pin is `=1.5.1`, the version the network runs.
+
+If all of these hold and the hashes still differ, you have a real discrepancy between what the contract asked for and what the network recorded.
 
 ## Where this check runs in production
 
