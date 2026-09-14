@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" data-theme="dark" width="900" height="438" viewBox="0 50 900 438" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="blueprint" data-quality-profile="showcase"><style type="text/css"><![CDATA[
+<svg xmlns="http://www.w3.org/2000/svg" data-theme="dark" width="1440" height="730" viewBox="18 50 864 438" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="blueprint" data-quality-profile="showcase"><style type="text/css"><![CDATA[
 svg,
     [data-theme="dark"]{--bg: #020617;
       --grid: #1e293b;
@@ -1953,6 +1953,14 @@ svg[data-preset="blueprint"][data-animation="trace"] [data-animate="edge"]{strok
       animation-duration: 2.15s;}
 svg[data-preset="blueprint"][data-animation="trace"] [data-animate="node"]{animation-name: archify-blueprint-node-pulse;
       animation-duration: 3.8s;}
+svg[data-preset][data-theme]{
+  --bg:#122531; --panel:rgba(18,37,49,0.92); --grid:#1e3d52;
+  --external-stroke:#0466A2; --external-fill:rgba(4,102,162,0.18);
+  --backend-stroke:#F37A49;  --backend-fill:rgba(243,122,73,0.15);
+  --cloud-stroke:#0AD9DC;    --cloud-fill:rgba(10,217,220,0.13);
+  --database-stroke:#BF90F8; --database-fill:rgba(191,144,248,0.15);
+}
+
 svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace!important}
 .semantic-sigil{display:none!important}
 
@@ -1979,7 +1987,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </defs>
 
         <!-- Background Grid -->
-        <rect width="100%" height="100%" fill="var(--bg)" /><rect width="100%" height="100%" fill="var(--panel)" /><rect width="100%" height="100%" fill="url(#grid)" />
+        <rect x="18" y="50" width="864" height="438" fill="var(--bg)" /><rect x="18" y="50" width="864" height="438" fill="var(--panel)" /><rect x="18" y="50" width="864" height="438" fill="url(#grid)" />
 
         <!-- Time Segments -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="48" y="158" width="804" height="96" rx="10" class="c-lane" stroke-width="1"/>
@@ -2056,7 +2064,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
 
         <g id="node-partners" data-node-id="partners" data-node-label="Partners" tabindex="0" role="button" aria-label="Focus Partners, Sequence participant" aria-pressed="false" data-node-kind="external" data-node-context="Sequence participant">
           <title>Partners · Sequence participant</title>
-          <rect x="271.33333333333337" y="72" width="170" height="54" rx="6" class="c-mask"/>
+          <rect x="280.33333333333337" y="81.0" width="170.0" height="54.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.35" stroke-width="1"/><rect x="276.33333333333337" y="77.0" width="170.0" height="54.0" rx="6" fill="var(--bg)" stroke="var(--external-stroke)" stroke-opacity="0.55" stroke-width="1"/><rect x="271.33333333333337" y="72" width="170" height="54" rx="6" class="c-mask"/>
           <rect x="271.33333333333337" y="72" width="170" height="54" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(277.33333333333337 78) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>

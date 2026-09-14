@@ -102,6 +102,7 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 - Internal links use root-relative paths: `/fhe-library/core-concepts/access-control`, not `../core-concepts/access-control` and not the full `https://cofhe-docs.fhenix.zone/...` URL. Relative paths break when a page moves; absolute URLs break preview deployments.
 - Link text describes the destination. "See [access control](/fhe-library/core-concepts/access-control)", never `"click [here](/...)"` or a bare URL.
 - Never link to a private repository; readers get a 404. Of the FhenixProtocol repos, only `cofhe-contracts` and `cofhesdk` are public. Name a component or path in prose instead, and add the link when the repo goes public.
+- A designed diagram declares a width past the content column, around 1440px, with the viewBox left at its own size. `<Frame>` centres an image at its intrinsic size on its own backdrop and drops inline styles, so a narrower diagram sits letterboxed. The vector scales, so oversizing the declaration costs nothing.
 - Every image is wrapped in `<Frame>` and carries alt text that says what the image shows, not what it is called. "Sealed output flowing from the FHE Engine to the client", not "diagram".
 - Pick the component that matches the content, and use each one for one job:
 
@@ -168,12 +169,15 @@ Never declare a column the flow does not use. Mermaid draws it at full strength 
 
 Color marks **where a component runs**, never what kind of component it is. A reader should be able to answer "is this mine, is this onchain, is this Fhenix's" from the color alone, and get the same answer on every page.
 
-| Zone | Components | Archify type |
+| Zone | Components | Color |
 |---|---|---|
-| Client side | Your app, Client SDK | `external` |
-| Host chain | Your contract, TaskManager | `backend` |
-| CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor | `cloud` |
-| Registry chain | CommitmentRegistry | `database` |
+| Client side, and independent parties | Your app, Client SDK, Partners | `#0466A2` |
+| Host chain | Your contract, TaskManager | `#F37A49` |
+| CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor | `#0AD9DC` |
+| Registry chain | CommitmentRegistry | `#BF90F8` |
+
+The dark ground is `#122531`. These values live in the export script, not in each
+diagram, so one edit changes every diagram.
 
 CT Server is not in the table because it is never a column; it is named inside a self-message. Components in one zone share one color, including those a given flow does not use. Teecryptor is the same color on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change color between diagrams.
 

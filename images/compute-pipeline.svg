@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" data-theme="dark" width="1180" height="438" viewBox="0 88 1180 438" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="blueprint" data-quality-profile="showcase"><style type="text/css"><![CDATA[
+<svg xmlns="http://www.w3.org/2000/svg" data-theme="dark" width="1440" height="556" viewBox="18 88 1134 438" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="blueprint" data-quality-profile="showcase"><style type="text/css"><![CDATA[
 svg,
     [data-theme="dark"]{--bg: #020617;
       --grid: #1e293b;
@@ -1951,6 +1951,14 @@ svg[data-preset="blueprint"][data-animation="trace"] [data-animate="edge"]{strok
       animation-duration: 2.15s;}
 svg[data-preset="blueprint"][data-animation="trace"] [data-animate="node"]{animation-name: archify-blueprint-node-pulse;
       animation-duration: 3.8s;}
+svg[data-preset][data-theme]{
+  --bg:#122531; --panel:rgba(18,37,49,0.92); --grid:#1e3d52;
+  --external-stroke:#0466A2; --external-fill:rgba(4,102,162,0.18);
+  --backend-stroke:#F37A49;  --backend-fill:rgba(243,122,73,0.15);
+  --cloud-stroke:#0AD9DC;    --cloud-fill:rgba(10,217,220,0.13);
+  --database-stroke:#BF90F8; --database-fill:rgba(191,144,248,0.15);
+}
+
 svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace!important}
 .semantic-sigil{display:none!important}
 
@@ -1977,7 +1985,7 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         </defs>
 
         <!-- Background Grid -->
-        <rect width="100%" height="100%" fill="var(--bg)" /><rect width="100%" height="100%" fill="var(--panel)" /><rect width="100%" height="100%" fill="url(#grid)" />
+        <rect x="18" y="88" width="1134" height="438" fill="var(--bg)" /><rect x="18" y="88" width="1134" height="438" fill="var(--panel)" /><rect x="18" y="88" width="1134" height="438" fill="url(#grid)" />
 
         <!-- Boundaries (behind everything) -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="Compute pipeline, offchain" x="220" y="110" width="750" height="110" rx="12" class="c-region" stroke-width="1"/>
@@ -1993,80 +2001,80 @@ svg text,svg tspan{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menl
         <!-- Components -->
         <g id="node-taskmanager" data-node-id="taskmanager" data-node-label="TaskManager" tabindex="0" role="button" aria-label="Focus TaskManager, host chain, Architecture component" aria-pressed="false" data-node-kind="backend" data-node-sublabel="host chain" data-node-context="Architecture component">
           <title>TaskManager · host chain · Architecture component</title>
-          <rect x="60" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="60" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="61.0" y="141.0" width="118.0" height="36.0" rx="5" fill="var(--backend-stroke)"/><rect x="61.0" y="172.0" width="118.0" height="5" fill="var(--backend-stroke)"/>
           <rect x="60" y="140" width="120" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(66 146) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="120" y="168" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">TaskManager</text>
-        <text data-detail="context" x="120" y="184" class="t-muted" font-size="9" text-anchor="middle">host chain</text>
+          <text data-node-label="" data-detail-anchor="" x="120" y="168" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">TaskManager</text>
+        <text data-detail="context" x="120" y="189.0" class="t-muted" font-size="9" text-anchor="middle">host chain</text>
         </g>
 
         <g id="node-slim" data-node-id="slim" data-node-label="Slim listener" tabindex="0" role="button" aria-label="Focus Slim listener, reads chain events, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="reads chain events" data-node-context="Compute pipeline, offchain">
           <title>Slim listener · reads chain events · Compute pipeline, offchain</title>
-          <rect x="250" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="250" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="251.0" y="141.0" width="118.0" height="36.0" rx="5" fill="var(--cloud-stroke)"/><rect x="251.0" y="172.0" width="118.0" height="5" fill="var(--cloud-stroke)"/>
           <rect x="250" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(256 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="310" y="168" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Slim listener</text>
-        <text data-detail="context" x="310" y="184" class="t-muted" font-size="9" text-anchor="middle">reads chain events</text>
+          <text data-node-label="" data-detail-anchor="" x="310" y="168" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Slim listener</text>
+        <text data-detail="context" x="310" y="189.0" class="t-muted" font-size="9" text-anchor="middle">reads chain events</text>
         </g>
 
         <g id="node-fheos" data-node-id="fheos" data-node-label="FheOS" tabindex="0" role="button" aria-label="Focus FheOS, validates and orders, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="validates and orders" data-node-context="Compute pipeline, offchain">
           <title>FheOS · validates and orders · Compute pipeline, offchain</title>
-          <rect x="440" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="440" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="441.0" y="141.0" width="118.0" height="36.0" rx="5" fill="var(--cloud-stroke)"/><rect x="441.0" y="172.0" width="118.0" height="5" fill="var(--cloud-stroke)"/>
           <rect x="440" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(446 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="500" y="168" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FheOS</text>
-        <text data-detail="context" x="500" y="184" class="t-muted" font-size="9" text-anchor="middle">validates and orders</text>
+          <text data-node-label="" data-detail-anchor="" x="500" y="168" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">FheOS</text>
+        <text data-detail="context" x="500" y="189.0" class="t-muted" font-size="9" text-anchor="middle">validates and orders</text>
         </g>
 
         <g id="node-engine" data-node-id="engine" data-node-label="FHE Engine" tabindex="0" role="button" aria-label="Focus FHE Engine, computes on ciphertexts, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="computes on ciphertexts" data-node-context="Compute pipeline, offchain">
           <title>FHE Engine · computes on ciphertexts · Compute pipeline, offchain</title>
-          <rect x="630" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="630" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="631.0" y="141.0" width="118.0" height="36.0" rx="5" fill="var(--cloud-stroke)"/><rect x="631.0" y="172.0" width="118.0" height="5" fill="var(--cloud-stroke)"/>
           <rect x="630" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(636 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="690" y="168" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FHE Engine</text>
-        <text data-detail="context" x="690" y="184" class="t-muted" font-size="8.1" text-anchor="middle">computes on ciphertexts</text>
+          <text data-node-label="" data-detail-anchor="" x="690" y="168" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">FHE Engine</text>
+        <text data-detail="context" x="690" y="189.0" class="t-muted" font-size="8.1" text-anchor="middle">computes on ciphertexts</text>
         </g>
 
         <g id="node-poster" data-node-id="poster" data-node-label="Blockchain poster" tabindex="0" role="button" aria-label="Focus Blockchain poster, batches commitments, Compute pipeline, offchain" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="batches commitments" data-node-context="Compute pipeline, offchain">
           <title>Blockchain poster · batches commitments · Compute pipeline, offchain</title>
-          <rect x="820" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="820" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="821.0" y="141.0" width="118.0" height="36.0" rx="5" fill="var(--cloud-stroke)"/><rect x="821.0" y="172.0" width="118.0" height="5" fill="var(--cloud-stroke)"/>
           <rect x="820" y="140" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(826 146) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="880" y="168" class="t-primary" font-size="10.9" font-weight="600" text-anchor="middle">Blockchain poster</text>
-        <text data-detail="context" x="880" y="184" class="t-muted" font-size="9" text-anchor="middle">batches commitments</text>
+          <text data-node-label="" data-detail-anchor="" x="880" y="168" style="fill:#0d1f2b" font-size="10.9" font-weight="600" text-anchor="middle">Blockchain poster</text>
+        <text data-detail="context" x="880" y="189.0" class="t-muted" font-size="9" text-anchor="middle">batches commitments</text>
         </g>
 
         <g id="node-registry" data-node-id="registry" data-node-label="CommitmentRegistry" tabindex="0" role="button" aria-label="Focus CommitmentRegistry, registry chain, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="registry chain" data-node-context="Architecture component">
           <title>CommitmentRegistry · registry chain · Architecture component</title>
-          <rect x="1010" y="140" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="1010" y="140" width="120" height="60" rx="6" class="c-mask"/><rect x="1011.0" y="141.0" width="118.0" height="36.0" rx="5" fill="var(--database-stroke)"/><rect x="1011.0" y="172.0" width="118.0" height="5" fill="var(--database-stroke)"/>
           <rect x="1010" y="140" width="120" height="60" rx="6" class="c-database" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1016 146) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1070" y="168" class="t-primary" font-size="10.3" font-weight="600" text-anchor="middle">CommitmentRegistry</text>
-        <text data-detail="context" x="1070" y="184" class="t-muted" font-size="9" text-anchor="middle">registry chain</text>
+          <text data-node-label="" data-detail-anchor="" x="1070" y="168" style="fill:#0d1f2b" font-size="10.3" font-weight="600" text-anchor="middle">CommitmentRegistry</text>
+        <text data-detail="context" x="1070" y="189.0" class="t-muted" font-size="9" text-anchor="middle">registry chain</text>
         </g>
 
         <g id="node-store" data-node-id="store" data-node-label="Ciphertext store" tabindex="0" role="button" aria-label="Focus Ciphertext store, fronted by the CT Server, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="fronted by the CT Server" data-node-context="Architecture component">
           <title>Ciphertext store · fronted by the CT Server · Architecture component</title>
-          <rect x="630" y="288" width="120" height="60" rx="6" class="c-mask"/>
+          <rect x="630" y="288" width="120" height="60" rx="6" class="c-mask"/><rect x="631.0" y="289.0" width="118.0" height="36.0" rx="5" fill="var(--cloud-stroke)"/><rect x="631.0" y="320.0" width="118.0" height="5" fill="var(--cloud-stroke)"/>
           <rect x="630" y="288" width="120" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(636 294) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="690" y="316" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Ciphertext store</text>
-        <text data-detail="context" x="690" y="332" class="t-muted" font-size="7.7" text-anchor="middle">fronted by the CT Server</text>
+          <text data-node-label="" data-detail-anchor="" x="690" y="316" style="fill:#0d1f2b" font-size="11" font-weight="600" text-anchor="middle">Ciphertext store</text>
+        <text data-detail="context" x="690" y="337.0" class="t-muted" font-size="7.7" text-anchor="middle">fronted by the CT Server</text>
         </g>
 
         <!-- Connection labels -->
