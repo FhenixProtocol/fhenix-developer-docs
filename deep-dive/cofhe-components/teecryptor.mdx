@@ -26,7 +26,7 @@ Concurrently with authorization, Teecryptor confirms that the [compute pipeline]
 </Step>
 
 <Step title="Ciphertext fetch and integrity check">
-The ciphertext is fetched from the CT Server exactly as the FHE Engine stored it, and its bytes must hash to the onchain commitment. A missing commitment or mismatched bytes rejects the request. Teecryptor only ever decrypts bytes the coprocessor committed to publicly.
+The ciphertext is fetched from the CT Server exactly as the coprocessor stored it, and its bytes must hash to the onchain commitment. A missing commitment or mismatched bytes rejects the request. Teecryptor only ever decrypts bytes the coprocessor committed to publicly.
 </Step>
 
 <Step title="Decryption">

@@ -72,9 +72,10 @@ Developers only interact directly with **two** parts of CoFHE; the rest runs beh
 | Component | Role |
 | --- | --- |
 | **TaskManager** | Onchain gateway that validates FHE requests and enforces access control |
-| **FHE Engine** | Picks up onchain task events, validates and orders them, executes the FHE operations on encrypted data, and commits results |
+| **ZK Verifier** | Verifies the proof on every encrypted input, inside a hardware-attested TEE |
+| **Compute pipeline** | Picks up onchain task events, validates and orders them, executes the FHE operations on encrypted data, and commits results |
 | **Teecryptor** | Decrypts inside a hardware-attested TEE, after checking permissions and commitments |
-| **Registries** | Track ciphertexts and record result commitments so integrity can be verified before any decryption |
+| **CommitmentRegistry** | Records a commitment for every ciphertext, so integrity is verified before any decryption |
 
 For a component-by-component breakdown, see the [CoFHE Architecture deep dive](/deep-dive/cofhe-components/overview).
 
