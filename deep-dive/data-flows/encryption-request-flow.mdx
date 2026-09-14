@@ -14,7 +14,7 @@ This page follows encrypted inputs from the plaintext in your application to han
 | **Your contract** | Host chain | Consumes the handles and the proof, and forwards them to the TaskManager |
 | **[TaskManager](/deep-dive/cofhe-components/task-manager)** | Host chain | Verifies the ZK Verifier's batch signature when the inputs are used onchain |
 | **[ZK Verifier](/deep-dive/cofhe-components/zk-verifier)** | CoFHE, offchain | Attested offchain component that verifies the proofs of every encrypted-input batch |
-| **CT Server** | CoFHE, offchain | Stores the verified ciphertext bytes. Named inside a message rather than drawn as its own column |
+| **CT Server** | CoFHE, offchain | Stores the verified ciphertext bytes. Not drawn in the diagram; the ZK Verifier writes to it during verification |
 | **[Compute pipeline](/deep-dive/cofhe-components/compute-pipeline)** | CoFHE, offchain | Picks up each `InputVerified` event and posts the commitment |
 | **[CommitmentRegistry](/deep-dive/cofhe-components/commitment-registry)** | Registry chain | Records a commitment for every verified input |
 
