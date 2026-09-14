@@ -3,14 +3,14 @@ sequenceDiagram
     participant Ceremony as Keygen ceremony
     participant Partners as Partners
     participant Pub as Public material
-    participant Enclave as Component enclave
+    participant Enclave as Teecryptor or ZK Verifier
 
     Note over Ceremony: generates the keyset in-enclave,<br/>splits secrets with Shamir (3-of-6)
-    Ceremony->>Partners: one encrypted share per partner (attested write)
-    Ceremony->>Pub: publish public material
+    Ceremony->>Partners: one share per partner, split per consumer
+    Ceremony->>Pub: publish the public material
     Note over Ceremony: terminates, whole key<br/>never persisted
     Note over Partners,Enclave: later, at every component boot
-    Enclave->>Partners: attestation of the running image
+    Enclave->>Partners: cofhe-keys asks, with the image attestation
     Note over Partners: each partner verifies independently
-    Partners-->>Enclave: release share, only to the approved image
+    Partners-->>Enclave: its own share, only to the approved image
     Note over Enclave: reconstruct in memory,<br/>zeroize transit material
