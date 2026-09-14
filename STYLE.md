@@ -102,6 +102,7 @@ Do not use internal names in public docs: no hostnames, no GCP project names, no
 - Internal links use root-relative paths: `/fhe-library/core-concepts/access-control`, not `../core-concepts/access-control` and not the full `https://cofhe-docs.fhenix.zone/...` URL. Relative paths break when a page moves; absolute URLs break preview deployments.
 - Link text describes the destination. "See [access control](/fhe-library/core-concepts/access-control)", never `"click [here](/...)"` or a bare URL.
 - Never link to a private repository; readers get a 404. Of the FhenixProtocol repos, only `cofhe-contracts` and `cofhesdk` are public. Name a component or path in prose instead, and add the link when the repo goes public.
+- A designed diagram declares a width past the content column, around 1440px, with the viewBox left at its own size. `<Frame>` centres an image at its intrinsic size on its own backdrop and drops inline styles, so a narrower diagram sits letterboxed. The vector scales, so oversizing the declaration costs nothing.
 - Every image is wrapped in `<Frame>` and carries alt text that says what the image shows, not what it is called. "Sealed output flowing from the FHE Engine to the client", not "diagram".
 - Pick the component that matches the content, and use each one for one job:
 
@@ -163,6 +164,30 @@ A column that the flow really touches, but that is drawn idle, reads as a column
 CT Server is the deliberate second case. It stores and serves ciphertext bytes for the ZK Verifier and Teecryptor, but on most pages it carries a single round trip, and a whole column for that crowds the diagram. It is drawn as a self-message on the component that calls it, and the message names it, so the reader still learns who serves the bytes. The FHE Engine is different again: it writes the ciphertext store directly, so its message names no component.
 
 Never declare a column the flow does not use. Mermaid draws it at full strength with no messages, and a reader takes that for a mistake. Mermaid also cannot dim a single column, so there is no way to show one as inactive: leave it out instead.
+
+### Diagram color
+
+Color marks **where a component runs**, never what kind of component it is. A reader should be able to answer "is this mine, is this onchain, is this Fhenix's" from the color alone, and get the same answer on every page.
+
+| Zone | Components | Color |
+|---|---|---|
+| Client side, and independent parties | Your app, Client SDK, Partners | `#0466A2` |
+| Host chain | Your contract, TaskManager | `#F37A49` |
+| CoFHE, offchain | ZK Verifier, Compute pipeline, Teecryptor | `#0AD9DC` |
+| Registry chain | CommitmentRegistry | `#BF90F8` |
+
+The dark ground is `#122531`. These values live in the export script, not in each
+diagram, so one edit changes every diagram.
+
+CT Server is not in the table because it is never a column; it is named inside a self-message. Components in one zone share one color, including those a given flow does not use. Teecryptor is the same color on the decryption pages as the ZK Verifier is on the encryption page, because both run offchain inside CoFHE. A component must never change color between diagrams.
+
+The reader-facing key is the page's own "Key components" table, which carries a **Runs in** column naming each component's zone. That is the legend: no swatches, no hex values in prose, and nothing to drift when a preset changes. A page that has such a table carries the column; a page without one names the zones in the tip under its diagram instead.
+
+Do not color by component type. That is the tool's default, and it produces one accent per participant, encoding a distinction the reader cannot act on.
+
+Architecture and lifecycle diagrams name their legend entries after the renderer's own component or state kinds, which say nothing a reader can use: a contract labelled "Database", a deliberate end state labelled "failure". Relabel those entries to the zone or the state's real meaning. Sequence legends describe arrow kinds and already read correctly.
+
+The key management ceremony sits outside this table, like its actors: the keygen ceremony and the component enclave run inside CoFHE, but the partners are independent custodians and must not read as CoFHE's.
 
 One action gets one phrase, in every diagram that shows it:
 
