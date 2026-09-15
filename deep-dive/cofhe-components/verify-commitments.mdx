@@ -39,7 +39,7 @@ Three values are not published yet. Everything else on this page works today.
 
 | Value | Why it is missing |
 | --- | --- |
-| CommitmentRegistry address | The registry chain is not fixed yet. The contract, its interface, and the version tag are settled; only the deployment target is open. |
+| CommitmentRegistry address | The registry is deployed and the coprocessor already writes to it. The contract, its interface, and the version tag are settled. What is open is publishing the address here, which is not decided yet. |
 | Verified input archive base URL | The archive exists and its object layout is stable. The public read endpoint is not published yet. |
 | Key store base URL | A different store from the input archive, with its own read endpoint. The public key and the CRS are already reachable over HTTP; the evaluation key is not. |
 
@@ -62,15 +62,14 @@ A handle is not the commitment, and the two relate differently depending on wher
 
 That difference is why the registry exists. A result's handle is fixed onchain the moment the task is created, so it cannot carry a hash of bytes nobody has computed yet.
 
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Menlo, Monaco, Consolas, monospace", "fontSize": "16px", "primaryColor": "#8FBAF5", "primaryBorderColor": "#2E7CF6", "primaryTextColor": "#0A1626", "lineColor": "#4C8DFF", "signalColor": "#4C8DFF", "signalTextColor": "#8FA3BF", "actorBkg": "#8FBAF5", "actorBorder": "#2E7CF6", "actorTextColor": "#0A1626", "actorLineColor": "#3D4654", "noteBkgColor": "#14171C", "noteBorderColor": "#3D4654", "noteTextColor": "#AFC3DE", "activationBkgColor": "#1E3A5F", "activationBorderColor": "#4C8DFF", "clusterBkg": "#14171C", "clusterBorder": "#3D4654", "titleColor": "#E7EAEE", "edgeLabelBackground": "#8FBAF5", "textColor": "#AFC3DE", "labelTextColor": "#E7EAEE", "tertiaryColor": "#14171C", "loopTextColor": "#AFC3DE", "labelBoxBkgColor": "#1E3A5F", "labelBoxBorderColor": "#4C8DFF"}, "sequence": {"actorFontFamily": "Menlo, Monaco, Consolas, monospace", "messageFontFamily": "Menlo, Monaco, Consolas, monospace", "noteFontFamily": "Menlo, Monaco, Consolas, monospace", "width": 220, "actorFontSize": 16, "messageFontSize": 16, "noteFontSize": 15}}}%%
-flowchart LR
-    TM[TaskManager events] -->|operation, input handles| You
-    Archive[Verified input archive] -->|input ciphertexts| You
-    Keys[Public key material] -->|evaluation key, public key, CRS| You
-    You[Your machine] -->|keccak256 of your result| Compare{Match?}
-    Registry[CommitmentRegistry] -->|recorded commitment| Compare
-```
+{/* Diagram source: verify-commitments.mmd, beside this page. Edit it first, then re-run the archify build. */}
+<Frame>
+<img src="/images/verify-commitments.svg" alt="The TaskManager on the host chain, the verified input archive and the key store inside CoFHE, and the CommitmentRegistry on the registry chain, all feeding a recomputation and a hash comparison on your own machine" />
+</Frame>
+
+<Tip>
+Color marks the zone, and the boxes group what runs where. Only the last box is yours: everything else is a public read, and none of it needs an account or a key.
+</Tip>
 
 ## Read the computation graph
 
@@ -140,7 +139,11 @@ cast call $REGISTRY "getVersionStatus(bytes32)(uint8)" $VERSION --rpc-url $REGIS
 
 The answer is `0` for Unset, `1` for Active, `2` for Deprecated, and `3` for Revoked. A status only moves forward: Active to Deprecated or Revoked, and Deprecated to Revoked. `Deprecated` means the version was superseded and its commitments stay readable. `Revoked` means the opposite. Do not trust a match under a revoked version.
 
-A zero answer is not proof of tampering. A result that is still being computed has no commitment yet, because the coprocessor posts the commitment after the compute stage finishes.
+A zero answer is not proof of tampering, and it has two ordinary causes.
+
+The first is timing: a result that is still being computed has no commitment yet, because the coprocessor posts the commitment after the compute stage finishes.
+
+The second is the version. Version 1 is still Active and holds the bulk of the earlier history. A handle committed before the cutover resolves only under version 1, and reads as zero under version 2. Retry the lookup under version 1 before you conclude anything.
 
 To audit in bulk rather than one handle at a time, enumerate the version. `getSize` reports the total, and `getHandles` pages through it, clamping `offset + limit` at the total and returning an empty array once `offset` runs past the end.
 
@@ -272,7 +275,11 @@ If all of these hold and the hashes still differ, you have a real discrepancy be
 
 ## Where this check runs in production
 
-[Teecryptor](/deep-dive/cofhe-components/teecryptor) makes the same comparison inside its enclave on every decryption request. It hashes the ciphertext bytes it is about to decrypt and refuses any that do not match the commitment anchored onchain. Your audit and its gate read the same record.
+[Teecryptor](/deep-dive/cofhe-components/teecryptor) makes the same comparison inside its enclave on every decryption request. It hashes the ciphertext bytes it is about to decrypt and checks them against the commitment anchored onchain. Your audit and its gate read the same record.
+
+<Warning>
+The gate runs in warn-only mode during the rollout. A mismatch is logged and the decryption still proceeds. It moves to enforcement once handles committed under the earlier version have aged out, and until then the onchain commitment is the record you audit, not a block on decryption.
+</Warning>
 
 ## Source
 
