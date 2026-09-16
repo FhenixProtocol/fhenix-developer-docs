@@ -39,7 +39,7 @@ Three values are not published yet. Everything else on this page works today.
 
 | Value | Why it is missing |
 | --- | --- |
-| CommitmentRegistry address | The registry is deployed and the coprocessor already writes to it. The contract, its interface, and the version tag are settled. What is open is publishing the address here, which is not decided yet. |
+| CommitmentRegistry address | The contract, its interface, and the version tag are settled, and the coprocessor already posts commitments on the networks that run today. The chain and address the public network will use are not settled yet, so there is nothing stable to publish here. |
 | Verified input archive base URL | The archive exists and its object layout is stable. The public read endpoint is not published yet. |
 | Key store base URL | A different store from the input archive, with its own read endpoint. The public key and the CRS are already reachable over HTTP; the evaluation key is not. |
 
@@ -143,7 +143,7 @@ A zero answer is not proof of tampering, and it has two ordinary causes.
 
 The first is timing: a result that is still being computed has no commitment yet, because the coprocessor posts the commitment after the compute stage finishes.
 
-The second is the version. Version 1 is still Active and holds the bulk of the earlier history. A handle committed before the cutover resolves only under version 1, and reads as zero under version 2. Retry the lookup under version 1 before you conclude anything.
+The second is the version. More than one version can be Active at once, and a handle committed before a cutover resolves only under the version it was posted with. Read the status of each version you know of, and retry the lookup under the earlier one before you conclude anything.
 
 To audit in bulk rather than one handle at a time, enumerate the version. `getSize` reports the total, and `getHandles` pages through it, clamping `offset + limit` at the total and returning an empty array once `offset` runs past the end.
 
@@ -278,7 +278,7 @@ If all of these hold and the hashes still differ, you have a real discrepancy be
 [Teecryptor](/deep-dive/cofhe-components/teecryptor) makes the same comparison inside its enclave on every decryption request. It hashes the ciphertext bytes it is about to decrypt and checks them against the commitment anchored onchain. Your audit and its gate read the same record.
 
 <Warning>
-The gate runs in warn-only mode during the rollout. A mismatch is logged and the decryption still proceeds. It moves to enforcement once handles committed under the earlier version have aged out, and until then the onchain commitment is the record you audit, not a block on decryption.
+On the networks running today the gate is configured warn-only: a mismatch is logged and the decryption still proceeds. Enforcement is the intended setting, and it turns on once handles committed under the earlier version have aged out. So treat the onchain commitment as the record you audit, and do not assume a mismatch is currently refused.
 </Warning>
 
 ## Source
