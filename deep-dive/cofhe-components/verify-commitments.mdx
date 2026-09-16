@@ -275,11 +275,7 @@ If all of these hold and the hashes still differ, you have a real discrepancy be
 
 ## Where this check runs in production
 
-[Teecryptor](/deep-dive/cofhe-components/teecryptor) makes the same comparison inside its enclave on every decryption request. It hashes the ciphertext bytes it is about to decrypt and checks them against the commitment anchored onchain. Your audit and its gate read the same record.
-
-<Warning>
-On the networks running today the gate is configured warn-only: a mismatch is logged and the decryption still proceeds. Enforcement is the intended setting, and it turns on once handles committed under the earlier version have aged out. So treat the onchain commitment as the record you audit, and do not assume a mismatch is currently refused.
-</Warning>
+[Teecryptor](/deep-dive/cofhe-components/teecryptor) makes the same comparison inside its enclave on every decryption request. It hashes the ciphertext bytes it is about to decrypt and refuses any that do not match the commitment anchored onchain. Your audit and its gate read the same record, so a commitment you can check yourself is the same one that gates every decryption.
 
 ## Source
 
