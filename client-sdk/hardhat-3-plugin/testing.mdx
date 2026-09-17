@@ -1,0 +1,139 @@
+---
+title: Testing
+description: "Canonical test-writing patterns for FHE contracts under Hardhat 3"
+---
+
+This page shows the load-bearing patterns for writing FHE contract tests under Hardhat 3 with `@cofhe/hardhat-3-plugin`. Hardhat v2 counterpart: [Hardhat Plugin → Testing](/client-sdk/hardhat-plugin/testing).
+
+## Skeleton
+
+```typescript test/Counter.test.ts
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { network } from 'hardhat';
+import { Encryptable, FheTypes } from '@cofhe/sdk';
+
+describe('Encrypted counter', async () => {
+  const { viem, cofhe } = await network.connect();
+  const publicClient = await viem.getPublicClient();
+  const [walletClient] = await viem.getWalletClients();
+
+  it('encrypts, stores, and decrypts a uint32', async () => {
+    const client = await cofhe.createClientWithBatteries(walletClient);
+
+    // 1. Encrypt
+    const [enc] = await client
+      .encryptInputs([Encryptable.uint32(42n)])
+      .execute();
+
+    // 2. Store on-chain via TestBed
+    await walletClient.writeContract({
+      ...cofhe.mocks.TestBed,
+      functionName: 'setNumber',
+      args: [{
+        ctHash: enc.ctHash,
+        securityZone: enc.securityZone,
+        utype: enc.utype,
+        signature: enc.signature,
+      }],
+    });
+
+    const ctHash = (await publicClient.readContract({
+      ...cofhe.mocks.TestBed,
+      functionName: 'numberHash',
+    })) as `0x${string}`;
+
+    // 3. Decrypt via view (off-chain, instant)
+    const decryptedView = await client
+      .decryptForView(ctHash, FheTypes.Uint32)
+      .execute();
+    assert.equal(decryptedView, 42n);
+
+    // 4. Alternatively, verify plaintext without decryption
+    await cofhe.mocks.expectPlaintext(ctHash, 42n);
+  });
+});
+```
+
+That's the load-bearing shape. Everything below is what to add when the contract gets non-trivial.
+
+## Rules
+
+### 1. `async describe` runs `network.connect()` once per file
+
+Hardhat 3's `node:test` runner supports top-level `await` inside the describe callback. Resolve the connection (and deploy mocks) at the top of the describe — every `it` inside the same block shares the same fresh deployment.
+
+```typescript
+describe('My contract', async () => {
+  const { viem, cofhe } = await network.connect();
+  // ...
+});
+```
+
+If you want a **completely fresh** mock deployment between tests, call `await cofhe.mocks.deployMocks()` inside a `beforeEach`.
+
+### 2. Use `cofhe.createClientWithBatteries()` for most tests
+
+It handles config + connect + self-permit in one call. The self permit lets `decryptForView` work immediately:
+
+```typescript
+const client = await cofhe.createClientWithBatteries(walletClient);
+const value = await client.decryptForView(ctHash, FheTypes.Uint32).execute();
+```
+
+Drop down to `cofhe.createConfig` / `cofhe.createClient` only when you need to override defaults (e.g. a non-zero `mocks.encryptDelay`).
+
+### 3. Assert plaintext with `expectPlaintext` whenever possible
+
+```typescript
+await cofhe.mocks.expectPlaintext(ctHash, 42n);
+```
+
+Faster than `decryptForView` and needs no permit. Reserve the SDK path for tests where the SDK behavior itself is under test.
+
+### 4. Call mock contracts directly through their descriptors
+
+For state setup or assertions that don't need the SDK, spread the descriptor into Viem:
+
+```typescript
+await walletClient.writeContract({
+  ...cofhe.mocks.MockTaskManager,
+  functionName: 'setSecurityZones',
+  args: [0, 1],
+});
+```
+
+### 5. Wrap noisy code in `withLogs(name, fn)` for debugging
+
+When a test is misbehaving, scope mock logging to the suspicious block:
+
+```typescript
+await cofhe.mocks.withLogs('counter.increment()', async () => {
+  await walletClient.writeContract({
+    ...counterContract,
+    functionName: 'increment',
+  });
+});
+```
+
+## Common pitfalls
+
+<AccordionGroup>
+<Accordion title="Connection re-use between describes" icon="rotate">
+`network.connect()` returns a **fresh** deployment each call. If you `await network.connect()` once and share the result across `describe` blocks, those blocks share mock state — which is sometimes what you want and sometimes not. When in doubt, call `network.connect()` per `describe`.
+</Accordion>
+
+<Accordion title="Forgetting `FHE.allowThis` in the contract" icon="key">
+Tests pass on the first op, then a second op reverts with `ACLNotAllowed` because the contract itself isn't on the ACL. Toggle logging (`await cofhe.mocks.enableLogs()`) to see the missing grant — every op prints a line showing whether `allowThis` / `allow` was called.
+</Accordion>
+
+<Accordion title="Wrong wallet client for the SDK input" icon="user">
+The client is bound to whichever `walletClient` you passed to `createClientWithBatteries`. Calling the contract from a *different* wallet client (e.g. via `vm.prank`-style impersonation) will fail the ZK-verifier signature check — the input was signed for the original wallet, not the new caller.
+</Accordion>
+</AccordionGroup>
+
+## Related
+
+- [Hardhat 3 Plugin → Getting Started](/client-sdk/hardhat-3-plugin/getting-started) — install + config.
+- [Hardhat 3 Plugin → Mock Contracts](/client-sdk/hardhat-3-plugin/mock-contracts) — descriptors + plaintext inspection.
+- [Hardhat Plugin (v2) → Testing](/client-sdk/hardhat-plugin/testing) — the same patterns under Hardhat v2.

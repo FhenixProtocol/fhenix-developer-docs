@@ -1,0 +1,42 @@
+---
+title: Logging
+description: "Inspect FHE operations in your Hardhat 3 test output"
+---
+
+The mock contracts emit structured logs for every FHE operation. This makes it easy to see what your contracts are doing under the hood during tests.
+
+## `withLogs(name, fn)` — recommended
+
+Wraps a block of code with logging enabled and prints a labeled box around the output. The `name` appears as the header so you can identify which call produced which operations.
+
+```typescript
+await cofhe.mocks.withLogs('counter.increment()', async () => {
+  await walletClient.writeContract({
+    ...counterContract,
+    functionName: 'increment',
+  });
+});
+```
+
+`withLogs` enables logging before the closure runs and disables it after, so only operations from within that block appear in the output. The previous on/off state is restored when it returns.
+
+## `enableLogs()` / `disableLogs()` — manual
+
+For finer-grained control, you can enable and disable logging manually:
+
+```typescript
+await cofhe.mocks.enableLogs();
+
+await walletClient.writeContract({
+  ...counterContract,
+  functionName: 'increment',
+});
+
+await cofhe.mocks.disableLogs();
+```
+
+## Default behavior
+
+Logging is controlled by the `cofhe.logMocks` config option (see [Getting Started → Configuration](/client-sdk/hardhat-3-plugin/getting-started#configuration)). When the option is `true` (the default), mock-contract log events are emitted; when `false`, they're suppressed even if you call `enableLogs()`.
+
+`withLogs`, `enableLogs`, and `disableLogs` only flip the runtime gate at the mock-contract level — they do **not** override the config.
