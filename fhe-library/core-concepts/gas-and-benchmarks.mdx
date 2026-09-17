@@ -13,6 +13,6 @@ We are measuring the gas of every FHE operation per encrypted type. This page ge
 
 ## Performance benchmarks
 
-The compute pipeline executes operations with [TFHE-rs](https://github.com/zama-ai/tfhe-rs), Zama's FHE library, on the 1.5 line. For operation-level latency, use Zama's published numbers for that version: [TFHE-rs 1.5 benchmarks](https://docs.zama.ai/tfhe-rs/tfhe-rs/1.5/get-started/benchmarks).
+The compute pipeline executes operations with [TFHE-rs](https://github.com/zama-ai/tfhe-rs), Zama's FHE library. For operation-level latency, use Zama's published numbers: [TFHE-rs benchmarks](https://docs.zama.ai/tfhe-rs/tfhe-rs/1.5/get-started/benchmarks).
 
 Read them as the cost of the raw operation on reference hardware. End-to-end latency in CoFHE adds the steps around the operation: event pickup, validation, and commitment posting.
