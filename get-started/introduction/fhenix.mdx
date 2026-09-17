@@ -60,4 +60,23 @@ These challenges can all be mitigated by using FHE in your smart contracts.
 * Users control their data without relying on trusted third parties.
 
 
+---
+
+## From FHE to CoFHE
+
+FHE establishes that computation on encrypted data is possible — but
+possibility alone doesn't make it practical. Implementing FHE from
+scratch requires deep cryptographic expertise and migrating to an
+entirely different chain. Fhenix solves this by taking a different
+approach: instead of asking developers to migrate, bring encrypted
+computation to the chains they already use.
+
+The result is CoFHE — an FHE coprocessor that attaches to any EVM
+chain. The heavy cryptographic work runs offchain; your contract only
+ever sees lightweight handles to encrypted values. Same Solidity, same
+chains — confidentiality becomes just another feature.
+
+→ See how CoFHE works in practice: [What is CoFHE?](/get-started/introduction/what-is-cofhe)
+
+
 
