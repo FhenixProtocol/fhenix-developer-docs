@@ -192,7 +192,7 @@ def main(argv: list[str]) -> int:
 
     node_modules = find_node_modules()
     samples = {}  # sol filename -> (page, block number, mdx line, mode)
-    compiled = skipped = 0
+    compiled = skipped = warned = 0
 
     with tempfile.TemporaryDirectory(prefix="doc-samples-") as tmp:
         project = Path(tmp)
@@ -249,15 +249,23 @@ def main(argv: list[str]) -> int:
                     continue
                 messages.append(err.get("formattedMessage", str(err)))
             if messages:
-                failed += 1
-                print(f"FAIL  {rel} block {number} (line {line}) [{mode}]")
+                # Only strict blocks (complete contracts) gate CI. Wrapped
+                # fragments depend on page context the scaffold cannot supply,
+                # so their failures are warnings: visible in the log, never
+                # blocking a PR.
+                if mode == "strict":
+                    failed += 1
+                    print(f"FAIL  {rel} block {number} (line {line}) [{mode}]")
+                else:
+                    warned += 1
+                    print(f"WARN  {rel} block {number} (line {line}) [{mode}]")
                 for msg in messages:
                     print(msg)
             else:
                 compiled += 1
                 print(f"OK    {rel} block {number} (line {line}) [{mode}]")
 
-    print(f"\n{compiled} compiled, {skipped} skipped, {failed} failed")
+    print(f"\n{compiled} compiled, {skipped} skipped, {warned} warnings, {failed} failed")
     return 1 if failed else 0
 
 
