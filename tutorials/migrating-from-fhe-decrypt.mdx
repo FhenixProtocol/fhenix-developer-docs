@@ -229,8 +229,10 @@ function claimUnshielded(
 // 1. Request unshield
 await token.unshield(recipientAddress, 100n);
 
-// 2. Get the ctHash of the burned amount (from the event or storage)
-const ctHash = /* ... from UnshieldedERC20 event ... */;
+// 2. Get the ctHash of the burned amount from the pending claim
+//    (UnshieldedERC20 does not carry it)
+const claims = await token.getUserClaims(recipientAddress);
+const ctHash = claims[claims.length - 1].ctHash;
 
 // 3. Decrypt offchain
 const result = await client
