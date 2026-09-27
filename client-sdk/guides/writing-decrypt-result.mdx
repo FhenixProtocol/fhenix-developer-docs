@@ -28,13 +28,13 @@ The intended consumer of `decryptForTx` is an onchain verifier such as `FHE.publ
 ```solidity Solidity
 import '@fhenixprotocol/cofhe-contracts/FHE.sol';
 
-// Example wrapper (adjust plaintext/result type to match your encrypted type).
+// Example wrapper (adjust the handle and plaintext types to match your encrypted type).
 function publishDecryptResult(
-  bytes32 ctHash,
+  euint32 handle,
   uint32 plaintext,
   bytes calldata signature
 ) external {
-  FHE.publishDecryptResult(euint32.wrap(ctHash), plaintext, signature);
+  FHE.publishDecryptResult(handle, plaintext, signature);
 }
 ```
 
