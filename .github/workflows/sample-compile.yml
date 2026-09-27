@@ -1,0 +1,70 @@
+name: Sample compile
+
+on:
+  pull_request:
+    paths:
+      - '**/*.mdx'
+      - 'scripts/compile-samples.py'
+      - '.github/workflows/sample-compile.yml'
+  workflow_dispatch:
+
+env:
+  # The Solidity dependency version the docs tell readers to install; see
+  # get-started/introduction/compatibility.mdx. Bump both together.
+  COFHE_CONTRACTS_VERSION: 0.2.0
+  # Pinned like Mint and Vale: forge ships often and its diagnostics change,
+  # so an unpinned install turns unrelated pull requests red.
+  FOUNDRY_VERSION: v1.5.1
+
+jobs:
+  solidity:
+    name: compile Solidity samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Pages written before this check existed may carry broken samples, so
+      # a pull request is judged only on the pages it touches. A manual run
+      # checks the whole site to see the backlog.
+      - name: Collect pages to check
+        id: files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only --diff-filter=d \
+              "origin/${{ github.base_ref }}...HEAD" -- '*.mdx' > files.txt
+          else
+            git ls-files '*.mdx' > files.txt
+          fi
+          count=$(wc -l < files.txt | tr -d ' ')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Checking $count page(s):"
+          cat files.txt
+
+      - name: Set up Node.js
+        if: steps.files.outputs.count != '0'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # --no-save keeps the checkout clean: the repo has no package.json and
+      # must not gain one. npm also pulls @openzeppelin/contracts, which
+      # FHE.sol imports.
+      - name: Install cofhe-contracts
+        if: steps.files.outputs.count != '0'
+        run: npm install --no-save "@fhenixprotocol/cofhe-contracts@${COFHE_CONTRACTS_VERSION}"
+
+      - name: Install Foundry
+        if: steps.files.outputs.count != '0'
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      # Extracts every ```solidity block from the changed pages and compiles
+      # each one with forge. The script prints the page, the block number, and
+      # the compiler error for every failure. TypeScript blocks are not
+      # checked; this check is Solidity only.
+      - name: Compile Solidity samples
+        if: steps.files.outputs.count != '0'
+        run: xargs -a files.txt python3 scripts/compile-samples.py
