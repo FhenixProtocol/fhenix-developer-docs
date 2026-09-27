@@ -111,6 +111,12 @@ def classify(code: str, title: str):
         return "skip:ellipsis placeholder", None
     if re.search(r"\bbefore\b", title, re.IGNORECASE):
         return "skip:fence titled 'Before' (documents the removed API)", None
+    # v1 provisions only the cofhe-contracts package. A sample importing any
+    # other package (plugin frameworks, OpenZeppelin, confidential contracts)
+    # cannot compile here; skipping keeps CI honest instead of false-failing.
+    for m in re.finditer(r'import\s+(?:\{[^}]*\}\s+from\s+)?"([^"./][^"]*)"', code):
+        if not m.group(1).startswith("@fhenixprotocol/cofhe-contracts"):
+            return f"skip:imports unprovisioned package {m.group(1)}", None
 
     hoisted, rest = [], []
     for line in code.splitlines():
