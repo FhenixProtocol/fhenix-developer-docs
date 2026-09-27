@@ -203,7 +203,7 @@ Here's a practical example showing how to handle encrypted bids in an auction:
 ```solidity
 contract EncryptedAuction {
     euint32 public highestBid;
-    address public highestBidder;
+    address public lastBidder;
 
     function placeBid(externalEuint32 encryptedBid, bytes calldata inputProof) public {
         euint32 bid = FHE.asEuint32(encryptedBid, inputProof);
@@ -219,11 +219,10 @@ contract EncryptedAuction {
 
         highestBid = newHighestBid;
 
-        // Update highest bidder (note: address is not encrypted)
-        // In production, you'd handle this more carefully
-        if (/* some non-encrypted condition */) {
-            highestBidder = msg.sender;
-        }
+        // The contract cannot tell whether this bid won: isHigher is
+        // encrypted, and plain `if` cannot branch on it. Track bidders,
+        // and resolve the winner when the result is revealed.
+        lastBidder = msg.sender;
     }
 
     function revealWinner(euint32 ctHash, uint32 plaintext, bytes calldata signature) public {
