@@ -166,7 +166,7 @@ ebool condition1 = a.gt(b);
 ebool condition2 = c.lt(d);
 
 euint32 temp = FHE.select(condition1, valueA, valueB);
-euint32 final = FHE.select(condition2, temp, valueC);
+euint32 result = FHE.select(condition2, temp, valueC);
 ```
 </Accordion>
 

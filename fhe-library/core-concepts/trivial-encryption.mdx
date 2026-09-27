@@ -29,18 +29,18 @@ When two trivially-encrypted numbers are combined in an FHE operation, the resul
 ## Example
 
 ```solidity
-function doSomeCalculations(externalEuint16 input, bytes calldata inputProof) {
+function doSomeCalculations(externalEuint16 input, bytes calldata inputProof) public {
     // public
     euint16 number2 = FHE.asEuint16(2);
     euint16 number3 = FHE.asEuint16(3);
     euint16 number5 = FHE.add(number2, number3);
 
     // confidential
-    euint16 encInput = FHE.asEuint16(input);
+    euint16 encInput = FHE.asEuint16(input, inputProof);
     euint16 encMul = FHE.mul(encInput, number5);
 
     // public
-    euint16 eFalse = FHE.asEbool(false);
+    ebool eFalse = FHE.asEbool(false);
 
     // Observer knows that result is encInput, but not what the value is
     euint16 result = FHE.select(eFalse, encMul, encInput);

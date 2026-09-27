@@ -34,7 +34,7 @@ function publishDecryptResult(
   uint32 plaintext,
   bytes calldata signature
 ) external {
-  FHE.publishDecryptResult(ctHash, plaintext, signature);
+  FHE.publishDecryptResult(euint32.wrap(ctHash), plaintext, signature);
 }
 ```
 
