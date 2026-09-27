@@ -2,6 +2,15 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Fhenix Documentation",
+  "description": "Documentation for CoFHE, Fhenix's Fully Homomorphic Encryption coprocessor: write Solidity contracts that compute on encrypted data.",
+  "seo": {
+    "metatags": {
+      "og:site_name": "Fhenix Documentation",
+      "og:type": "website",
+      "twitter:card": "summary",
+      "twitter:site": "@fhenix"
+    }
+  },
   "colors": {
     "primary": "#0AD9DC",
     "light": "#5FE8EA",
