@@ -68,6 +68,10 @@ SKIP_PAGES: dict[str, str] = {
 TOLERATED_FRAGMENT_ERRORS = {
     "7576",  # Undeclared identifier
     "7920",  # Identifier not found or not unique (types, modifiers)
+    "2333",  # Identifier already declared: variant lists reuse a result name
+    "3656",  # Contract should be marked abstract: bodyless signature fragments
+    "4334",  # Trying to override non-virtual function (signature fragments)
+    "9456",  # Overriding function is missing "override" (signature fragments)
 }
 
 FENCE_OPEN_RE = re.compile(r"^(\s*)```solidity\b(.*)$")
@@ -76,7 +80,7 @@ TYPE_DECL_RE = re.compile(
     r"^\s*(abstract\s+contract|contract|interface|library)\s+[A-Za-z_]"
 )
 MEMBER_RE = re.compile(
-    r"^\s*(function|modifier|event|error|struct|enum|constructor|using|receive|fallback)\b"
+    r"^\s*(function|modifier|event|error|struct|enum|constructor|using|receive|fallback|mapping\s*\()"
 )
 STATE_VAR_RE = re.compile(
     r"^\s*[A-Za-z_][\w.\[\]]*(\s+(public|private|internal|constant|immutable))+\s+[A-Za-z_]\w*\s*(=|;)"
@@ -111,6 +115,10 @@ def classify(code: str, title: str):
         return "skip:ellipsis placeholder", None
     if re.search(r"\bbefore\b", title, re.IGNORECASE):
         return "skip:fence titled 'Before' (documents the removed API)", None
+    if re.search(r"don'?t|do not|wrong|bad", title, re.IGNORECASE):
+        return "skip:fence titled as an anti-example", None
+    if code.count("{") != code.count("}"):
+        return "skip:unbalanced braces (truncated fragment)", None
     # v1 provisions only the cofhe-contracts package. A sample importing any
     # other package (plugin frameworks, OpenZeppelin, confidential contracts)
     # cannot compile here; skipping keeps CI honest instead of false-failing.
