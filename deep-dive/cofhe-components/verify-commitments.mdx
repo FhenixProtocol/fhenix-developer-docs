@@ -43,6 +43,10 @@ One value is not published yet. Everything else on this page works today.
 
 The two stores are publicly readable already. The input archive fills as the network processes inputs, and the key store fills when the key ceremony runs at mainnet launch.
 
+<Note>
+A base URL is a prefix, not a page. Opening it in a browser returns a `NoSuchKey` error; append an object path to fetch. To see what a store holds, use the listing form: <code style={{ whiteSpace: "nowrap" }}>https://storage.googleapis.com/fhenix-mainnet-keys?prefix=generator/keys/</code> returns an XML listing, and the same `?prefix=` form works on the input archive.
+</Note>
+
 You need one CommitmentRegistry address, not one per chain. A handle is derived from the ciphertext bytes, or from the operation and its input handles, and neither derivation mixes in a chain id. So handles are global, one registry records them all, and your host chain never appears in the lookup.
 
 <Note>
