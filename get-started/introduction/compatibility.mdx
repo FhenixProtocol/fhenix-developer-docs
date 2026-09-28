@@ -27,12 +27,16 @@ Solidity dependencies version separately from the SDK:
 
 | Package | Version | What it does |
 | --- | --- | --- |
-| `@fhenixprotocol/cofhe-contracts` | [`0.2.0`](https://github.com/FhenixProtocol/cofhe-contracts/tree/v0.2.0) | `FHE.sol` and the onchain CoFHE interfaces |
+| `@fhenixprotocol/cofhe-contracts` | [`0.3.0`](https://github.com/FhenixProtocol/cofhe-contracts/tree/1334118827fcdd5b52d0b70d0bce9e1ccdb7f955) | `FHE.sol` and the onchain CoFHE interfaces |
 | `@fhenixprotocol/cofhe-errors` | `1.0.2` | Shared error definitions for the CoFHE contracts |
 | `fhenix-confidential-contracts` | `0.4.0` | Confidential token primitives, including FHERC20 |
 
 <Note>
 `fhenix-confidential-contracts` is published unscoped. There is no `@fhenixprotocol/fhenix-confidential-contracts` package, so installing that name fails.
+</Note>
+
+<Note>
+`cofhe-contracts` 0.3.0 is the current release on the repository's `master` and is not on npm yet. `npm install` still gives you `0.2.0`; the npm release follows.
 </Note>
 
 ## What each package requires
