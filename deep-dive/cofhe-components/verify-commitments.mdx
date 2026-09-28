@@ -170,8 +170,9 @@ The handle is written without its `0x` prefix, and `{shard}` is its first four c
 ```bash
 ARCHIVE=https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs
 
-# Path shape: the example input's chain (Arbitrum Sepolia) and handle
-curl -sO $ARCHIVE/cofhe/v1/chain/421614/security-zone/0/verified-inputs/1b2c/1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed350500
+# Path shape: the example input's chain (Arbitrum Sepolia) and handle.
+# -f fails loudly when the object does not exist, instead of saving the error page.
+curl -fsSO $ARCHIVE/cofhe/v1/chain/421614/security-zone/0/verified-inputs/1b2c/1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed350500
 ```
 
 Each object is a bincode-encoded record holding the ciphertext bytes and its metadata. The metadata carries the handle, the proof it belongs to, the submitting account, the security zone, the chain, the index within the proof, and the type. Take the ciphertext bytes out of that record. They are the same `safe_serialize` of a compressed value as everything else, so `keccak256` over them reproduces the commitment you read from `InputVerified`. Check that before going further.
