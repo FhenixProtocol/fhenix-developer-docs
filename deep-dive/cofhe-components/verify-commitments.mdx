@@ -28,7 +28,7 @@ The check says nothing about plaintexts. You never learn what any value decrypts
 | TaskManager | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9`, the same address on every supported chain |
 | Host chain RPC | Any endpoint for the chain your contract runs on |
 | CommitmentRegistry | One address for every host chain, pending, see [Pending values](#pending-values) |
-| Verified input archive | The [fhenix-mainnet-zee-k-inputs](https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs?prefix=cofhe/) bucket, public. See [Fetch the inputs](#fetch-the-inputs) |
+| Verified input archive | The [testnet-v2-inputs](https://storage.googleapis.com/testnet-v2-inputs?prefix=cofhe/) and [fhenix-mainnet-zee-k-inputs](https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs?prefix=cofhe/) buckets, public. See [Fetch the inputs](#fetch-the-inputs) |
 | Key store | The [fhenix-mainnet-keys](https://storage.googleapis.com/fhenix-mainnet-keys?prefix=generator/keys/) bucket, public. See [Fetch the public key material](#fetch-the-public-key-material) |
 | tfhe-rs | `1.5.1` |
 | Tools | Foundry's `cast`, and a Rust toolchain for the recomputation |
@@ -165,14 +165,16 @@ cofhe/v1/chain/{chainId}/security-zone/{zone}/verified-inputs/{shard}/{handle}
 cofhe/v1/chain/{chainId}/security-zone/{zone}/verification-proofs/{shard}/{proofId}
 ```
 
-The handle is written without its `0x` prefix, and `{shard}` is its first four characters: a handle starting `1b2c` sits in the `1b2c` directory. Fetch an object anonymously by appending its path to the archive base URL. Use your own handle from step 1; the archive holds an object only after the network verified that input.
+The handle is written without its `0x` prefix, and `{shard}` is its first four characters. Fetch an object anonymously by appending its path to the archive base URL. This fetches the verified input above, from the testnet archive:
 
 ```bash
-ARCHIVE=https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs
+ARCHIVE=https://storage.googleapis.com/testnet-v2-inputs
 
 # -f fails loudly when the object does not exist, instead of saving the error page.
-curl -fsSO $ARCHIVE/cofhe/v1/chain/{chainId}/security-zone/{zone}/verified-inputs/{shard}/{handle}
+curl -fsSO $ARCHIVE/cofhe/v1/chain/421614/security-zone/0/verified-inputs/1b2c/1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed350500
 ```
+
+The mainnet archive at `https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs` works the same way: same layout, your handle and chain id in the path. It holds an object once the network verified that input.
 
 Each object is a bincode-encoded record holding the ciphertext bytes and its metadata. The metadata carries the handle, the proof it belongs to, the submitting account, the security zone, the chain, the index within the proof, and the type. Take the ciphertext bytes out of that record. They are the same `safe_serialize` of a compressed value as everything else, so `keccak256` over them reproduces the commitment you read from `InputVerified`. Check that before going further.
 
