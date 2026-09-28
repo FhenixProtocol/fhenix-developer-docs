@@ -165,9 +165,7 @@ cofhe/v1/chain/{chainId}/security-zone/{zone}/verified-inputs/{shard}/{handle}
 cofhe/v1/chain/{chainId}/security-zone/{zone}/verification-proofs/{shard}/{proofId}
 ```
 
-The handle is written without its `0x` prefix, and `{shard}` is its first four characters. For the verified input above, on Arbitrum Sepolia in zone 0, the path is `cofhe/v1/chain/421614/security-zone/0/verified-inputs/1b2c/1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed350500`.
-
-Fetch an object anonymously by appending its path to the archive base URL. Use your own handle from step 1; the archive holds an object only after the network verified that input.
+The handle is written without its `0x` prefix, and `{shard}` is its first four characters: a handle starting `1b2c` sits in the `1b2c` directory. Fetch an object anonymously by appending its path to the archive base URL. Use your own handle from step 1; the archive holds an object only after the network verified that input.
 
 ```bash
 ARCHIVE=https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs
