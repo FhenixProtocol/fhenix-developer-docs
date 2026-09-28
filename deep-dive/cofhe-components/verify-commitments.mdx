@@ -165,14 +165,15 @@ cofhe/v1/chain/{chainId}/security-zone/{zone}/verified-inputs/{shard}/{handle}
 cofhe/v1/chain/{chainId}/security-zone/{zone}/verification-proofs/{shard}/{proofId}
 ```
 
-The handle is written without its `0x` prefix, and `{shard}` is its first four characters. Fetch an object anonymously: append its path to the archive base URL, with your handle and chain id from step 1. The archive holds an object once the network verified that input.
-
-The verified input above lives on testnet, and the public testnet archive works the same way. This command fetches it, runnable as is:
+The handle is written without its `0x` prefix, and `{shard}` is its first four characters. Fetch an object anonymously: append its path to the archive base URL, with your handle and chain id from step 1. The archive holds an object once the network verified that input. The `-f` flag makes a missing object fail loudly instead of saving the error page.
 
 ```bash
-ARCHIVE=https://storage.googleapis.com/testnet-v2-inputs
+# Mainnet archive
+ARCHIVE=https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs
+curl -fsSO $ARCHIVE/cofhe/v1/chain/{chainId}/security-zone/{zone}/verified-inputs/{shard}/{handle}
 
-# -f fails loudly when the object does not exist, instead of saving the error page.
+# The verified input above lives on testnet; this fetch runs as is.
+ARCHIVE=https://storage.googleapis.com/testnet-v2-inputs
 curl -fsSO $ARCHIVE/cofhe/v1/chain/421614/security-zone/0/verified-inputs/1b2c/1b2cd55ff9b0cbef294dfdc4cfb80ea6450bf0a272e45f9b3715a27bed350500
 ```
 
