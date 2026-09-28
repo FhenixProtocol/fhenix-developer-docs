@@ -55,13 +55,7 @@ FHE_IMPORT = 'import "@fhenixprotocol/cofhe-contracts/FHE.sol";'
 # Pages whose Solidity samples are known broken. CI skips them so unrelated
 # pull requests stay green until the sample is fixed. Every entry needs a
 # reason and should be removed when the page is repaired.
-SKIP_PAGES: dict[str, str] = {
-    "fhe-library/core-concepts/decryption-operations.mdx": (
-        "block 5 calls FHE.publishDecryptResultBatch(uint256[], uint256[], bytes[]); "
-        "library FHE in cofhe-contracts 0.2.0 only has typed-array overloads "
-        "(ebool[] ... eaddress[]) - the uint256[] overload is in library Impl"
-    ),
-}
+SKIP_PAGES: dict[str, str] = {}
 
 # Error codes tolerated in WRAPPED fragments only: the fragment references
 # names the page declares outside the block, so they cannot resolve here.
