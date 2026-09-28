@@ -418,7 +418,7 @@ function onConfidentialTransferReceived(
     bytes calldata data
 ) external override returns (ebool) {
     // ✅ Simple logic is fine
-    stakedBalances[from] += amount;
+    stakedBalances[from] = FHE.add(stakedBalances[from], amount);
 
     // ❌ Avoid complex operations
     // for (uint i = 0; i < 1000; i++) { ... }

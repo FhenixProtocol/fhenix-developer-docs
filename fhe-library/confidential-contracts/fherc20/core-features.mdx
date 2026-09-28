@@ -247,7 +247,7 @@ function confidentialBalanceOf(address account)
 ```solidity In Smart Contract
 // Use in FHE operations
 euint64 balance = token.confidentialBalanceOf(user);
-euint64 doubled = balance + balance;
+euint64 doubled = FHE.add(balance, balance);
 ```
 
 ```typescript Offchain (with @cofhe/sdk)
