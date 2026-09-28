@@ -252,7 +252,7 @@ contract StakingPool is IERC7984Receiver {
         }
 
         // Update staked balance
-        stakedBalances[from] = stakedBalances[from] + amount;
+        stakedBalances[from] = FHE.add(stakedBalances[from], amount);
 
         // Grant access to the balance
         FHE.allowThis(stakedBalances[from]);
