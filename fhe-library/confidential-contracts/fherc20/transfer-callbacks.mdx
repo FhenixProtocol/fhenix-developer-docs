@@ -193,6 +193,9 @@ contract BasicReceiver is IERC7984Receiver {
 Accept transfers only under certain conditions:
 
 ```solidity
+import "fhenix-confidential-contracts/contracts/interfaces/IERC7984Receiver.sol";
+import "@fhenixprotocol/cofhe-contracts/FHE.sol";
+
 contract ConditionalReceiver is IERC7984Receiver {
     address public immutable trustedToken;
     mapping(address => bool) public approvedSenders;
@@ -232,6 +235,10 @@ contract ConditionalReceiver is IERC7984Receiver {
 Execute logic upon receiving tokens:
 
 ```solidity
+import "fhenix-confidential-contracts/contracts/interfaces/IERC7984Receiver.sol";
+import "fhenix-confidential-contracts/contracts/interfaces/IFHERC20.sol";
+import "@fhenixprotocol/cofhe-contracts/FHE.sol";
+
 contract StakingPool is IERC7984Receiver {
     IFHERC20 public immutable stakingToken;
     mapping(address => euint64) public stakedBalances;
@@ -252,7 +259,7 @@ contract StakingPool is IERC7984Receiver {
         }
 
         // Update staked balance
-        stakedBalances[from] = stakedBalances[from] + amount;
+        stakedBalances[from] = FHE.add(stakedBalances[from], amount);
 
         // Grant access to the balance
         FHE.allowThis(stakedBalances[from]);
@@ -418,7 +425,7 @@ function onConfidentialTransferReceived(
     bytes calldata data
 ) external override returns (ebool) {
     // ✅ Simple logic is fine
-    stakedBalances[from] += amount;
+    stakedBalances[from] = FHE.add(stakedBalances[from], amount);
 
     // ❌ Avoid complex operations
     // for (uint i = 0; i < 1000; i++) { ... }

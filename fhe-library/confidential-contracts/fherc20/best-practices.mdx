@@ -257,7 +257,7 @@ function dangerousReceiver(
 - User directly approves via wallet transaction
 - Simple onchain permission grants
 
-```solidity
+```typescript
 // User directly approves DEX
 await token.connect(user).setOperator(
     dexAddress,
@@ -278,7 +278,7 @@ await dex.swap(tokenIn, tokenOut, amountIn);
 **Use operators when:**
 - Granting recurring permissions
 
-```solidity
+```typescript
 // Grant 30-day subscription access
 await token.setOperator(
     subscriptionContract,
