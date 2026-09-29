@@ -218,6 +218,7 @@
                   "fhe-library/reference/fhe-sol/bindings"
                 ]
               },
+              "fhe-library/reference/gas-costs",
               "fhe-library/reference/cofhe-errors",
               "fhe-library/reference/cofhe-errors-reference"
             ]

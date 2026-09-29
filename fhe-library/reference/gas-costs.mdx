@@ -1,0 +1,137 @@
+---
+title: "Gas per Operation"
+description: "Measured gas of every FHE.sol operation, and how batching changes the cost"
+---
+
+Every value is measured on the deployed contracts (Ethereum Sepolia and Arbitrum Sepolia, September 2026; both chains return the same values) and rounded to the nearest 100 gas. For what the gas pays for, see [gas costs and benchmarks](/fhe-library/core-concepts/gas-and-benchmarks).
+
+How to read the tables:
+
+- **First call** is the price when the operation is the first FHE call in the transaction, which touches the TaskManager and ACL contracts cold. **Later calls** is the price of every additional FHE call in the same transaction.
+- Each value is the highest across the supported types; the spread across types stays under 450 gas.
+- `X` stands for the encrypted type: `asEuint32`, `asEbool`, `shareEuint64`, and so on. The seven encrypted types are `ebool`, `euint8` through `euint128`, and `eaddress`; "All" means all seven.
+
+<Note>
+Arbitrum charges an extra L1 data fee for transaction calldata. An FHE operation inside a contract adds no calldata, so it adds nothing to that fee. Encrypted inputs do add calldata.
+</Note>
+
+## Arithmetic
+
+| Operation | First call | Later calls | Types |
+|---|---|---|---|
+| `add` | 51,600 | 31,600 | `euint8` to `euint128` |
+| `sub` | 51,500 | 31,500 | `euint8` to `euint128` |
+| `mul` | 52,600 | 32,600 | `euint8` to `euint128` |
+| `div` | 52,300 | 32,300 | `euint8` to `euint128` |
+| `rem` | 52,500 | 32,500 | `euint8` to `euint128` |
+| `square` | 48,900 | 28,800 | `euint8` to `euint128` |
+| `min` | 53,600 | 33,600 | `euint8` to `euint128` |
+| `max` | 53,800 | 33,700 | `euint8` to `euint128` |
+
+## Comparison
+
+| Operation | First call | Later calls | Types |
+|---|---|---|---|
+| `eq` | 52,700 | 32,700 | All |
+| `ne` | 53,000 | 33,000 | All |
+| `lt` | 53,000 | 33,000 | `euint8` to `euint128` |
+| `lte` | 52,800 | 32,800 | `euint8` to `euint128` |
+| `gt` | 53,300 | 33,300 | `euint8` to `euint128` |
+| `gte` | 52,800 | 32,800 | `euint8` to `euint128` |
+
+## Bitwise and shift
+
+| Operation | First call | Later calls | Types |
+|---|---|---|---|
+| `and` | 51,700 | 31,700 | `ebool`, `euint8` to `euint128` |
+| `or` | 51,900 | 31,900 | `ebool`, `euint8` to `euint128` |
+| `xor` | 51,500 | 31,500 | `ebool`, `euint8` to `euint128` |
+| `not` | 45,700 | 25,700 | `ebool`, `euint8` to `euint128` |
+| `shl` | 52,800 | 32,700 | `euint8` to `euint128` |
+| `shr` | 52,900 | 32,900 | `euint8` to `euint128` |
+| `rol` | 54,500 | 34,400 | `euint8` to `euint128` |
+| `ror` | 54,600 | 34,600 | `euint8` to `euint128` |
+
+## Select
+
+| Operation | First call | Later calls | Types |
+|---|---|---|---|
+| `select` | 55,900 | 35,900 | All |
+
+## Encrypt: create a ciphertext
+
+| Operation | First call | Later calls | Types |
+|---|---|---|---|
+| [Trivial encrypt](/fhe-library/core-concepts/trivial-encryption) `asX(plaintext)` | 45,400 | 25,300 | All |
+| Encrypted input `asX(InEuintX)` | 39,800 | 17,800 | All |
+| Encrypted input from bytes `asX(bytes)` | 40,400 | 18,400 | All |
+| Random `randomX()` | 40,900 | 16,100 | `euint8` to `euint128` |
+
+## Cast between encrypted types
+
+| Operation | First call | Later calls | Types |
+|---|---|---|---|
+| Cast `asX(eY)`, target not `ebool` | 45,900 | 25,800 | Any to `euint8` to `euint128` |
+| Cast to `ebool`, `asEbool(eY)` | 75,800 | 51,800 | Numeric types and `eaddress` to `ebool` |
+
+A cast to `ebool` costs more because `FHE.sol` implements it as `ne(value, asX(0))`: two TaskManager tasks instead of one.
+
+## Access control
+
+All access-control operations support all seven types and cost the same for each. The two `is*` functions are `view`; they cost gas only when a contract calls them inside a transaction.
+
+| Operation | First call | Later calls |
+|---|---|---|
+| `allow` | 44,700 | 28,700 |
+| `allowThis` | 26,300 | 26,300 |
+| `allowSender` | 44,700 | 28,700 |
+| <code style={{ whiteSpace: "nowrap" }}>allowTransient</code> | 23,000 | 7,000 |
+| `allowGlobal` | 44,100 | 28,100 |
+| `allowPublic` | 44,100 | 28,100 |
+| `isAllowed` | 22,200 | 6,200 |
+| <code style={{ whiteSpace: "nowrap" }}>isPubliclyAllowed</code> | 21,900 | 5,900 |
+
+`allowThis` shows one price because your contract calls it on a result it computed earlier in the same transaction, so the TaskManager is already warm. `isAllowed` is measured on a handle the account can access, which returns early; a denied check reads more storage and costs more.
+
+## Sharing
+
+A receive always follows a share in the same transaction, so it never pays a cold price.
+
+| Operation | First call | Later calls |
+|---|---|---|
+| `shareX` | 25,900 | 7,900 |
+| <code style={{ whiteSpace: "nowrap" }}>receiveXParam</code> | 6,300 | 6,300 |
+| <code style={{ whiteSpace: "nowrap" }}>receiveXFromCall</code> | 6,300 | 6,300 |
+
+## Decryption results
+
+The four `verify*` and `get*` functions are `view`; they cost gas only when a contract calls them inside a transaction.
+
+| Operation | First call | Later calls |
+|---|---|---|
+| <code style={{ whiteSpace: "nowrap" }}>publishDecryptResult</code> | 71,400 | 53,400 |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResult</code> | 15,100 | 6,100 |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResultSafe</code> | 15,700 | 6,700 |
+| <code style={{ whiteSpace: "nowrap" }}>getDecryptResult</code> | 24,300 | 8,300 |
+| <code style={{ whiteSpace: "nowrap" }}>getDecryptResultSafe</code> | 23,200 | 7,200 |
+
+`publishDecryptResult` is measured with a non-zero result. A zero result, for example `false` or an amount of 0, leaves one storage slot at zero and costs less.
+
+## Batching
+
+One signature can cover many encrypted inputs, and one call can publish many decryption results. Inputs amortize well; published results do not, because each result writes its own storage.
+
+Batch encrypted inputs, `asEuint32s` with one signature:
+
+| Inputs in the batch | 1 | 2 | 4 | 8 |
+|---|---|---|---|---|
+| Total gas | 39,600 | 45,400 | 56,900 | 79,900 |
+| Gas per input | 39,600 | 22,700 | 14,200 | 10,000 |
+
+Batch decryption results, `euint32`:
+
+| Results in the batch | 1 | 2 | 4 | 8 |
+|---|---|---|---|---|
+| <code style={{ whiteSpace: "nowrap" }}>publishDecryptResultBatch</code> | 75,100 | 128,700 | 235,800 | 450,100 |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResultBatch</code> | 18,800 | 24,300 | 35,500 | 57,800 |
+| <code style={{ whiteSpace: "nowrap" }}>verifyDecryptResultBatchSafe</code> | 19,500 | 25,400 | 37,100 | 60,700 |
