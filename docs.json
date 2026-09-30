@@ -47,12 +47,6 @@
             ]
           },
           {
-            "group": "Builder Support",
-            "pages": [
-              "get-started/builder-support/get-funded"
-            ]
-          },
-          {
             "group": "Build with AI",
             "pages": [
               "get-started/build-with-ai/build-with-ai",
@@ -310,6 +304,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/get-started/builder-support/get-funded",
+      "destination": "/get-started/introduction/support-and-feedback"
+    },
     {
       "source": "/docs/devdocs/overview",
       "destination": "/"
