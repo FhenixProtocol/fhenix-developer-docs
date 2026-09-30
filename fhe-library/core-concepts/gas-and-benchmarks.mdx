@@ -1,15 +1,24 @@
 ---
 title: "Gas Costs and Benchmarks"
-description: "What FHE operations cost in gas, and where to find operation latency benchmarks"
+description: "The gas an FHE operation and a confidential transfer take, and where to find operation latency benchmarks"
 ---
 
-An FHE operation splits its cost in two. Your contract pays gas onchain to request the operation. The encrypted math itself runs offchain in the [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) and costs no gas.
+An FHE operation costs gas onchain to request it. The encrypted math itself runs offchain in the [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) and costs no gas.
 
-## Gas costs
+## Gas per confidential transfer
 
-A call like `FHE.add` records a task through the TaskManager and returns a handle for the result. The gas covers that request and the access-control bookkeeping, not the FHE computation.
+Whole transactions on the reference [FHERC20](/fhe-library/confidential-contracts/fherc20/overview) token, with an encrypted input amount where the call takes one:
 
-We are measuring the gas of every FHE operation per encrypted type. This page gets the full table when the measurements land.
+| Action | Gas |
+|---|---|
+| `confidentialTransfer` to an existing holder | 421,500 |
+| `confidentialTransfer` to a new holder | 474,400 |
+| <code style={{ whiteSpace: "nowrap" }}>confidentialTransferFrom</code> by an operator | 424,800 |
+| `setOperator`, a one-time approval | 46,700 |
+
+## Gas per operation
+
+The [gas per operation reference](/fhe-library/reference/gas-costs) lists the expected gas of every `FHE.sol` operation. Most operations take 40,000 to 55,000 gas as the first FHE call in a transaction, and about 20,000 less as a later call.
 
 ## Performance benchmarks
 
