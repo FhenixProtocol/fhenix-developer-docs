@@ -65,9 +65,9 @@ These values remain encrypted throughout the entire auction, preventing anyone f
 When a new bid comes in, the contract uses encrypted operations to update the highest bid:
 
 ```solidity
-euint64 emount = FHE.asEuint64(amount);           // Encrypt the bid
-ebool isHigher = FHE.gt(emount, highestBid);      // Compare encrypted values
-highestBid = FHE.max(emount, highestBid);         // Take the maximum
+euint64 eAmount = FHE.asEuint64(amount);           // Encrypt the bid
+ebool isHigher = FHE.gt(eAmount, highestBid);      // Compare encrypted values
+highestBid = FHE.max(eAmount, highestBid);         // Take the maximum
 highestBidder = FHE.select(isHigher, newBidder, currentBidder);  // Update bidder
 ```
 
@@ -136,12 +136,12 @@ contract AuctionExample {
         FHE.allowThis(highestBidder);
     }
 
-    function bid(uint256 amount) external {
+    function bid(uint64 amount) external {
         require(!auctionClosed, "Auction is closed");
 
-        euint64 emount = FHE.asEuint64(amount);
-        ebool isHigher = FHE.gt(emount, highestBid);
-        highestBid = FHE.max(emount, highestBid);
+        euint64 eAmount = FHE.asEuint64(amount);
+        ebool isHigher = FHE.gt(eAmount, highestBid);
+        highestBid = FHE.max(eAmount, highestBid);
         highestBidder = FHE.select(
             isHigher,
             FHE.asEaddress(msg.sender), // Encrypt the sender's address
@@ -217,17 +217,17 @@ The `FHE.allowThis()` calls are crucial - they grant the contract permission to 
 The `bid()` function handles incoming bids:
 
 ```solidity
-function bid(uint256 amount) external {
+function bid(uint64 amount) external {
     require(!auctionClosed, "Auction is closed");
 
     // 1. Encrypt the bid amount
-    euint64 emount = FHE.asEuint64(amount);
+    euint64 eAmount = FHE.asEuint64(amount);
 
     // 2. Check if this bid is higher (encrypted comparison)
-    ebool isHigher = FHE.gt(emount, highestBid);
+    ebool isHigher = FHE.gt(eAmount, highestBid);
 
     // 3. Update highest bid using max
-    highestBid = FHE.max(emount, highestBid);
+    highestBid = FHE.max(eAmount, highestBid);
 
     // 4. Update highest bidder using select
     highestBidder = FHE.select(
