@@ -1,73 +1,101 @@
 ---
 title: Mock Contracts
-description: "Inspect plaintext and call mock CoFHE contracts in Hardhat 3 tests"
+description: "Read plaintext values and call the CoFHE mock contracts in Hardhat 3 tests"
 ---
 
-`conn.cofhe.mocks` exposes Viem contract descriptors for every deployed mock contract and helpers for reading the on-chain plaintext that the mock task manager stores. None of this requires the SDK client — the mocks are reachable from any Viem `publicClient` / `walletClient`.
+The plugin deploys mock versions of the CoFHE contracts on every simulated chain. The mocks compute FHE operations onchain and keep each result's plaintext in storage, so a test can read any encrypted value without the offchain services.
 
-## Contract descriptors
+## What the mocks deploy
 
-Each mock is exposed as a synchronous `{ address, abi }` object — spread it directly into Viem's `readContract` / `writeContract`:
+| Contract | Address | Role |
+| --- | --- | --- |
+| `MockTaskManager` | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9` | Runs FHE operations and stores each result's plaintext |
+| `MockACL` | Assigned at deployment | Access control for encrypted handles |
+| `ACPTimestampRevoker` | Assigned at deployment | Default revoker for ACPs |
+| `ACPShareRegistry` | Assigned at deployment | Onchain hand-off for shared ACPs |
+| `MockZkVerifier` | `0x0000000000000000000000000000000000005001` | Verifies encrypted inputs |
+| `MockThresholdNetwork` | `0x0000000000000000000000000000000000005002` | Answers decryption requests |
+
+The plugin writes the fixed-address contracts' bytecode directly with `hardhat_setCode`. It deploys `MockACL` and the two ACP contracts as normal transactions, because they need their constructors to run.
+
+The SDK detects the mocks by checking for code at the `MockZkVerifier` address. When it finds them, it skips ZK proof generation and lets the mocks verify inputs.
+
+## Call a mock directly
+
+`cofhe.mocks` exposes four of the mocks as viem `{ address, abi }` descriptors. Spread one into `readContract` or `writeContract`:
 
 ```typescript
-cofhe.mocks.MockTaskManager;      // { address: '0x...', abi: [...] }
-cofhe.mocks.MockACL;              // { address: '0x...', abi: [...] }
-cofhe.mocks.MockZkVerifier;       // { address: '0x...', abi: [...] }
-cofhe.mocks.MockThresholdNetwork; // { address: '0x...', abi: [...] }
-cofhe.mocks.TestBed;              // { address: '0x...', abi: [...] }
-```
+import { network } from 'hardhat';
 
-### Calling a mock directly
+const { viem, cofhe } = await network.create();
+const publicClient = await viem.getPublicClient();
 
-```typescript
-const ctHash = await publicClient.readContract({
-  ...cofhe.mocks.TestBed,
-  functionName: 'numberHash',
-});
-
-await walletClient.writeContract({
+const aclAddress = await publicClient.readContract({
   ...cofhe.mocks.MockTaskManager,
-  functionName: 'setSecurityZones',
-  args: [0, 1],
+  functionName: 'acl',
 });
 ```
 
-This is the lowest-friction way to assert mock state without going through the SDK.
+| Descriptor | Contract |
+| --- | --- |
+| `cofhe.mocks.MockTaskManager` | `MockTaskManager` |
+| `cofhe.mocks.MockACL` | `MockACL` |
+| `cofhe.mocks.MockZkVerifier` | `MockZkVerifier` |
+| `cofhe.mocks.MockThresholdNetwork` | `MockThresholdNetwork` |
 
-## Reading plaintext values
+The ABIs are typed, so viem checks `functionName` and `args` at compile time.
 
-Because `MockTaskManager` stores plaintext values on-chain, you can read the underlying plaintext of any encrypted handle directly in tests — no permit needed.
+## Read plaintext values
+
+Because `MockTaskManager` stores plaintexts, you can assert on encrypted state without an ACP or a decryption request. Both helpers accept the handle as a hex string, which is what viem returns for an `euint32` getter, or as a `bigint`.
 
 ### `getPlaintext(ctHash)`
 
-Returns the plaintext `bigint` for a given ciphertext hash. Accepts either a `bigint` or a hex `string`.
+Returns the stored plaintext as a `bigint`:
 
 ```typescript
-const plaintext = await cofhe.mocks.getPlaintext(ctHash);
+const counter = await viem.deployContract('Counter');
+await counter.write.increment();
+
+const count = await cofhe.mocks.getPlaintext(await counter.read.count());
+// count === 1n
 ```
 
-### `expectPlaintext(ctHash, expected)`
+`getPlaintext` returns `0n` for a handle that has no stored value, so a typo in the handle reads as zero.
 
-Assertion shorthand — throws if the on-chain plaintext doesn't match `expected`:
+### `expectPlaintext(ctHash, expectedValue)`
+
+Throws when the stored plaintext differs from `expectedValue`, or when the handle has no stored value:
 
 ```typescript
-await cofhe.mocks.expectPlaintext(ctHash, 42n);
+await cofhe.mocks.expectPlaintext(await counter.read.count(), 1n);
+```
+
+A mismatch throws an `Error` whose message names both values:
+
+```text
+mock_expectPlaintext: expected 2, got 1 for ctHash 0xf4b9...0400
 ```
 
 <Warning>
-`getPlaintext` and `expectPlaintext` only work on the in-process Hardhat network where `MockTaskManager.mockStorage` exists. They will throw on real CoFHE networks.
+On a network without the mocks, `getPlaintext` throws, but `expectPlaintext` prints a message and returns without asserting anything. A test that relies on `expectPlaintext` passes silently against a testnet.
 </Warning>
 
-## Re-deploying mocks mid-test
+## Redeploy the mocks
 
-Normally you don't need this — mocks are deployed automatically on every `network.connect()`. For advanced scenarios where you want to reset mock state inside a single test:
+`cofhe.mocks.deployMocks(options?)` runs the deployment again on the current chain:
 
 ```typescript
-await cofhe.mocks.deployMocks({ deployTestBed: true, silent: true });
+await cofhe.mocks.deployMocks({ gasWarning: false, mocksDeployVerbosity: '' });
 ```
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `deployTestBed` | `boolean` | `true` | Whether to deploy the `TestBed` utility contract. |
-| `gasWarning` | `boolean` | inherits from config | Print the gas-warning line after deployment. |
-| `silent` | `boolean` | `false` | Suppress all deployment output (overrides `mocksDeployVerbosity`). |
+| Option | Type | Default |
+| --- | --- | --- |
+| `gasWarning` | `boolean` | `true` |
+| `mocksDeployVerbosity` | `'' \| 'v' \| 'vv'` | `'v'` |
+
+These defaults apply to the call itself. `deployMocks` does not read the `cofhe` block of your Hardhat config, so a bare call prints the gas warning even when the config turns it off.
+
+<Warning>
+A redeploy is not a reset. It deploys a new `MockACL` and points `MockTaskManager` at it, but `cofhe.mocks.MockACL` keeps the old address, and handles created before the redeploy lose their permissions. The next FHE operation on one of those handles reverts with `ACLNotAllowed` (selector `0x4d13139e`). For a clean state, open a new connection with `network.create()` instead.
+</Warning>
