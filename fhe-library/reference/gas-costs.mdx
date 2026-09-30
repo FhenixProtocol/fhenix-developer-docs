@@ -3,7 +3,11 @@ title: "Gas per Operation"
 description: "The expected gas of every FHE.sol operation"
 ---
 
-Every value is measured on the deployed contracts and rounded to the nearest 100 gas. The values are for the first FHE call in a transaction; every later FHE call in the same transaction costs about 20,000 gas less.
+Every value is measured on the deployed contracts and rounded to the nearest 100 gas.
+
+<Note>
+**The values are for the first FHE call in a transaction. Every later FHE call in the same transaction costs about 20,000 gas less.**
+</Note>
 
 `X` stands for the encrypted type: `asEuint32`, `asEbool`, `shareEuint64`, and so on. The seven encrypted types are `ebool`, `euint8` through `euint128`, and `eaddress`; "All" means all seven. The type barely changes the price, so each value is the highest across the supported types.
 
