@@ -1,27 +1,17 @@
 ---
 title: "Gas Costs and Benchmarks"
-description: "What FHE operations cost in gas, what a confidential transfer costs, and where to find operation latency benchmarks"
+description: "The gas an FHE operation and a confidential transfer take, and where to find operation latency benchmarks"
 ---
 
-An FHE operation splits its cost in two. Your contract pays gas onchain to request the operation. The encrypted math itself runs offchain in the [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) and costs no gas, so the gas covers the request and the access-control bookkeeping, not the FHE computation.
+An FHE operation costs gas onchain to request it. The encrypted math itself runs offchain in the [compute pipeline](/deep-dive/cofhe-components/compute-pipeline) and costs no gas.
 
-## Typical costs
+## Gas per operation
 
-The first FHE call in a transaction touches the TaskManager and ACL contracts cold and costs about 20,000 gas more than every later FHE call in the same transaction. The encrypted type barely changes the price.
+The [gas per operation reference](/fhe-library/reference/gas-costs) lists the expected gas of every `FHE.sol` operation. Most operations take 40,000 to 55,000 gas as the first FHE call in a transaction, and about 20,000 less as a later call.
 
-| Operation | First call | Later calls |
-|---|---|---|
-| `add`, and most math and comparisons | 51,600 | 31,600 |
-| `select` | 55,900 | 35,900 |
-| Encrypted input `asEuintX(InEuintX)` | 39,800 | 17,800 |
-| `allow` | 44,700 | 28,700 |
-| <code style={{ whiteSpace: "nowrap" }}>publishDecryptResult</code> | 71,400 | 53,400 |
+## Gas per confidential transfer
 
-The [gas per operation reference](/fhe-library/reference/gas-costs) lists every operation and how batching changes the cost.
-
-## What a confidential token transfer costs
-
-Single operations do not tell you what a user pays. This table shows whole transactions on the reference [FHERC20](/fhe-library/confidential-contracts/fherc20/overview) token, with an encrypted input amount where the call takes one. The gas includes the 21,000 transaction base and the calldata.
+Whole transactions on the reference [FHERC20](/fhe-library/confidential-contracts/fherc20/overview) token, with an encrypted input amount where the call takes one:
 
 | Action | Gas |
 |---|---|
@@ -29,10 +19,6 @@ Single operations do not tell you what a user pays. This table shows whole trans
 | `confidentialTransfer` to a new holder | 474,400 |
 | <code style={{ whiteSpace: "nowrap" }}>confidentialTransferFrom</code> by an operator | 424,800 |
 | `setOperator`, a one-time approval | 46,700 |
-| Baseline: plain ERC20 `transfer` to an existing holder | 34,500 |
-| Baseline: plain ERC20 `transfer` to a new holder | 51,600 |
-
-A transfer to a new holder pays for one extra FHE task, the encrypted zero it adds to, and for fresh storage slots. A plain ERC20 shows the same storage effect.
 
 ## Performance benchmarks
 
