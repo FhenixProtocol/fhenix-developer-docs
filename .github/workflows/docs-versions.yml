@@ -5,6 +5,7 @@ on:
     paths:
       - '**/*.mdx'
       - 'scripts/check-versions.py'
+      - '.github/workflows/sample-compile.yml'
   # Weekly, so a release upstream surfaces as an issue rather than waiting for
   # someone to notice a stale install command.
   schedule:
@@ -70,7 +71,8 @@ jobs:
               '',
               'Update `get-started/introduction/compatibility.mdx`, then run',
               '`python3 scripts/check-versions.py --docs` to find every pin that',
-              'needs to move with it.',
+              'needs to move with it, including the package pins in',
+              '`.github/workflows/sample-compile.yml`.',
             ].join('\n');
 
             const title = 'Docs versions are behind npm';

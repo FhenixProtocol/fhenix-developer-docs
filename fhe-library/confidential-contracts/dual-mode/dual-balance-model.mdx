@@ -1,272 +1,76 @@
 ---
-title: "The Dual-Balance Model"
-description: "How ERC20Confidential maintains a real public balance and an encrypted balance backed by a single pool"
+title: "How the two balances relate"
+description: "The pool that backs ERC20Confidential's encrypted balances, how total supply is counted, and the indicator token"
 ---
 
-## Overview
+Every confidential token on an `ERC20Confidential` contract is backed by public tokens that the contract holds aside. This page explains where those tokens sit, what each supply function counts, and what the indicator token shows. Read it before you build accounting or analytics on top of the token.
 
-The defining feature of `ERC20Confidential` is that **every holder owns two balances simultaneously** inside one contract: a public ERC-20 balance and a confidential (FHE-encrypted) balance. This page explains how those two layers are stored, how they stay backed 1:1, and how the encrypted bookkeeping engine (`_confidentialUpdate`) drives every confidential mutation.
+## Where the backing tokens sit
 
----
+Public tokens backing confidential balances sit in the public balance of a fixed address, `CONFIDENTIAL_POOL`:
 
-## The Two Layers
-
-```solidity
-abstract contract ERC20Confidential is ERC20, ERC165, IERC20Confidential, FHERC20WrapperClaimHelper {
-    address public constant CONFIDENTIAL_POOL = address(0x1011000000000000000000000000000000000000);
-
-    mapping(address => euint64) private _confidentialBalances;               // confidential layer
-    mapping(address => mapping(address => uint48)) private _operators;       // confidential operators
-
-    ERC20ConfidentialIndicator public immutable indicatorToken;             // display sidecar
-
-    uint8 private immutable _decimals;
-    uint8 private immutable _confidentialDecimals;
-    uint256 private immutable _conversionRate;
-}
+```text
+0x1011000000000000000000000000000000000000
 ```
 
-<CardGroup cols={2}>
-<Card title="Public Layer" icon="eye">
-**Inherited from OpenZeppelin `ERC20`**
+The contract moves tokens in and out of it with internal transfers:
 
-Transparent balances tracked in the standard `_balances` mapping. `balanceOf`, `transfer`, `approve`, `transferFrom`, and `totalSupply` behave like any ERC-20. Fully visible onchain.
-</Card>
+| Operation | Public balance | Pool | Confidential balance |
+| --- | --- | --- | --- |
+| `shield(amount)` | Caller's balance decreases | Increases | Caller's balance increases by `amount / rate` |
+| `unshield(amount)` | No change | No change | Caller's balance decreases, a claim opens |
+| `claimUnshielded(...)` | Recipient's balance increases | Decreases | No change |
+| `_confidentialMint(to, amount)` | No change | Increases by newly minted tokens | `to`'s balance increases |
 
-<Card title="Confidential Layer" icon="lock">
-**`mapping(address => euint64) _confidentialBalances`**
+`unshield` leaves the pool alone. The pool keeps custody of the tokens until the claim settles, so a pending claim is still backed.
 
-Encrypted balances stored as `euint64` handles. Readable only by the holder (via an ACL grant and an [Access Control Permission](/client-sdk/guides/acps), or ACP) and the contract. Operated on entirely under FHE.
-</Card>
-</CardGroup>
+Because the pool is an ordinary address, anyone can send public tokens to it with `transfer`. Those tokens back no confidential balance, and the token has no function that returns them.
 
-Because `ERC20Confidential` inherits the **real** OpenZeppelin `ERC20`, the public side is genuinely functional. This is the inversion of FHERC20, where those same functions revert.
+## What total supply counts
 
-```solidity
-/// @dev `false` because {balanceOf} returns the real public ERC-20 balance, not an indicator.
-function balanceOfIsIndicator() public pure virtual returns (bool) {
-    return false;
-}
+`totalSupply()` is the OpenZeppelin total of all public balances, and the pool is one of them. Shielding and unshielding move tokens between addresses, so they never change `totalSupply()`. Only public mints and burns change it, including the public mint inside `_confidentialMint`.
 
-/// @dev Always `0`: {balanceOf} is not an indicator on this token.
-function indicatorTick() public pure virtual returns (uint256) {
-    return 0;
-}
-```
+The confidential supply is the pool's balance converted to confidential units. The token exposes it two ways:
 
-<Note>
-On FHERC20, `balanceOfIsIndicator()` returns `true` and `balanceOf` returns a fake activity number. On `ERC20Confidential`, both signals declare the public balance **real**, and confidential-activity display is delegated to a separate [sidecar token](#the-indicator-sidecar-token).
-</Note>
+| Function | Returns | When it updates |
+| --- | --- | --- |
+| <code style={{ whiteSpace: "nowrap" }}>confidentialTotalSupplyPlaintext</code> | `uint256`, the pool's balance divided by the rate | On every read, so it is always current |
+| <code style={{ whiteSpace: "nowrap" }}>confidentialTotalSupply</code> | `euint64` handle that anyone can decrypt | On `shield`, `claimUnshielded`, `_confidentialMint`, and `syncConfidentialTotalSupply` |
 
----
+The confidential supply is not secret: anyone can compute it from the pool's public balance. `confidentialTotalSupply` exists for contracts that need the value as a ciphertext for FHE operations. The handle is the zero handle until the first shield, claim, or confidential mint.
 
-## The Confidential Pool
+A transfer straight into the pool raises `confidentialTotalSupplyPlaintext` immediately but leaves the stored handle stale. Anyone can refresh it by calling `syncConfidentialTotalSupply()`.
 
-`CONFIDENTIAL_POOL` is a fixed sentinel address (`0x1011...0000`) that **custodies the public tokens backing every confidential balance**. It is the linchpin of the dual-balance model.
+The stored value saturates at `type(uint64).max` rather than reverting, so a large transfer into the pool cannot block `shield` or claims.
 
-<Steps>
-<Step title="Shielding deposits into the pool">
-When you `shield`, your public tokens are transferred to `CONFIDENTIAL_POOL` and an equal encrypted amount is credited to your confidential balance.
-</Step>
+## The indicator token
 
-<Step title="The pool holds the backing">
-At any moment, the public balance sitting at `CONFIDENTIAL_POOL` equals the total value of all confidential balances (scaled by the conversion rate).
-</Step>
+The `ERC20Confidential` constructor deploys a second contract, `ERC20ConfidentialIndicator`, and records it as `indicatorToken()`. Wallets and block explorers that only understand ERC-20 can track it to see that confidential activity happened, without seeing amounts.
 
-<Step title="Claiming withdraws from the pool">
-When you unshield and claim, public tokens are transferred out of `CONFIDENTIAL_POOL` back to you.
-</Step>
-</Steps>
+| Property | Value |
+| --- | --- |
+| `name()` | `"1011000 "` followed by the token's name, for example `1011000 Dual Token` |
+| `symbol()` | `"c"` followed by the token's symbol, for example `cDUAL` |
+| `decimals()` | `4` |
+| `balanceOf(account)` | `1011000.0000` before any confidential activity |
 
-This backing invariant is why `confidentialTotalSupply()` can be derived directly from the pool's public balance:
+Each confidential move updates the indicator for both parties. The first move into an account sets its indicator to `1011000.5001`, and each later one adds `0.0001`, up to `1011000.9999`. The first move out sets it to `1011000.4999`, and each later one subtracts `0.0001`, down to `1011000.0001`. The indicator also emits a `Transfer` event for each move, so the activity shows in transaction history.
 
-```solidity
-/// @dev Derived on read from CONFIDENTIAL_POOL's public balance, scaled to confidential decimals.
-/// The returned handle is not a registered ciphertext, so it is informational only and cannot
-/// be decrypted or used in FHE operations.
-function confidentialTotalSupply() public view virtual returns (euint64) {
-    return euint64.wrap(bytes32(balanceOf(CONFIDENTIAL_POOL) / _rate()));
-}
-```
+The indicator's `transfer`, `transferFrom`, `approve`, and `allowance` revert with `ERC20ConfidentialIndicatorNoOp`. Only the parent token can update it.
 
-<Warning>
-The `euint64` returned by `confidentialTotalSupply()` is **synthetic**, it wraps a plaintext number, not a registered ciphertext. It is for display/inspection only; you cannot decrypt it or feed it into FHE operations.
-</Warning>
+## Read both balances
 
----
+The public balance is a plain view call. The confidential balance is a handle, which the holder decrypts with an Access Control Permission (ACP) through [`decryptForView`](/client-sdk/guides/decrypt-to-view):
 
-## Conversion Rate and Decimals
-
-The public token may use any decimals; the confidential layer is capped at **6** to keep encrypted balances within `euint64`.
-
-```solidity
-_decimals = decimals_;
-_confidentialDecimals = decimals_ <= 6 ? decimals_ : 6;
-_conversionRate = decimals_ > 6 ? 10 ** (decimals_ - 6) : 1;
-```
-
-| Public decimals | `confidentialDecimals()` | `_rate()` | 1 confidential unit = |
-|-----------------|--------------------------|-----------|------------------------|
-| 18 | 6 | `10^12` | `10^12` public base units |
-| 8 | 6 | `10^2` | `100` public base units |
-| 6 | 6 | `1` | `1` public base unit (1:1) |
-| 4 | 4 | `1` | `1` public base unit (1:1) |
-
-The rate governs both directions of the bridge:
-- **Shielding** rounds the public amount *down* to a whole multiple of the rate, then divides by the rate to get the confidential amount.
-- **Claiming** multiplies the decrypted confidential amount by the rate to compute the public payout.
-
-<Tip>
-Dust below one confidential unit cannot be shielded. `shield()` reverts with `AmountTooSmallForConfidentialPrecision` if the rounded amount is zero. See [Shield & Unshield](/fhe-library/confidential-contracts/dual-mode/shield-unshield).
-</Tip>
-
----
-
-## The Confidential Update Engine
-
-`_confidentialUpdate` is the encrypted analog of ERC-20's `_update`. Every confidential mutation (shield mint, confidential transfer, unshield burn) flows through it. Passing `address(0)` as `from` means *mint*; passing `address(0)` as `to` means *burn*.
-
-```solidity
-function _confidentialUpdate(
-    address from,
-    address to,
-    euint64 amount
-) internal virtual returns (euint64 transferred) {
-    ebool success;
-    euint64 ptr;
-
-    if (from != address(0)) {
-        euint64 fromBalance = _confidentialBalances[from];
-        // Underflow-safe encrypted subtraction: success is an encrypted bool
-        (success, ptr) = FHESafeMath.tryDecrease(fromBalance, amount);
-        FHE.allowThis(ptr);
-        FHE.allow(ptr, from);
-        _confidentialBalances[from] = ptr;
-    }
-
-    // If the sender had too little, transferred collapses to 0 — no revert, no leak
-    transferred = from != address(0) ? FHE.select(success, amount, FHE.asEuint64(0)) : amount;
-
-    if (to != address(0)) {
-        ptr = FHE.add(_confidentialBalances[to], transferred);
-        FHE.allowThis(ptr);
-        FHE.allow(ptr, to);
-        _confidentialBalances[to] = ptr;
-    }
-
-    if (from != address(0)) FHE.allow(transferred, from);
-    if (to != address(0)) FHE.allow(transferred, to);
-    FHE.allowThis(transferred);
-
-    indicatorToken.emitConfidentialTransfer(from, to); // nudge the display sidecar
-
-    emit ConfidentialTransfer(from, to, transferred);
-}
-```
-
-Key behaviors baked into this function:
-
-<AccordionGroup>
-<Accordion title="Zero-replacement on insufficient balance" icon="circle-xmark" defaultOpen>
-`FHESafeMath.tryDecrease` returns an encrypted `success` flag. If the sender's balance is too low, `FHE.select(success, amount, 0)` sets the transferred amount to **encrypted zero** instead of reverting.
-
-This is deliberate: reverting would leak whether the sender had enough balance. The trade-off is that transfers can silently move zero tokens, always work with the returned `transferred` handle, never the requested amount.
-</Accordion>
-
-<Accordion title="Fresh handle on every update" icon="rotate" defaultOpen>
-Each balance change stores a **new** `euint64` handle (`ptr`). Any `FHE.allow` you granted on a previous handle no longer applies to the new one. The engine re-grants `allowThis` + `allow(..., holder)` on every update so the contract and holder retain access.
-</Accordion>
-
-<Accordion title="Access control is granted inline" icon="key" defaultOpen>
-After each mutation the function grants:
-- `FHE.allowThis(...)` on the new balance and the transferred amount, so the contract can keep operating on them.
-- `FHE.allow(balance, holder)`: so the holder can decrypt their own balance.
-- `FHE.allow(transferred, from/to)`: so both parties can see what moved.
-
-Learn more in [Access Control](/fhe-library/core-concepts/access-control).
-</Accordion>
-</AccordionGroup>
-
----
-
-## The Indicator Sidecar Token
-
-On FHERC20 the token's own `balanceOf` doubles as a wallet "activity indicator." `ERC20Confidential` can't do that, its `balanceOf` is a real balance. Instead, the constructor deploys a **separate companion token**, `ERC20ConfidentialIndicator`, dedicated to showing confidential activity in wallets and explorers **without revealing real amounts**.
-
-```solidity
-constructor(address parentAddress, string memory parentName, string memory parentSymbol)
-    ERC20(string.concat("1011000 ", parentName), string.concat("c", parentSymbol))
-{
-    parent = parentAddress;
-}
-
-function decimals() public pure override returns (uint8) {
-    return 4;
-}
-
-function balanceOf(address account) public view override returns (uint256) {
-    return 10110000000 + _indicatedBalances[account];
-}
-```
-
-Characteristics of the sidecar:
-
-- **Name/symbol:** `"1011000 <ParentName>"` / `"c<PARENTSYMBOL>"` (e.g. `cMDT`), with **4 decimals**.
-- **Fake balances:** `balanceOf` returns `10110000000 + _indicatedBalances[account]`: a deliberately non-revealing number that changes with activity but encodes no real amount.
-- **Driven only by the parent:** `emitConfidentialTransfer(from, to)` is `onlyParent`. The parent calls it inside `_confidentialUpdate`, nudging a bounded internal counter and emitting a `Transfer(from, to, 10110000001)` so explorers register that *something* happened.
-- **Inert on its own:** `transfer`, `transferFrom`, `approve`, and `allowance` all revert with `ERC20ConfidentialIndicatorNoOp()`. You cannot move or approve the indicator token, it exists purely for display.
-
-```solidity
-function emitConfidentialTransfer(address from, address to) public onlyParent {
-    _incrementIndicatedBalance(to);
-    _decrementIndicatedBalance(from);
-    emit Transfer(from, to, 10110000001);
-}
-```
-
-<Note>
-The indicator's counter jitters within bounds (increment seeds at `5001`, capped at `9999`; decrement seeds at `4999`, floored at `1`). These numbers are intentionally meaningless, they signal activity, not balance. Access the deployed sidecar via the parent's public `indicatorToken` variable.
-</Note>
-
----
-
-## Reading Balances
-
-<CodeGroup>
-```solidity Public Balance (real)
-// Standard ERC-20 — returns the actual, visible balance
-uint256 pub = token.balanceOf(user);
-```
-
-```solidity Confidential Balance (handle)
-// Returns an encrypted euint64 handle, NOT the value
-euint64 handle = token.confidentialBalanceOf(user);
-```
-
-```typescript Decrypt Confidential (offchain)
+```typescript
 import { FheTypes } from '@cofhe/sdk';
 
-const handle = await token.confidentialBalanceOf(user.address);
+const publicBalance = await token.balanceOf(account);
 
-// Handle === 0 means "no confidential balance ever recorded", not "balance is zero"
-if (handle && handle !== 0n) {
-  const balance = await cofheClient
-    .decryptForView(handle, FheTypes.Uint64)
-    .withACP()
-    .execute();
-}
+const handle = await token.confidentialBalanceOf(account);
+const confidentialBalance = await client
+  .decryptForView(handle, FheTypes.Uint64)
+  .execute();
 ```
-</CodeGroup>
 
-<Warning>
-A confidential balance handle of `0` means the account has **never** held a confidential balance, not that the balance is zero. Always check before attempting to decrypt.
-</Warning>
-
----
-
-## Related Topics
-
-- Bridge value between layers in [Shield & Unshield](/fhe-library/confidential-contracts/dual-mode/shield-unshield)
-- Move confidential tokens in [Confidential Operations](/fhe-library/confidential-contracts/dual-mode/confidential-operations)
-- Understand the FHERC20 indicator design in [FHERC20 Core Features](/fhe-library/confidential-contracts/fherc20/core-features#the-indicator-system-in-detail)
-- Learn about [Access Control](/fhe-library/core-concepts/access-control) for FHE permissions
+`confidentialBalance` is in confidential units. Multiply it by the rate to compare it with the public balance.

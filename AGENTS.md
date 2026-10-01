@@ -8,7 +8,8 @@ STYLE.md is binding for all content. Read it before writing or editing any page.
 
 ## Facts
 
-- Never write a technical claim you have not verified against the current source of the relevant repo (cofhe, cofhesdk, teecryptor, zee-k-verifier) or the published packages. Docs drift is the failure mode this project exists to fix.
+- Never write a technical claim you have not verified against the current source of the relevant repo (cofhe, cofhesdk, teecryptor, zee-k-verifier, fhenix-confidential-contracts) or the published packages. Docs drift is the failure mode this project exists to fix.
+- For the confidential token contracts (FHERC20, ERC20Confidential, the wrappers), verify against the Solidity under `contracts/` at the tag matching the version on the compatibility page, or the published npm package. The repo README lags the code; do not take API shapes from it.
 - Current behavior and future plans never mix. Future work lives in `deep-dive/research/future-plans.mdx`, labeled as such.
 - The TEE (Teecryptor) is the current decryption architecture. The Threshold Network is a future plan only.
 - No internal names: hostnames, cloud project names, environment names, deployment bundle names, feature flags.
@@ -37,7 +38,18 @@ vale $FILES
 
 The `Docs style` action runs both on the `.mdx` files a pull request touches. Errors block the merge, warnings do not. Pages written before the linters existed still contain violations, so the action ignores files your branch did not touch. Fix a legacy page when you are already editing it, not in a sweep.
 
-Neither linter can tell whether a claim is true or whether a sample runs. Those stay your job.
+Neither linter can tell whether a claim is true. That stays your job.
+
+## Samples
+
+The `Sample compile` action compiles every ```solidity block on the pages a pull request touches, with forge, against the `@fhenixprotocol/cofhe-contracts` and `fhenix-confidential-contracts` versions pinned in `.github/workflows/sample-compile.yml`. A complete contract that fails blocks the merge; a fragment that fails only warns. Run it locally before opening a pull request:
+
+```bash
+npm install --no-save @fhenixprotocol/cofhe-contracts@0.2.0 fhenix-confidential-contracts@0.4.0
+python3 scripts/compile-samples.py $FILES
+```
+
+Those pins follow the compatibility page. When it changes, move them too; `python3 scripts/check-versions.py --docs` fails until you do. The action does not deploy or run anything, so a sample that compiles can still be wrong. Library linking, for example, only fails at deploy time.
 
 ## Workflow
 

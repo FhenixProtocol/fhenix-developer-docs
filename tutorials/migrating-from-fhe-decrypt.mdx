@@ -151,9 +151,13 @@ const value = await counter.get_counter_value();
 
 ---
 
-## Example 2: Token unshield (FHERC20Wrapper)
+## Example 2: Token unshield
 
 The unshield flow is where `FHE.decrypt` was most commonly used. It already followed a two-step pattern (unshield + claim), which maps naturally to the new flow.
+
+<Note>
+This example is a minimal wrapper written to show the migration. The FHERC20 wrappers in `fhenix-confidential-contracts` key claims by a claim ID rather than by the handle, because two unshields can produce the same handle. To use those contracts, follow [wrap ERC-20 tokens and ETH](/fhe-library/confidential-contracts/fherc20/fherc20-wrapper).
+</Note>
 
 <CodeGroup>
 ```solidity Before (FHE.decrypt)

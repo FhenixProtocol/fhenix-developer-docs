@@ -4,7 +4,8 @@
 The compatibility page is the single source of truth for package versions.
 This script asserts two things:
 
-  --docs   every version pinned anywhere in the docs matches that page
+  --docs   every version pinned anywhere in the docs matches that page, and so
+           do the package pins in the sample-compile workflow
   --npm    the compatibility page itself matches what is published on npm
 
 The two run separately on purpose. The docs check is offline and runs on every
@@ -35,6 +36,15 @@ PIN = r'(?<![\w/@-]){pkg}@([\^~]?)(\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?)'
 IGNORE = re.compile(r'<!--\s*versions:ignore\s*-->')
 
 SKIP_DIRS = ("cofhejs/",)
+
+# The sample-compile workflow installs these packages to compile the docs'
+# Solidity samples. Its pins must match the page, or CI compiles the samples
+# against a version the docs do not tell readers to install.
+WORKFLOW = Path(".github/workflows/sample-compile.yml")
+WORKFLOW_PINS = {
+    "COFHE_CONTRACTS_VERSION": "@fhenixprotocol/cofhe-contracts",
+    "CONFIDENTIAL_CONTRACTS_VERSION": "fhenix-confidential-contracts",
+}
 
 
 def truth_table(path: Path = TRUTH):
@@ -82,6 +92,19 @@ def scan(paths, versions):
     return problems
 
 
+def scan_workflow(versions):
+    problems = []
+    text = WORKFLOW.read_text(encoding="utf-8")
+    for var, pkg in WORKFLOW_PINS.items():
+        m = re.search(rf"^\s*{var}:\s*['\"]?([^\s'\"]+)", text, re.MULTILINE)
+        if not m:
+            problems.append((WORKFLOW, 0, f"{var} not found (it pins {pkg})"))
+        elif pkg in versions and m.group(1) != versions[pkg]:
+            n = text[: m.start(1)].count("\n") + 1
+            problems.append((WORKFLOW, n, f"{var} {m.group(1)} should be {versions[pkg]} ({pkg})"))
+    return problems
+
+
 def npm_latest(pkg):
     out = subprocess.run(
         ["npm", "view", pkg, "version"], capture_output=True, text=True, timeout=120
@@ -107,7 +130,7 @@ def main(argv):
     if mode_docs:
         paths = [Path(a) for a in args] or sorted(Path(".").rglob("*.mdx"))
         paths = [p for p in paths if p.suffix == ".mdx" and p.exists()]
-        problems = scan(paths, versions)
+        problems = scan(paths, versions) + scan_workflow(versions)
         for path, n, message in problems:
             print(f"{path}:{n}: error [version-drift] {message}")
         print(
