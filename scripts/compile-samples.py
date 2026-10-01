@@ -37,6 +37,11 @@ Toolchain:
 `@fhenixprotocol/cofhe-contracts` (plus its `@openzeppelin/contracts`
 dependency). The script looks for it in ./node_modules, or in the directory
 named by the COFHE_SAMPLES_NODE_MODULES environment variable.
+
+The confidential token samples import `fhenix-confidential-contracts`, which
+brings `@openzeppelin/contracts-upgradeable` with it. Install it next to
+cofhe-contracts to compile those samples. When it is missing, blocks that
+import it are skipped and the skip says why.
 """
 
 import json
@@ -51,6 +56,17 @@ from pathlib import Path
 SOLC_VERSION = "0.8.28"
 SCAFFOLD_PRAGMA = "pragma solidity >=0.8.25 <0.9.0;"
 FHE_IMPORT = 'import "@fhenixprotocol/cofhe-contracts/FHE.sol";'
+
+# npm packages a sample may import, each with a file that proves it is
+# installed. cofhe-contracts is required; the others are optional and their
+# samples are skipped when absent.
+REQUIRED_PACKAGE = "@fhenixprotocol/cofhe-contracts"
+PACKAGES = {
+    "@fhenixprotocol/cofhe-contracts": "FHE.sol",
+    "@openzeppelin/contracts": "package.json",
+    "@openzeppelin/contracts-upgradeable": "package.json",
+    "fhenix-confidential-contracts": "contracts/FHERC20/FHERC20.sol",
+}
 
 # Pages whose Solidity samples are known broken. CI skips them so unrelated
 # pull requests stay green until the sample is fixed. Every entry needs a
@@ -103,7 +119,15 @@ def extract_blocks(path: Path):
         yield number, start, title, "\n".join(body)
 
 
-def classify(code: str, title: str):
+def package_of(path: str):
+    """The PACKAGES entry an import path belongs to, or None."""
+    for pkg in PACKAGES:
+        if path.startswith(pkg + "/"):
+            return pkg
+    return None
+
+
+def classify(code: str, title: str, installed: set[str]):
     """Return (mode, source) where mode is 'skip:<reason>' or 'strict'/'wrapped'."""
     if "..." in code:
         return "skip:ellipsis placeholder", None
@@ -113,12 +137,15 @@ def classify(code: str, title: str):
         return "skip:fence titled as an anti-example", None
     if code.count("{") != code.count("}"):
         return "skip:unbalanced braces (truncated fragment)", None
-    # v1 provisions only the cofhe-contracts package. A sample importing any
-    # other package (plugin frameworks, OpenZeppelin, confidential contracts)
-    # cannot compile here; skipping keeps CI honest instead of false-failing.
+    # Only the packages in PACKAGES are provisioned. A sample importing any
+    # other package (plugin frameworks, forge-std) cannot compile here;
+    # skipping keeps CI honest instead of false-failing.
     for m in re.finditer(r'import\s+(?:\{[^}]*\}\s+from\s+)?"([^"./][^"]*)"', code):
-        if not m.group(1).startswith("@fhenixprotocol/cofhe-contracts"):
+        pkg = package_of(m.group(1))
+        if pkg is None:
             return f"skip:imports unprovisioned package {m.group(1)}", None
+        if pkg not in installed:
+            return f"skip:{pkg} is not installed", None
 
     hoisted, rest = [], []
     for line in code.splitlines():
@@ -143,18 +170,21 @@ def classify(code: str, title: str):
     return "wrapped", f"{head}\n\ncontract Sample {{\nfunction f() public {{\n{body}\n}}\n}}\n"
 
 
-def find_node_modules() -> Path:
+def find_node_modules() -> tuple[Path, set[str]]:
+    """The node_modules to compile against, and which PACKAGES it holds."""
     candidates = []
     env = os.environ.get("COFHE_SAMPLES_NODE_MODULES")
     if env:
         candidates.append(Path(env))
     candidates.append(Path.cwd() / "node_modules")
     for c in candidates:
-        if (c / "@fhenixprotocol/cofhe-contracts/FHE.sol").is_file():
-            return c.resolve()
+        if (c / REQUIRED_PACKAGE / PACKAGES[REQUIRED_PACKAGE]).is_file():
+            installed = {p for p, marker in PACKAGES.items() if (c / p / marker).is_file()}
+            return c.resolve(), installed
     sys.exit(
-        "error: @fhenixprotocol/cofhe-contracts not found.\n"
-        "Run: npm install --no-save @fhenixprotocol/cofhe-contracts@<documented version>\n"
+        f"error: {REQUIRED_PACKAGE} not found.\n"
+        "Run: npm install --no-save @fhenixprotocol/cofhe-contracts@<documented version>"
+        " fhenix-confidential-contracts@<documented version>\n"
         "or set COFHE_SAMPLES_NODE_MODULES to a node_modules that has it."
     )
 
@@ -172,6 +202,17 @@ def forge_build(project: Path, target: str) -> list[dict]:
     try:
         out = json.loads(result.stdout)
     except json.JSONDecodeError:
+        # An import of a path the package does not ship stops forge before
+        # solc runs, so no JSON comes back. That is the sample's fault, not
+        # the setup's: report it against the sample.
+        missing = re.search(r"failed to resolve file: (.*?); check configured remappings", result.stderr)
+        if missing:
+            return [{
+                "severity": "error",
+                "errorCode": "unresolved-import",
+                "sourceLocation": {"file": target},
+                "formattedMessage": f"unresolved import: {missing.group(1)}",
+            }]
         sys.exit(
             f"error: forge build produced no JSON (exit {result.returncode}).\n"
             f"stdout: {result.stdout[:2000]}\nstderr: {result.stderr[:2000]}"
@@ -184,7 +225,9 @@ def main(argv: list[str]) -> int:
         print("usage: compile-samples.py <page.mdx> [...]", file=sys.stderr)
         return 2
 
-    node_modules = find_node_modules()
+    node_modules, installed = find_node_modules()
+    for pkg in sorted(set(PACKAGES) - installed):
+        print(f"note: {pkg} not installed; samples importing it are skipped")
     samples = {}  # sol filename -> (page, block number, mdx line, mode)
     compiled = skipped = warned = 0
 
@@ -199,9 +242,8 @@ def main(argv: list[str]) -> int:
             "libs = []\n"
             f'solc = "{SOLC_VERSION}"\n'
             "remappings = [\n"
-            f'    "@fhenixprotocol/cofhe-contracts/={node_modules}/@fhenixprotocol/cofhe-contracts/",\n'
-            f'    "@openzeppelin/contracts/={node_modules}/@openzeppelin/contracts/",\n'
-            "]\n"
+            + "".join(f'    "{p}/={node_modules}/{p}/",\n' for p in sorted(installed))
+            + "]\n"
         )
 
         for arg in argv:
@@ -213,7 +255,7 @@ def main(argv: list[str]) -> int:
                 print(f"SKIP page {rel}: {SKIP_PAGES[rel]}")
                 continue
             for number, line, title, code in extract_blocks(page):
-                mode, source = classify(code, title)
+                mode, source = classify(code, title, installed)
                 if mode.startswith("skip:"):
                     print(f"SKIP  {rel} block {number} (line {line}): {mode[5:]}")
                     skipped += 1
@@ -233,8 +275,12 @@ def main(argv: list[str]) -> int:
                 if err.get("severity") != "error":
                     continue
                 loc = (err.get("sourceLocation") or {}).get("file", "")
-                if loc != sol:
-                    # An error outside the sample is a setup problem: fail loudly.
+                # A sample can make solc report against a package file, e.g. by
+                # implementing an interface with the wrong signature. The
+                # packages compile cleanly on their own, so the sample is at fault.
+                in_package = loc.startswith(str(node_modules))
+                if loc != sol and not in_package:
+                    # Any other error outside the sample is a setup problem: fail loudly.
                     sys.exit(
                         f"error: compiler error outside the sample {sol}:\n"
                         f"{err.get('formattedMessage')}"

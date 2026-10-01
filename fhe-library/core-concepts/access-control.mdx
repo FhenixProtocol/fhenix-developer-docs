@@ -31,11 +31,11 @@ To prevent misuse, all FHE operations verify that the caller has explicit permis
 
 ---
 
-## How Access Control Works
+## How access control works
 
 In practice, the code above will revert with an `ACLNotAllowed` error because the calling contract doesn't have permission for that ciphertext handle. Any FHE operation will fail if the caller lacks permission for all input handles.
 
-### Example: Unauthorized Operations Fail
+### Unauthorized operations fail
 
 ```solidity
 FHE.add(notAllowedCt, allowedCt); // -> will revert with ACLNotAllowed
@@ -43,12 +43,12 @@ FHE.add(notAllowedCt, allowedCt); // -> will revert with ACLNotAllowed
 
 By default, newly created ciphertext handles are accessible to the contract that created them, but **only for the duration of the transaction**. Any additional access must be explicitly granted.
 
-### What the ACL Does *Not* Gate
+### What the ACL does *not* gate
 
 The ACL governs **operation creation**. Computing on a handle, and requesting its decryption. It does not gate the onchain publication of a decrypt result:
 
 ```solidity
-// Anyone can call this — it is signature-gated, not ACL-gated
+// Anyone can call this: it is signature-gated, not ACL-gated
 FHE.publishDecryptResult(seenHandle, plaintext, signature);
 ```
 
@@ -62,7 +62,7 @@ Treat `FHE.allowPublic()` as the real decision point. Once a handle is marked pu
 
 ---
 
-## Granting Access
+## Granting access
 
 CoFHE provides six methods to grant access to ciphertext handles:
 
@@ -116,7 +116,7 @@ FHE.allowTransient(secretValue, otherContract); // Temporary access for this tx
 
 Marks a ciphertext handle as eligible for public decryption. Anyone can then request decryption of this value offchain via `decryptForTx` and publish or verify the result onchain.
 
-Use this when a value is intended to become public, for example, the amount being unshielded in an FHERC20 unwrap flow.
+Use this when a value is intended to become public, for example, the amount burned when you [unshield an FHERC20 token](/fhe-library/confidential-contracts/fherc20/fherc20-wrapper).
 
 ```solidity
 euint32 burnedAmount = FHE.asEuint32(input);
@@ -131,7 +131,7 @@ FHE.allowPublic(burnedAmount); // Anyone can decrypt and publish this value
 
 ---
 
-## Decryption and Access Control
+## Decryption and access control
 
 Decryption is a multi-step process: a client requests the plaintext and its signature offchain via `decryptForTx`, then publishes or verifies the result onchain.
 
@@ -146,11 +146,11 @@ If the requester does not have permission on the ciphertext handle, the decrypti
 
 ---
 
-## Behind the Scenes
+## How the ACL is stored
 
 Every blockchain integrating CoFHE includes a deployed `ACL.sol` contract. This contract manages ownership records for each ciphertext, ensuring that only authorized owners can perform operations on their encrypted data.
 
-### ACL Storage Structure
+### ACL storage structure
 
 The ACL contract contains the following mapping which tracks the ownership of each ciphertext handle:
 
@@ -162,7 +162,7 @@ This two-level mapping allows efficient lookup of whether a specific address has
 
 ---
 
-## Best Practices
+## Best practices
 
 <CardGroup cols={2}>
 <Card title="Principle of Least Privilege" icon="shield-halved">
@@ -184,11 +184,11 @@ Consider the lifecycle of your encrypted data and whether permissions should be 
 
 ---
 
-## Practical Examples
+## Practical examples
 
 For detailed examples on how to explicitly manage ciphertext allowances in contracts, see the [ACL Usage Examples](/tutorials/acl-usage-examples) guide.
 
-### Quick Example: Token Transfer
+### A token transfer
 
 ```solidity
 function transfer(address to, externalEuint32 inAmount, bytes calldata inputProof) public {

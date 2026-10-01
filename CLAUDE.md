@@ -8,7 +8,8 @@ STYLE.md is binding for all content. Read it before writing or editing any page.
 
 ## Facts
 
-- Never write a technical claim you have not verified against the current source of the relevant repo (cofhe, cofhesdk, teecryptor, zee-k-verifier) or the published packages. Docs drift is the failure mode this project exists to fix.
+- Never write a technical claim you have not verified against the current source of the relevant repo (cofhe, cofhesdk, teecryptor, zee-k-verifier, fhenix-confidential-contracts) or the published packages. Docs drift is the failure mode this project exists to fix.
+- For the confidential token contracts (FHERC20, ERC20Confidential, the wrappers), verify against the Solidity under `contracts/` at the tag matching the version on the compatibility page, or the published npm package. The repo README lags the code; do not take API shapes from it.
 - Current behavior and future plans never mix. Future work lives in `deep-dive/research/future-plans.mdx`, labeled as such.
 - The TEE (Teecryptor) is the current decryption architecture. The Threshold Network is a future plan only.
 - No internal names: hostnames, cloud project names, environment names, deployment bundle names, feature flags.
@@ -18,7 +19,7 @@ STYLE.md is binding for all content. Read it before writing or editing any page.
 - Navigation lives in `docs.json`. A page not referenced there is invisible; check it when adding, renaming, or removing pages.
 - Renaming or removing a page requires a redirect entry.
 - Diagrams are Mermaid blocks in the page (see STYLE.md, Diagrams). Do not add or edit SVGs; designed SVGs come from the design pass and keep their Mermaid source in the repo.
-- Code samples must compile or run against the currently published versions before they ship.
+- Code samples must compile or run against the currently published versions before they ship. `scripts/compile-samples.py` compiles the Solidity ones; see AGENTS.md, Samples.
 
 ## Workflow
 

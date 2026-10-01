@@ -176,6 +176,9 @@
           {
             "group": "Confidential Contracts",
             "pages": [
+              "fhe-library/confidential-contracts/overview",
+              "fhe-library/confidential-contracts/calling-from-contracts",
+              "fhe-library/confidential-contracts/upgradeable",
               {
                 "group": "FHERC20",
                 "pages": [
@@ -188,12 +191,13 @@
                 ]
               },
               {
-                "group": "ERC20Confidential (Dual-Mode)",
+                "group": "ERC20Confidential",
                 "pages": [
                   "fhe-library/confidential-contracts/dual-mode/overview",
                   "fhe-library/confidential-contracts/dual-mode/dual-balance-model",
                   "fhe-library/confidential-contracts/dual-mode/shield-unshield",
                   "fhe-library/confidential-contracts/dual-mode/confidential-operations",
+                  "fhe-library/confidential-contracts/dual-mode/extending",
                   "fhe-library/confidential-contracts/dual-mode/best-practices"
                 ]
               }

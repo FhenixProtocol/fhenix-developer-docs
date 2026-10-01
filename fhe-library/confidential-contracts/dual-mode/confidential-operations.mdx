@@ -1,275 +1,74 @@
 ---
-title: "Confidential Operations"
-description: "Confidential transfers, the operator system, and transfer callbacks on ERC20Confidential"
+title: "Confidential transfers and operators"
+description: "How encrypted transfers and operators work on ERC20Confidential, and where they differ from FHERC20"
 ---
 
-## Overview
+`ERC20Confidential` moves confidential balances with the same functions as [FHERC20](/fhe-library/confidential-contracts/fherc20/core-features). This page lists those functions and the few places where `ERC20Confidential` behaves differently. Read the FHERC20 page for the full behavior of each overload.
 
-Once value is [shielded](/fhe-library/confidential-contracts/dual-mode/shield-unshield) into the confidential layer, `ERC20Confidential` exposes the full [ERC-7984](https://eips.ethereum.org/EIPS/eip-7984) surface for moving it privately. This API is **identical to FHERC20's**. Confidential transfers, a time-based operator system, and safe transfers with receiver callbacks. This page covers each, with the specifics of the `ERC20Confidential` implementation.
+## The transfer functions
 
-<Note>
-The confidential-transfer API here mirrors FHERC20. If you already know FHERC20's [operators](/fhe-library/confidential-contracts/fherc20/operators) and [transfer callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks), the same mental model applies, only the contract name and errors differ.
-</Note>
+Every transfer function comes in two overloads: one for a wallet, which passes an encrypted input and its proof, and one for a contract, which passes a `sharedEuint64`.
 
----
+| Function | Wallet overload | Contract overload |
+| --- | --- | --- |
+| `confidentialTransfer` | `(to, externalEuint64, bytes inputProof)` | `(to, sharedEuint64)` |
+| `confidentialTransferFrom` | `(from, to, externalEuint64, bytes inputProof)` | `(from, to, sharedEuint64)` |
+| `confidentialTransferAndCall` | `(to, externalEuint64, bytes inputProof, bytes data)` | `(to, sharedEuint64, bytes data)` |
+| `confidentialTransferFromAndCall` | `(from, to, externalEuint64, bytes inputProof, bytes data)` | `(from, to, sharedEuint64, bytes data)` |
 
-## Confidential Transfers
-
-Every transfer function comes in two overloads: an `InEuint64` overload for encrypted input coming from offchain users, and an `euint64` overload for already-encrypted, contract-to-contract values.
-
-```solidity
-// From caller
-function confidentialTransfer(address to, InEuint64 memory inValue) public returns (euint64 transferred);
-function confidentialTransfer(address to, euint64 value) public returns (euint64 transferred);
-
-// From a third party (requires operator permission)
-function confidentialTransferFrom(address from, address to, InEuint64 memory inValue) public returns (euint64 transferred);
-function confidentialTransferFrom(address from, address to, euint64 value) public returns (euint64 transferred);
-```
-
-### How a transfer is authorized
-
-The `euint64` overloads require the caller to already hold FHE access to the value; the `InEuint64` overloads accept a fresh encrypted input and convert it in-place.
-
-```solidity
-function confidentialTransfer(address to, euint64 value) public virtual returns (euint64 transferred) {
-    if (!FHE.isAllowed(value, msg.sender)) {
-        revert ERC20ConfidentialUnauthorizedUseOfEncryptedAmount(value, msg.sender);
-    }
-    transferred = _confidentialTransfer(msg.sender, to, value);
-    FHE.allowTransient(transferred, msg.sender); // caller can read what actually moved
-}
-```
-
-The internal path validates addresses and routes through the [confidential update engine](/fhe-library/confidential-contracts/dual-mode/dual-balance-model#the-confidential-update-engine):
-
-```solidity
-function _confidentialTransfer(address from, address to, euint64 value)
-    internal virtual returns (euint64 transferred)
-{
-    if (from == address(0)) revert ERC20InvalidSender(address(0));
-    if (to == address(0)) revert ERC20InvalidReceiver(address(0));
-    transferred = _confidentialUpdate(from, to, value);
-}
-```
-
-<Warning>
-**Zero-replacement:** if the sender's confidential balance is insufficient, the transfer moves **encrypted zero** rather than reverting (to avoid leaking balance information). Always use the returned `transferred` handle, not the requested amount, for any downstream logic.
-</Warning>
-
-### Usage
+Each returns a `sharedEuint64` holding the amount that actually moved. From a wallet, encrypt the amount in confidential units and name the token as the consuming contract:
 
 ```typescript
 import { Encryptable } from '@cofhe/sdk';
 
-// Encrypt the amount offchain (6 confidential decimals)
-const [enc] = await cofheClient
-  .encryptInputs([Encryptable.uint64(100_000_000n)]) // 100 tokens
+const [amount, inputProof] = await client
+  .encryptInputs([Encryptable.uint64(3_000_000n)])
+  .setConsumingContract(await token.getAddress())
   .execute();
 
-// Transfer confidentially
-await token.confidentialTransfer(recipient.address, enc);
+await token['confidentialTransfer(address,bytes32,bytes)'](recipient, amount, inputProof);
 ```
 
-<Tip>
-The caller is granted **transient** access (`FHE.allowTransient`) to the `transferred` handle. Access valid only for the current transaction. Both the sender and recipient receive persistent access to it inside `_confidentialUpdate`.
-</Tip>
+The account that encrypts the input must be the account that sends the transaction. For calls from a contract, see [call a token from your contract](/fhe-library/confidential-contracts/calling-from-contracts).
 
----
+As on FHERC20, a transfer of more than the balance does not revert. It moves zero, and the returned amount decrypts to zero.
 
-## The Operator System
+## Where it differs from FHERC20
 
-Like FHERC20, `ERC20Confidential` replaces ERC-20 allowances (which would leak amounts) with **time-based operators**. An operator can move any amount of a holder's confidential balance until an expiration timestamp.
+| Behavior | `ERC20Confidential` | `FHERC20` |
+| --- | --- | --- |
+| Sender has never held a confidential balance | The transfer moves zero | Reverts with `FHERC20ZeroBalance` |
+| Caller is not `from` or an operator | `ERC20ConfidentialUnauthorizedSpender(holder, spender)` | `FHERC20UnauthorizedSpender(holder, spender)` |
+| `to` is the zero address | `ConfidentialInvalidReceiver(address(0))` | `FHERC20InvalidReceiver(address(0))` |
+| Hook before each move | `_beforeConfidentialMove(from, to)` | None |
+| Indicator updates | On the separate [indicator token](/fhe-library/confidential-contracts/dual-mode/dual-balance-model#the-indicator-token) | On the token's own `balanceOf` |
 
-```solidity
-function setOperator(address operator, uint48 until) public virtual {
-    _setOperator(msg.sender, operator, until);
-}
+`_beforeConfidentialMove` runs before all eight transfer functions and both `unshield` overloads. It does nothing by default. Override it to freeze accounts or pause the confidential side; see [extend ERC20Confidential](/fhe-library/confidential-contracts/dual-mode/extending).
 
-function isOperator(address holder, address spender) public view virtual returns (bool) {
-    return holder == spender || block.timestamp <= _operators[holder][spender];
-}
-```
+All eight transfer functions and both `unshield` overloads are `nonReentrant`, so a callback cannot call another transfer or `unshield` on the same token.
 
-<CardGroup cols={2}>
-<Card title="Self is always an operator" icon="user-check">
-`isOperator` returns `true` when `holder == spender`, so a holder can always move their own tokens via `confidentialTransferFrom` without granting anything.
-</Card>
+## Operators
 
-<Card title="Inclusive expiry" icon="clock">
-Permission is valid while `block.timestamp <= until`. Set `until` to `block.timestamp` to revoke immediately, or `type(uint48).max` for effectively indefinite access.
-</Card>
-</CardGroup>
-
-### Granting and using operators
+An operator can move any amount of a holder's confidential balance until a deadline:
 
 ```typescript
-// Grant a DEX operator rights for 1 hour
-await token.setOperator(
-  dexAddress,
-  Math.floor(Date.now() / 1000) + 3600
-);
-
-// The operator transfers on the holder's behalf
-const [enc] = await cofheClient
-  .encryptInputs([Encryptable.uint64(50_000_000n)])
-  .execute();
-await token.connect(dex).confidentialTransferFrom(holder.address, recipient.address, enc);
+const oneHour = Math.floor(Date.now() / 1000) + 3600;
+await token.setOperator(operatorAddress, oneHour);
 ```
 
-`confidentialTransferFrom` checks operator status before moving tokens:
+`isOperator(holder, spender)` returns `true` while `block.timestamp` is at or before the deadline, and always returns `true` when `holder` and `spender` are the same address. Setting the deadline to `0` revokes the operator. Each call emits `OperatorSet(holder, operator, until)`. For the operator model in depth, see [operators](/fhe-library/confidential-contracts/fherc20/operators).
 
-```solidity
-function confidentialTransferFrom(address from, address to, euint64 value)
-    public virtual returns (euint64 transferred)
-{
-    if (!FHE.isAllowed(value, msg.sender)) {
-        revert ERC20ConfidentialUnauthorizedUseOfEncryptedAmount(value, msg.sender);
-    }
-    if (!isOperator(from, msg.sender)) {
-        revert ERC20ConfidentialUnauthorizedSpender(from, msg.sender);
-    }
-    transferred = _confidentialTransfer(from, to, value);
-    FHE.allowTransient(transferred, msg.sender);
-}
-```
+Confidential operators and public allowances are separate. `approve` and `transferFrom` keep working on the public balance and have no effect on the confidential one, and `setOperator` grants nothing on the public side.
 
-<Warning>
-An operator has access to a holder's **entire** confidential balance until expiry, not a specific amount. Grant only to trusted addresses and prefer short windows. Expiry is silent, a `confidentialTransferFrom` after `until` reverts with `ERC20ConfidentialUnauthorizedSpender`.
-</Warning>
+## Transfers with a callback
 
-`OperatorSet(holder, operator, until)` is emitted on every grant or revocation.
-
----
-
-## Transfer Callbacks
-
-The `...AndCall` functions transfer confidential tokens **and** notify the recipient contract, which can accept or reject the transfer. All four overloads exist:
-
-```solidity
-function confidentialTransferAndCall(address to, InEuint64 memory encryptedAmount, bytes calldata data) public returns (euint64);
-function confidentialTransferAndCall(address to, euint64 amount, bytes calldata data) public returns (euint64);
-function confidentialTransferFromAndCall(address from, address to, InEuint64 memory encryptedAmount, bytes calldata data) public returns (euint64);
-function confidentialTransferFromAndCall(address from, address to, euint64 amount, bytes calldata data) public returns (euint64);
-```
-
-### The accept-or-refund mechanism
-
-`ERC20Confidential` moves the tokens first, asks the recipient, and **refunds** whatever the recipient rejects, all under FHE, without revealing amounts:
-
-```solidity
-function _confidentialTransferAndCall(address from, address to, euint64 amount, bytes calldata data)
-    internal virtual returns (euint64 transferred)
-{
-    euint64 sent = _confidentialTransfer(from, to, amount);
-    ebool success = FHERC20Utils.checkOnTransferReceived(msg.sender, from, to, sent, data);
-    // If the receiver rejected, refund the full sent amount back to `from`
-    euint64 refund = _confidentialUpdate(to, from, FHE.select(success, FHE.asEuint64(0), sent));
-    transferred = FHE.sub(sent, refund);
-}
-```
-
-<Steps>
-<Step title="Transfer executes">
-`sent` tokens move from `from` to `to` via the confidential update engine.
-</Step>
-
-<Step title="Recipient is called">
-`FHERC20Utils.checkOnTransferReceived` invokes `onConfidentialTransferReceived` on the recipient (if it's a contract) and returns an encrypted `success` flag.
-</Step>
-
-<Step title="Rejected amount is refunded">
-`FHE.select(success, 0, sent)` computes the refund: zero if accepted, the full amount if rejected. That refund moves back from `to` to `from`.
-</Step>
-
-<Step title="Net transfer reported">
-`transferred = sent - refund`, the actual net amount that stuck with the recipient.
-</Step>
-</Steps>
-
-### The receiver interface
-
-A recipient contract must implement `IERC7984Receiver` and return an **encrypted** bool:
-
-```solidity
-interface IERC7984Receiver {
-    function onConfidentialTransferReceived(
-        address operator,
-        address from,
-        euint64 amount,
-        bytes calldata data
-    ) external returns (ebool);
-}
-```
-
-- Return `FHE.asEbool(true)` to accept the transfer.
-- Return `FHE.asEbool(false)` to reject it, the tokens are refunded to the sender under FHE.
-
-```solidity
-contract ConfidentialVault is IERC7984Receiver {
-    ERC20Confidential public immutable token;
-    mapping(address => euint64) public deposits;
-
-    constructor(address token_) { token = ERC20Confidential(token_); }
-
-    function onConfidentialTransferReceived(
-        address operator,
-        address from,
-        euint64 amount,
-        bytes calldata data
-    ) external override returns (ebool) {
-        if (msg.sender != address(token)) return FHE.asEbool(false); // validate the token
-
-        deposits[from] = FHE.add(deposits[from], amount);
-        FHE.allowThis(deposits[from]);
-        FHE.allow(deposits[from], from);
-
-        return FHE.asEbool(true);
-    }
-}
-```
-
-<Note>
-Unlike an all-or-nothing revert, the accept/reject decision is evaluated under encryption and settled by refunding the rejected portion. See [FHERC20 Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for receiver patterns, reentrancy guidance, and data-passing examples, the receiver contract is written the same way.
-</Note>
-
----
-
-## Errors
-
-```solidity
-// Caller lacks FHE access to the encrypted amount it's trying to spend
-error ERC20ConfidentialUnauthorizedUseOfEncryptedAmount(euint64 value, address user);
-
-// Caller is not an authorized operator for `holder`
-error ERC20ConfidentialUnauthorizedSpender(address holder, address spender);
-
-// Standard OpenZeppelin ERC-20 address guards (used by _confidentialTransfer)
-error ERC20InvalidSender(address sender);
-error ERC20InvalidReceiver(address receiver);
-```
-
----
+`confidentialTransferAndCall` and `confidentialTransferFromAndCall` call `onConfidentialTransferReceived` on the recipient after the transfer, using the same `IERC7984Receiver` interface as FHERC20. If the receiver returns an encrypted `false`, the token moves the amount back to the sender. See [transfer callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks) for how to write a receiver.
 
 ## Events
 
-```solidity
-// Confidential transfer — the amount is an encrypted handle, not a plaintext value
-event ConfidentialTransfer(address indexed from, address indexed to, euint64 indexed amount);
+| Event | When |
+| --- | --- |
+| `ConfidentialTransfer(from, to, amount)` | Every confidential move, including shield (`from` is zero) and unshield (`to` is zero). `amount` is the handle of the moved amount |
+| `OperatorSet(holder, operator, until)` | `setOperator` |
 
-// Operator permission granted or revoked
-event OperatorSet(address indexed holder, address indexed operator, uint48 until);
-```
-
-<Note>
-`ConfidentialTransfer` carries an encrypted `euint64` handle, never a plaintext amount, you cannot index transfer amounts offchain from events. The sidecar `ERC20ConfidentialIndicator` also emits a standard `Transfer(from, to, 10110000001)` so explorers register activity without exposing amounts.
-</Note>
-
----
-
-## Related Topics
-
-- Bridge value into the confidential layer with [Shield & Unshield](/fhe-library/confidential-contracts/dual-mode/shield-unshield)
-- Understand the encrypted bookkeeping in [The Dual-Balance Model](/fhe-library/confidential-contracts/dual-mode/dual-balance-model)
-- Receiver patterns and reentrancy: [FHERC20 Transfer Callbacks](/fhe-library/confidential-contracts/fherc20/transfer-callbacks)
-- Review [Best Practices](/fhe-library/confidential-contracts/dual-mode/best-practices) for secure operator and access-control usage
+The sender and the recipient can both decrypt the `amount` handle of a transfer they took part in.

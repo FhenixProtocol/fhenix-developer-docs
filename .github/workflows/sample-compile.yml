@@ -9,9 +9,11 @@ on:
   workflow_dispatch:
 
 env:
-  # The Solidity dependency version the docs tell readers to install; see
-  # get-started/introduction/compatibility.mdx. Bump both together.
+  # The Solidity dependency versions the docs tell readers to install; see
+  # get-started/introduction/compatibility.mdx. scripts/check-versions.py
+  # --docs fails when these disagree with that page.
   COFHE_CONTRACTS_VERSION: 0.2.0
+  CONFIDENTIAL_CONTRACTS_VERSION: 0.4.0
   # Pinned like Mint and Vale: forge ships often and its diagnostics change,
   # so an unpinned install turns unrelated pull requests red.
   FOUNDRY_VERSION: v1.5.1
@@ -50,10 +52,15 @@ jobs:
 
       # --no-save keeps the checkout clean: the repo has no package.json and
       # must not gain one. npm also pulls @openzeppelin/contracts, which
-      # FHE.sol imports.
-      - name: Install cofhe-contracts
+      # FHE.sol imports, and @openzeppelin/contracts-upgradeable, which the
+      # confidential token contracts import. One install resolves a single
+      # cofhe-contracts copy, which fhenix-confidential-contracts pins exactly.
+      - name: Install Solidity packages
         if: steps.files.outputs.count != '0'
-        run: npm install --no-save "@fhenixprotocol/cofhe-contracts@${COFHE_CONTRACTS_VERSION}"
+        run: |
+          npm install --no-save \
+            "@fhenixprotocol/cofhe-contracts@${COFHE_CONTRACTS_VERSION}" \
+            "fhenix-confidential-contracts@${CONFIDENTIAL_CONTRACTS_VERSION}"
 
       - name: Install Foundry
         if: steps.files.outputs.count != '0'
