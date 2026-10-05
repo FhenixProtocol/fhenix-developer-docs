@@ -200,7 +200,13 @@ pnpm eth-sepolia:deploy-counter
 ```bash Arbitrum Sepolia
 pnpm arb-sepolia:deploy-counter
 ```
+
+```bash Base Sepolia
+pnpm base-sepolia:deploy-counter
+```
 </CodeGroup>
+
+The plugin ships presets for the first two networks. Base Sepolia has none, so the starter defines that network in its own `hardhat.config.ts`; the [compatibility page](/get-started/introduction/compatibility#supported-networks) shows the block to copy into your own project.
 </Step>
 
 <Step title="Interact with your contract">
@@ -213,6 +219,10 @@ pnpm eth-sepolia:increment-counter
 
 ```bash Arbitrum Sepolia
 pnpm arb-sepolia:increment-counter
+```
+
+```bash Base Sepolia
+pnpm base-sepolia:increment-counter
 ```
 </CodeGroup>
 </Step>
@@ -270,7 +280,7 @@ CoFHE supports multiple development environments:
 
 - Public testnet for real FHE operations
 - Requires ETH from the Sepolia faucet
-- Available on Ethereum Sepolia and Arbitrum Sepolia
+- Available on Ethereum Sepolia, Arbitrum Sepolia, and Base Sepolia
 
 <Info>
 Environment detection happens automatically in most cases. When testing on the Hardhat network with mocks deployed (e.g., in unit tests), `hre.cofhe.createClientWithBatteries` will detect the Hardhat network and configure the client for the mock environment. When using tasks that connect to networks like `arb-sepolia`, the environment will automatically be set to testnet mode. This environment setting is crucial as it determines how the SDK handles encryption and decryption operations.
