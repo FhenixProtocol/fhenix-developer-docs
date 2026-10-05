@@ -27,27 +27,15 @@ The check says nothing about plaintexts. You never learn what any value decrypts
 | --- | --- |
 | TaskManager | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9`, the same address on every supported chain |
 | Host chain RPC | Any endpoint for the chain your contract runs on |
-| CommitmentRegistry | One address for every host chain, pending, see [Pending values](#pending-values) |
+| CommitmentRegistry | `0x4B82F827C03fad5739EFEcfcF743E65E732be695` on Arbitrum One, one address for every host chain |
 | Verified input archive | The [fhenix-mainnet-zee-k-inputs](https://storage.googleapis.com/fhenix-mainnet-zee-k-inputs?prefix=cofhe/) bucket, public. See [Fetch the inputs](#fetch-the-inputs) |
 | Key store | The [fhenix-mainnet-keys](https://storage.googleapis.com/fhenix-mainnet-keys?prefix=generator/keys/) bucket, public. See [Fetch the public key material](#fetch-the-public-key-material) |
 | tfhe-rs | `1.5.1` |
 | Tools | Foundry's `cast`, and a Rust toolchain for the recomputation |
 
-### Pending values
-
-One value is not published yet. Everything else on this page works today.
-
-| Value | Status |
-| --- | --- |
-| CommitmentRegistry address | The contract, its interface, and the version tag are settled, and the coprocessor already posts commitments on the networks running today. The chain and address for the public network are being finalised, and they are published here as soon as they are confirmed. |
-
-The two stores are publicly readable already. The input archive fills as the network processes inputs, and the key store fills when the key ceremony runs at mainnet launch. The bucket links above show the live listing.
-
 You need one CommitmentRegistry address, not one per chain. A handle is derived from the ciphertext bytes, or from the operation and its input handles, and neither derivation mixes in a chain id. So handles are global, one registry records them all, and your host chain never appears in the lookup.
 
-<Note>
-Step 1 works today and does not depend on any of the three. The computation graph and every input commitment come from the host chain alone.
-</Note>
+The two stores are publicly readable already. The input archive fills as the network processes inputs, and the key store fills when the key ceremony publishes its public material. The bucket links above show the live listing.
 
 ## How a ciphertext is committed
 
@@ -118,14 +106,16 @@ The first 30 bytes are identical, and the handle's last two are the type byte an
 `getCommitment` takes the version tag and the handle, and returns the recorded hash. `bytes32(0)` means nothing is posted for that pair.
 
 ```bash
-REGISTRY=<pending>
-REGISTRY_RPC=<pending>
+REGISTRY=0x4B82F827C03fad5739EFEcfcF743E65E732be695
+REGISTRY_RPC=https://arbitrum-one-rpc.publicnode.com
 VERSION=0x0000000000000000000000000000000000000000000000000000000000000002
 HANDLE=0xf0a73bae25878afcc52cf176616b3e3aa93f3ef6fa701ed61282cdd17df70500
 
 cast call $REGISTRY "getCommitment(bytes32,bytes32)(bytes32)" \
   $VERSION $HANDLE --rpc-url $REGISTRY_RPC
 ```
+
+The handle here is the step 1 example; put the handle you are auditing in its place.
 
 <Warning>
 The version tag is the number 2 encoded as `bytes32`, so `0x00...02`. It is not the ASCII character `2`. `cast format-bytes32-string "2"` returns `0x3200...00`, and every lookup under that value comes back zero.
@@ -208,7 +198,7 @@ curl -s -X POST $COFHE_URL/GetCrs \
 ```
 
 <Note>
-Neither HTTP endpoint serves the evaluation key, and you cannot compute without it. Only the key store has it, at `keys/versionized/{zone}/computation_key` under the base URL. The object lands with the key ceremony at mainnet launch; until then this step waits.
+Neither HTTP endpoint serves the evaluation key, and you cannot compute without it. Only the key store has it, at `keys/versionized/{zone}/computation_key` under the base URL. The object lands when the key ceremony publishes its material; until then this step waits.
 </Note>
 
 ## Re-run the operation
