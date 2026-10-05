@@ -35,7 +35,7 @@ The check says nothing about plaintexts. You never learn what any value decrypts
 
 You need one CommitmentRegistry address, not one per chain. A handle is derived from the ciphertext bytes, or from the operation and its input handles, and neither derivation mixes in a chain id. So handles are global, one registry records them all, and your host chain never appears in the lookup.
 
-The two stores are publicly readable already. The input archive fills as the network processes inputs, and the key store fills when the key ceremony publishes its public material. The bucket links above show the live listing.
+Both stores are publicly readable. The input archive fills as the network processes inputs. The bucket links above show the live listing.
 
 ## How a ciphertext is committed
 
@@ -198,7 +198,7 @@ curl -s -X POST $COFHE_URL/GetCrs \
 ```
 
 <Note>
-Neither HTTP endpoint serves the evaluation key, and you cannot compute without it. Only the key store has it, at `keys/versionized/{zone}/computation_key` under the base URL. The object lands when the key ceremony publishes its material; until then this step waits.
+Neither HTTP endpoint serves the evaluation key, and you cannot compute without it. Only the key store has it, at `keys/versionized/{zone}/computation_key` under the base URL.
 </Note>
 
 ## Re-run the operation
