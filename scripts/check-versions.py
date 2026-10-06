@@ -141,15 +141,22 @@ def main(argv):
         failed |= bool(problems)
 
     if mode_npm:
+        def semver(v):
+            return tuple(int(x) for x in re.match(r"(\d+)\.(\d+)\.(\d+)", v).groups())
+
         stale = []
         for pkg, documented in sorted(versions.items()):
             latest = npm_latest(pkg)
             if latest is None:
                 print(f"error [not-published] {pkg} is not published under that name")
                 stale.append((pkg, documented, "missing"))
-            elif latest != documented:
+            elif semver(latest) > semver(documented):
                 print(f"error [behind-npm] {pkg}: docs say {documented}, npm has {latest}")
                 stale.append((pkg, documented, latest))
+            elif semver(latest) < semver(documented):
+                # Docs may deliberately document a release cut on master before
+                # the npm publish. Warn so the state stays visible; do not fail.
+                print(f"warning [ahead-of-npm] {pkg}: docs say {documented}, npm has {latest}")
         print(
             f"\n{len(stale)} package(s) out of date in {TRUTH}.", file=sys.stderr
         )
