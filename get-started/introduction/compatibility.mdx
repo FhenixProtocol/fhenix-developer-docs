@@ -15,19 +15,19 @@ Every `@cofhe/*` package is released from the same monorepo at the same version,
 
 | Package | Version | What it does |
 | --- | --- | --- |
-| `@cofhe/sdk` | [`0.7.1`](https://github.com/FhenixProtocol/cofhesdk/releases/tag/@cofhe/sdk@0.7.1) | Client library for encrypting inputs, decrypting results, and signing ACPs |
-| `@cofhe/react` | `0.7.1` | React hooks built on the SDK |
-| `@cofhe/abi` | `0.7.1` | ABI definitions for the CoFHE contracts |
-| `@cofhe/hardhat-plugin` | `0.7.1` | Mock deployment and test helpers for Hardhat 2 |
-| `@cofhe/hardhat-3-plugin` | `0.7.1` | Mock deployment and test helpers for Hardhat 3 |
-| `@cofhe/foundry-plugin` | `0.7.1` | Mock deployment and test helpers for Foundry |
-| `@cofhe/mock-contracts` | `0.7.1` | Mock CoFHE contracts for local testing |
+| `@cofhe/sdk` | [`0.8.0`](https://github.com/FhenixProtocol/cofhesdk/releases/tag/@cofhe/sdk@0.8.0) | Client library for encrypting inputs, decrypting results, and signing ACPs |
+| `@cofhe/react` | `0.8.0` | React hooks built on the SDK |
+| `@cofhe/abi` | `0.8.0` | ABI definitions for the CoFHE contracts |
+| `@cofhe/hardhat-plugin` | `0.8.0` | Mock deployment and test helpers for Hardhat 2 |
+| `@cofhe/hardhat-3-plugin` | `0.8.0` | Mock deployment and test helpers for Hardhat 3 |
+| `@cofhe/foundry-plugin` | `0.8.0` | Mock deployment and test helpers for Foundry |
+| `@cofhe/mock-contracts` | `0.8.0` | Mock CoFHE contracts for local testing |
 
 Solidity dependencies version separately from the SDK:
 
 | Package | Version | What it does |
 | --- | --- | --- |
-| `@fhenixprotocol/cofhe-contracts` | [`0.2.0`](https://github.com/FhenixProtocol/cofhe-contracts/tree/v0.2.0) | `FHE.sol` and the onchain CoFHE interfaces |
+| `@fhenixprotocol/cofhe-contracts` | [`1.0.0`](https://github.com/FhenixProtocol/cofhe-contracts/tree/v1.0.0) | `FHE.sol` and the onchain CoFHE interfaces |
 | `@fhenixprotocol/cofhe-errors` | `1.0.2` | Shared error definitions for the CoFHE contracts |
 | `fhenix-confidential-contracts` | `0.4.0` | Confidential token primitives, including FHERC20 |
 
@@ -42,9 +42,9 @@ These are the peer dependencies declared by the published packages.
 | Package | Required | Optional |
 | --- | --- | --- |
 | `@cofhe/sdk` | `viem` ^2.38.6 | `ethers` ^5 or ^6, `@wagmi/core` ^2, `hardhat` ^2, `@nomicfoundation/hardhat-ethers` ^3 |
-| `@cofhe/hardhat-plugin` | `hardhat` ^2, `@nomicfoundation/hardhat-ethers` ^3, `ethers` ^5 or ^6, `@fhenixprotocol/cofhe-contracts` >=0.2.0, `@openzeppelin/contracts` ^5 | None |
+| `@cofhe/hardhat-plugin` | `hardhat` ^2, `@nomicfoundation/hardhat-ethers` ^3, `ethers` ^5 or ^6, `@fhenixprotocol/cofhe-contracts` >=1.0.0, `@openzeppelin/contracts` ^5 | None |
 | `@cofhe/hardhat-3-plugin` | `hardhat` ^3 | None |
-| `@cofhe/foundry-plugin` | `@fhenixprotocol/cofhe-contracts` 0.2.0, `@openzeppelin/contracts` 5.4.0 | None |
+| `@cofhe/foundry-plugin` | `@fhenixprotocol/cofhe-contracts` 1.0.0, `@openzeppelin/contracts` 5.4.0 | None |
 
 `viem` is the only client library the SDK always needs. The optional entries are adapters: install `ethers` or `@wagmi/core` only if you want to pass those objects to the SDK.
 
@@ -80,7 +80,7 @@ networks: {
 
 ## Upgrading from 0.6 {#upgrading-from-0-6}
 
-Upgrade to `0.6.1` first, then to `0.7.1`. The `0.7` release changes four things that will break a `0.6` project:
+Upgrade to `0.6.1` first, then to `0.8.0`. The `0.7` release changes four things that will break a `0.6` project:
 
 - Permits are renamed to ACPs. The `@cofhe/sdk/permits` entry point is now `@cofhe/sdk/acps`.
 - The `InEuintXX` input types are gone, along with `FHE.asEuint32(InEuint32)` and `ITaskManager.verifyInput`.
