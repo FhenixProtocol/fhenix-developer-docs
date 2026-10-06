@@ -8,7 +8,7 @@ description: "Registry-chain contract that records FHE computation commitments. 
 | **Type** | UUPS-upgradeable Solidity contract deployed on a dedicated **registry chain**. |
 | **Function** | Records `(version, handle) → commitHash` entries for every ciphertext the coprocessor produces or verifies, computed results and encrypted inputs alike. |
 | **Responsibilities** | • Provide an authoritative source of ciphertext integrity that [Teecryptor](/deep-dive/cofhe-components/teecryptor) checks **before** decrypting.<br/>• Group commitments by an opaque `version` tag so a future tfhe-rs / FHE-parameter upgrade can roll out without invalidating earlier ciphertexts.<br/>• Enforce write-once semantics per `(version, handle)` to prevent commitment replacement.<br/>• Expose paginated enumeration so offchain tooling can audit what has been posted. |
-| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. |
+| **Deployment** | One deployment per registry chain, behind an ERC-1967 proxy. The production registry is `0x4B82F827C03fad5739EFEcfcF743E65E732be695` on Arbitrum One, and it serves every host chain. |
 
 ## What a commitment is
 
