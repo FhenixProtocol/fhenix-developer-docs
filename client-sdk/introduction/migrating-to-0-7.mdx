@@ -1,6 +1,6 @@
 ---
 title: Migrating to 0.7
-description: "Upgrade from 0.6 to 0.7.1: batch inputs, ACPs, and the new encrypted types"
+description: "Upgrade from 0.6 to 0.7 or later: batch inputs, ACPs, and the new encrypted types"
 ---
 
 The `0.7` release renames permits to ACPs, replaces per-ciphertext input signatures with one signature per batch, and binds every encrypted input to the contract that will consume it. It also moves you to `@fhenixprotocol/cofhe-contracts` `0.2.0`, which deletes the `InEuintXX` structs. Most projects need Solidity changes, not only TypeScript changes.
@@ -17,7 +17,7 @@ This is one migration across three independently versioned packages. Bumping a s
 
 | Package | Target | Notes |
 | --- | --- | --- |
-| `@cofhe/*` (every package) | `0.7.1` | Keep them all on one version |
+| `@cofhe/*` (every package) | `0.8.0` | Keep them all on one version |
 | `@fhenixprotocol/cofhe-contracts` | `1.0.0` | Use the stable release, not a beta |
 | `fhenix-confidential-contracts` | `0.4.0` | Only if you use FHERC20 or confidential tokens |
 
@@ -43,7 +43,7 @@ You can also [browse the skill on GitHub](https://github.com/FhenixProtocol/cofh
 Then ask your agent to run it:
 
 ```text
-Migrate this project to @cofhe/sdk 0.7.1
+Migrate this project to @cofhe/sdk 0.8.0
 ```
 
 It proposes each change as a diff and waits for your approval. Tell it to apply everything if you would rather review at the end.
