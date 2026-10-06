@@ -18,10 +18,10 @@ This is one migration across three independently versioned packages. Bumping a s
 | Package | Target | Notes |
 | --- | --- | --- |
 | `@cofhe/*` (every package) | `0.7.1` | Keep them all on one version |
-| `@fhenixprotocol/cofhe-contracts` | `0.2.0` | Use the stable release, not a `0.2.0-beta.*` |
+| `@fhenixprotocol/cofhe-contracts` | `1.0.0` | Use the stable release, not a beta |
 | `fhenix-confidential-contracts` | `0.4.0` | Only if you use FHERC20 or confidential tokens |
 
-`fhenix-confidential-contracts` `0.4.0` depends on an exact `@fhenixprotocol/cofhe-contracts@0.2.0`. Leaving a beta pin in place resolves two copies of `FHE.sol`, and `sharedEuint64` from one is not the same type as `sharedEuint64` from the other. The resulting errors read like nonsense, so check the pin first.
+`fhenix-confidential-contracts` `0.4.0` depends on an exact `@fhenixprotocol/cofhe-contracts@1.0.0`. Leaving a beta pin in place resolves two copies of `FHE.sol`, and `sharedEuint64` from one is not the same type as `sharedEuint64` from the other. The resulting errors read like nonsense, so check the pin first.
 
 If you are coming from `cofhejs` rather than `@cofhe/sdk`, follow [migrating from cofhejs](/client-sdk/introduction/migrating-from-cofhejs) first. If you are on `0.5.x`, the Solidity work below is identical, because the `InEuintXX` structs did not change between `0.5` and `0.6`.
 
