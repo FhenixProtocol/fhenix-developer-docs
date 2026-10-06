@@ -1,13 +1,8 @@
 ---
 title: Build with AI
+sidebarTitle: "Overview"
 description: Learn how to use AI coding assistants effectively when building with Fhenix
 ---
-
-# Developer's Guide to Building with AI
-
-
-
-> Learn practical AI prompting techniques to build confidential smart contracts and integrate FHE into your development workflow.
 
 This guide helps developers leverage AI tools effectively when building with Fhenix. Whether you're using Cursor, GitHub Copilot, or other AI assistants, these strategies will help you get better results and integrate AI smoothly into your FHE development process.
 
@@ -60,7 +55,7 @@ A comprehensive instructions file helps AI tools understand your Fhenix project 
 
 **Ready-to-Use Prompt for Creating Instructions.md:**
 
-```
+```text
 Create a detailed instructions.md file for my Fhenix project with the following sections:
 
 1. Overview: Summarize the project goals, problem statements, and core FHE functionality
@@ -80,15 +75,15 @@ Start with clear commands and be specific about what you want. AI tools respond 
 
 **Example:** 
 
-❌ "Help me with my Fhenix code"
+Weak: "Help me with my Fhenix code"
 
-✅ "Create a confidential voting smart contract using Fhenix FHE that encrypts votes and allows tallying without revealing individual votes"
+Better: "Create a confidential voting smart contract using Fhenix FHE that encrypts votes and allows tallying without revealing individual votes"
 
 ### Provide Context for Complex Tasks
 
 **Ready-to-Use Prompt:**
 
-```
+```text
 I'm working on a Fhenix project for [your use case]. I need your help with:
 
 1. Problem: [describe specific FHE/encryption issue]
@@ -105,7 +100,7 @@ Start simple and refine through iterations rather than trying to get everything 
 
 **Ready-to-Use Prompt:**
 
-```
+```text
 Let's approach this FHE implementation step by step:
 
 1. First, implement a basic version of [feature] with minimal encryption functionality
@@ -124,7 +119,7 @@ When building with Fhenix, it's important to provide AI assistants with the righ
 
 **Example FHE Implementation Prompt:**
 
-```
+```text
 I'm implementing a confidential token transfer using Fhenix. Here's what I need:
 
 1. Encrypt token amounts before transfer
@@ -142,7 +137,7 @@ Based on Fhenix documentation, please show me:
 
 **Ready-to-Use Prompt for Confidential Balance Display:**
 
-```
+```text
 I need to implement a new feature in my Fhenix project that:
 
 1. Shows the connected wallet's encrypted balance
@@ -160,7 +155,7 @@ Please update our instructions.md to reflect this new implementation.
 
 **Ready-to-Use Prompt for Bug Analysis:**
 
-```
+```text
 I'm encountering an issue with my FHE implementation:
 
 1. Expected behavior: [what should happen]
@@ -177,7 +172,7 @@ Please analyze this situation step by step and help me:
 
 **Ready-to-Use Prompt for Adding Debug Logs:**
 
-```
+```text
 I need to debug the following FHE function. Please add comprehensive logging statements that will help me trace:
 
 1. Input values and their types (encrypted vs plaintext)
@@ -197,7 +192,7 @@ If you're uncertain how to proceed:
 
 **Ready-to-Use Clarification Prompt:**
 
-```
+```text
 I'm unsure how to proceed with [specific FHE task]. Here's what I know:
 
 1. [context about the problem]
@@ -213,13 +208,13 @@ Modern AI assistants have capabilities that you can leverage with these advanced
 
 **1. Step-by-step reasoning:** Ask the AI to work through FHE problems systematically
 
-```
+```text
 Please analyze this FHE encryption code step by step and identify potential security issues or gas optimizations.
 ```
 
 **2. Format specification:** Request specific formats for clarity
 
-```
+```text
 Please structure your response as a tutorial with:
 - Code examples for encrypting and decrypting data
 - Explanations of each FHE operation
@@ -228,13 +223,13 @@ Please structure your response as a tutorial with:
 
 **3. Length guidance:** Indicate whether you want brief or detailed responses
 
-```
+```text
 Please provide a concise explanation in 2-3 paragraphs about how FHE maintains privacy during computation.
 ```
 
 **4. Clarify ambiguities:** Help resolve unclear points when you receive multiple options
 
-```
+```text
 I notice you suggested two approaches for encryption. To clarify, I'd prefer to use the first approach with Solidity native types.
 ```
 
