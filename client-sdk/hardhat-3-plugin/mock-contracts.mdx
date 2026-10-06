@@ -9,7 +9,8 @@ The plugin deploys mock versions of the CoFHE contracts on every simulated chain
 
 | Contract | Address | Role |
 | --- | --- | --- |
-| `MockTaskManager` | `0xeA30c4B8b44078Bbf8a6ef5b9f1eC1626C7848D9` | Runs FHE operations and stores each result's plaintext |
+| <code style={{ whiteSpace: "nowrap" }}>MockCoFHEAddressBook</code> | `0xC0F4e00E531a2B086492Ae3DCC1515038307196b` | Resolves the TaskManager, at the same address `FHE.sol` reads on real networks |
+| `MockTaskManager` | `0x0000000000000000000000000000000000005000` | Runs FHE operations and stores each result's plaintext |
 | `MockACL` | Assigned at deployment | Access control for encrypted handles |
 | `ACPTimestampRevoker` | Assigned at deployment | Default revoker for ACPs |
 | `ACPShareRegistry` | Assigned at deployment | Onchain hand-off for shared ACPs |
