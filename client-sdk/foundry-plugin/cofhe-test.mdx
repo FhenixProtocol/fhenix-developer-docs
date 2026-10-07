@@ -22,7 +22,8 @@ Call once in `setUp()`. Deploys the full CoFHE mock stack and wires the contract
 
 | Mock | Role | Address |
 | --- | --- | --- |
-| `MockTaskManager` | Manages FHE operations; stores plaintext values onchain | `TASK_MANAGER_ADDRESS` (fixed) |
+| <code style={{ whiteSpace: "nowrap" }}>MockCoFHEAddressBook</code> | Resolves the TaskManager, at the address `FHE.sol` reads | `0xC0F4…196b` (fixed) |
+| `MockTaskManager` | Manages FHE operations; stores plaintext values onchain | `0x…5000` (fixed) |
 | `MockACL` | Access control list for encrypted handles | (deployed) |
 | `MockZkVerifier` | Verifies encrypted-input ZK proofs | `0x…5001` (fixed) |
 | `MockZkVerifierSigner` | Signs encrypted inputs (for the mock verifier) | (funded with 10 ether) |
@@ -32,6 +33,7 @@ Call once in `setUp()`. Deploys the full CoFHE mock stack and wires the contract
 After `deployMocks()` runs, the following public state vars are available on `CofheTest`:
 
 ```solidity
+mockAddressBook
 mockTaskManager
 mockAcl
 mockZkVerifier

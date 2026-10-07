@@ -78,6 +78,17 @@ networks: {
 },
 ```
 
+## Upgrading from 0.7
+
+Move `@fhenixprotocol/cofhe-contracts` to `1.0.0` and every `@cofhe/*` package to `0.8.0` in the same change. The `0.8.0` plugins require contracts `1.0.0` or later, and contracts `1.0.0` needs the `0.8.0` mocks in tests, so the two upgrades only work together.
+
+Two SDK changes can break your client code:
+
+- `TASK_MANAGER_ADDRESS` is removed from `@cofhe/sdk`. Contracts `1.0.0` resolves the TaskManager through the CoFHEAddressBook, and the SDK follows: call `getTaskManagerAddress(publicClient)` instead.
+- A custom `KeysStorage` implementation needs updating: the CRS is now keyed by chain and security zone, so `getCrs` and `setCrs` take the zone.
+
+Contract code compiles unchanged against `1.0.0`: the `FHE.sol` API only gains functions. The `0.8.0` release changes nothing in ACP signing, so ACPs signed under `0.7` stay valid.
+
 ## Upgrading from 0.6 {#upgrading-from-0-6}
 
 Upgrade to `0.6.1` first, then to `0.8.0`. The `0.7` release changes four things that will break a `0.6` project:
